@@ -1,0 +1,18 @@
+<van-nav-bar title="充电驿站" left-text="返回" right-text="" left-arrow bind:click-left="onClickLeft" bind:click-right="onClickRight" class="van-nav-bar" />
+<view class="container">
+  <!-- Payment Methods List -->
+  <view class="payment-list">
+    <view class="payment-item" wx:for="{{paymentMethods}}" wx:key="type">
+      <view class="payment-left">
+        <image src="{{item.icon}}" class="payment-icon {{item.type}}-icon"/>
+        <text class="payment-name">{{item.name}}</text>
+      </view>
+      <view class="remove-btn" bindtap="removePayment" data-type="{{item.type}}">移除</view>
+    </view>
+  </view>
+
+  <!-- Add Payment Method Button -->
+  <view class="add-payment-button" bindtap="addPaymentMethod">
+    <text>添加支付方式</text>
+  </view>
+</view> 

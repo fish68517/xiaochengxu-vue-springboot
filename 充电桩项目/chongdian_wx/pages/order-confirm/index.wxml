@@ -1,0 +1,86 @@
+<view class="container">
+  <view class="header">
+    <view class="title">提交订单</view>
+  </view>
+
+  <!-- 车辆信息 -->
+  <view class="section">
+    <view class="section-title">车辆信息</view>
+    <view class="car-info">
+      <image class="car-icon" src="{{image}}" mode="aspectFit"></image>
+      <view class="car-details">
+        <view class="car-name">{{brand}}</view>
+        <view class="car-model">{{model}} · {{carInfo.number}}</view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 充电站信息 -->
+  <view class="section">
+    <view class="section-title">充电站点</view>
+    <view class="station-info">
+      <image class="station-icon" src="{{selectedStation.stationPhoto}}" mode="aspectFit"></image>
+      <view class="station-details">
+        <view class="station-name">{{selectedStation.stationName}}</view>
+        <view class="station-address">{{selectedStation.stationAddress}}</view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 充电信息 -->
+  <view class="section">
+    <view class="section-title">功率：{{power}} kW</view>
+  </view>
+
+  <!-- 时间信息 -->
+  <view class="section">
+    <view class="info-row">
+      <text class="info-label">下单时间</text>
+      <text class="info-value">{{orderDate}}</text>
+    </view>
+    <view class="info-row">
+      <text class="info-label">充电开始时间</text>
+      <text class="info-value">{{startTime}}</text>
+    </view>
+    <view class="info-row">
+      <text class="info-label">充电时长</text>
+      <text class="info-value">{{time}} 小时</text>
+    </view>
+  </view>
+
+  <!-- 费用信息 -->
+  <view class="section">
+    <view class="info-row">
+      <text class="info-label">充电费用</text>
+      <text class="info-value">¥ {{totalPrice}}</text>
+    </view>
+    <view class="info-row">
+      <text class="info-label">税费</text>
+      <text class="info-value">¥ 0</text>
+    </view>
+    <view class="info-row total">
+      <text class="info-label">实付</text>
+      <text class="info-value highlight">¥ {{totalPrice}}</text>
+    </view>
+  </view>
+
+  <!-- 支付方式 -->
+  <view class="section">
+    <view class="section-title">支付方式</view>
+    <view class="payment-info">
+      <image class="payment-icon" src="{{paymentIcons[paymentType]}}" mode="aspectFit"></image>
+      <text>{{paymentNames[paymentType]}}</text>
+    </view>
+  </view>
+
+  <!-- 提示信息 -->
+  <view class="notice">
+    <text class="notice-icon">i</text>
+    <text class="notice-text">{{notice}}</text>
+  </view>
+
+  <!-- 提交按钮 -->
+  <view class="submit-button" bindtap="submitOrder">
+    提交订单
+  </view>
+</view> 

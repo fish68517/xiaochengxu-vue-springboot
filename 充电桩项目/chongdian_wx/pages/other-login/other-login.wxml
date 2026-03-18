@@ -1,0 +1,42 @@
+<view class="container">
+  <view class="login-container">
+    <view class="login-title">登录</view>
+    
+    <view class="login-form">
+      <view class="login-tabs">
+        <view class="tab-item {{activeTab === 'account' ? 'active' : ''}}" bindtap="switchTab" data-tab="account">手机号登录</view>
+        <view class="tab-item {{activeTab === 'email' ? 'active' : ''}}" bindtap="switchTab" data-tab="email">邮箱登录</view>
+      </view>
+      
+      <view class="tab-content" wx:if="{{activeTab === 'account'}}">
+        <view class="form-item">
+          <image src="/assets/icons/account.png" class="form-icon"></image>
+          <input class="form-input" placeholder="请输入手机号" bindinput="onAccountInput" />
+        </view>
+        
+        <view class="form-item">
+          <image src="/assets/icons/password.png" class="form-icon"></image>
+          <input class="form-input" password placeholder="请输入密码" bindinput="onPasswordInput" />
+        </view>
+      </view>
+      
+      <view class="tab-content" wx:if="{{activeTab === 'email'}}">
+        <view class="form-item">
+          <image src="/assets/icons/email.png" class="form-icon"></image>
+          <input class="form-input" placeholder="请输入邮箱账号" bindinput="onEmailInput" />
+        </view>
+        
+        <view class="form-item verify-code-item">
+          <image src="/assets/icons/verify.png" class="form-icon"></image>
+          <input class="form-input verify-input" placeholder="请输入验证码" bindinput="onVerifyCodeInput" />
+          <text class="send-code-btn" bindtap="sendVerifyCode" disa
+          bled="{{isSending}}">发送</text>
+        </view>
+      </view> 
+      <button class="login-btn" bindtap="handleLogin">下一步</button>
+    </view>
+  </view>
+</view>
+
+
+<text>pages/other-login/other-login.wxml</text>

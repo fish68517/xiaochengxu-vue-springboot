@@ -1,0 +1,264 @@
+/* pages/register/register.wxss */
+.container {
+  padding: 40rpx;
+  background-color: #fff; 
+  padding-bottom: 150rpx;
+  min-height: 100vh;
+  position: relative;
+}
+
+.input-section {
+  padding: 0 50rpx;
+  margin-top: 20rpx;
+}
+
+.back-button {
+  position: absolute;
+  top: 50rpx;
+  left: 30rpx;
+  z-index: 10;
+  width: 80rpx;
+  height: 80rpx;
+  border-radius: 50%;
+  background-color: rgba(0, 0, 0, 0.05);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  transition: all 0.3s ease;
+  box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.05);
+}
+
+.back-button:active {
+  transform: scale(0.95);
+  background-color: rgba(0, 0, 0, 0.1);
+}
+
+.back-text {
+  font-size: 36rpx; /* Slightly adjusted size */
+  font-weight: bold;
+  color: #333;
+}
+
+.title {
+  font-size: 56rpx;
+  font-weight: bold;
+  margin-top: 100rpx;
+  margin-bottom: 30rpx;
+  text-align: left;
+  color: #333;
+  letter-spacing: 1rpx;
+  background: linear-gradient(45deg, #333, #666);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  position: relative;
+}
+
+.subtitle {
+  font-size: 28rpx;
+  color: #666;
+  text-align: left;
+  margin-bottom: 60rpx;
+  line-height: 1.6;
+  padding-right: 20rpx;
+}
+
+.email-container {
+  margin-bottom: 40rpx;
+  margin-left: 40rpx;
+  position: relative;
+}
+
+.email-input-container {
+  border-bottom: 1px solid #e0e0e0;
+  padding: 10rpx 0;
+  transition: all 0.3s ease;
+  background-color: #fff;
+  margin-top: 40rpx;
+  margin-left: 50rpx;
+  width: 600rpx;
+  height: 60rpx;
+  box-sizing: border-box;
+  position: relative;
+}
+
+.email-input-container::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 0;
+  height: 2px;
+  background-color: var(--primary-color);
+  transition: width 0.3s ease;
+}
+
+.email-input-container.focused::after {
+  width: 100%;
+}
+
+.email-input-container.focused {
+  background-color: #fff;
+  box-shadow: 0 2rpx 8rpx rgba(0, 200, 83, 0.1);
+}
+
+.email-input {
+  flex: 1;
+  font-size: 32rpx;
+  height: 60rpx;
+  line-height: 60rpx;
+  caret-color: var(--primary-color);
+  color: #333;
+  padding: 0 10rpx;
+  transition: all 0.3s ease;
+}
+
+/**
+ * 当电子邮件输入框获得焦点时，将其向上移动2rpx，以提供视觉反馈。
+ * 这有助于用户识别当前正在编辑的输入字段。
+ */
+.email-input:focus {
+  transform: translateY(-2rpx);
+}
+.email-input:focus {
+  transform: translateY(-2rpx);
+}
+
+.verify-code-container {
+  display: flex;
+  margin-bottom: 50rpx;
+  margin-left: 40rpx;
+  position: relative;
+}
+
+.verify-input-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 20rpx;
+  width: 100%;
+}
+
+.send-code-btn {
+  height: 60rpx;
+  line-height: 60rpx;
+  font-size: 24rpx;
+  color: #FFFFFF;
+  background-color: var(--primary-color);
+  padding: 0 30rpx;
+  margin: 0;
+  white-space: nowrap;
+  transition: all 0.3s ease;
+  box-shadow: 0 4rpx 12rpx rgba(0, 200, 83, 0.2);
+  border-radius: 30rpx;
+  font-weight: 500;
+  letter-spacing: 1rpx;
+}
+
+.policy-container {
+  display: flex;
+  align-items: center;
+  margin-top: 60rpx;
+  padding: 30rpx;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.policy-container::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 4rpx;
+  height: 100%;
+  /* background: linear-gradient(to bottom, var(--primary-color), rgba(0, 200, 83, 0.5)); */
+}
+
+.policy-container:active {
+  background-color: #f0f0f0;
+  transform: translateY(2rpx);
+}
+
+.checkbox {
+  transform: scale(0.8);
+  margin-right: 20rpx;
+}
+
+.policy-text {
+  font-size: 26rpx;
+  color: #666;
+  line-height: 1.6;
+}
+
+.policy-link {
+  color: var(--primary-color);
+  font-size: 26rpx;
+  font-weight: 500;
+  position: relative;
+  display: inline-block;
+}
+
+.policy-link::after {
+  content: '';
+  position: absolute;
+  bottom: -2rpx;
+  left: 0;
+  width: 100%;
+  height: 2rpx;
+  background-color: var(--primary-color);
+  transform: scaleX(0);
+  transition: transform 0.3s ease;
+}
+
+.policy-link:active::after {
+  transform: scaleX(1);
+}
+
+.next-button {
+  width: 90%;
+  height: 70rpx;
+  line-height: 70rpx;
+  background-color: var(--primary-color);
+  color: #FFFFFF;
+  border-radius: 35rpx;
+  font-size: 30rpx;
+  text-align: center;
+  position: fixed;
+  bottom: 40rpx;
+  left: 5%;
+  right: 5%;
+  box-sizing: border-box;
+  transition: all 0.3s ease;
+  box-shadow: 0 4rpx 12rpx rgba(0, 200, 83, 0.2);
+  font-weight: 500;
+  letter-spacing: 2rpx;
+  text-transform: uppercase;
+  z-index: 100;
+}
+
+.next-button:active {
+  transform: scale(0.98);
+  box-shadow: 0 2rpx 6rpx rgba(0, 200, 83, 0.2);
+}
+
+.next-button[disabled] {
+  background-color: #CCCCCC;
+  box-shadow: none;
+}
+
+/* Changed class name */
+.email-input-label {
+  font-size: 28rpx; 
+  color: #333; 
+  margin-bottom: 15rpx;
+  text-align: left;
+}
+button:not([size=mini]) {
+    margin-left: auto;
+    margin-right: auto;
+    width: 90px;
+}
+button:not([size=mini]) {
+    margin-left: auto;
+    margin-right: auto;
+    width: 90px;
+}

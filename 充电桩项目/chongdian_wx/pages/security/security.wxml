@@ -1,0 +1,30 @@
+<!--pages/security/security.wxml-->
+<view class="container">
+  <view class="setting-item">
+    <text>记住我</text>
+    <switch checked="{{rememberMe}}" bindchange="onRememberMeChange" color="#07c160"/>
+  </view>
+  
+  <view class="setting-item">
+    <text>指纹识别码</text>
+    <switch checked="{{fingerprintEnabled}}" bindchange="onFingerprintChange" color="#07c160"/>
+  </view>
+  
+  <view class="setting-item">
+    <text>人脸识别</text>
+    <switch checked="{{faceIdEnabled}}" bindchange="onFaceIdChange" color="#07c160"/>
+  </view>
+  
+  <view class="setting-item">
+    <text>短信验证</text>
+    <switch checked="{{smsEnabled}}" bindchange="onSmsChange" color="#07c160"/>
+  </view>
+  
+  <view class="setting-item">
+    <text>微信验证</text>
+    <switch checked="{{wechatEnabled}}" bindchange="onWechatChange" color="#07c160"/>
+  </view>
+  <view class="button-container">
+    <button class="update-password" bindtap="updatePassword">更改密码</button>
+  </view>
+</view>

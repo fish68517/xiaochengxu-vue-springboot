@@ -1,0 +1,24 @@
+<!-- <van-nav-bar
+  left-text="关于我们"
+  left-arrow
+  bind:click-left="onClickLeft"/> -->
+<view class="container">
+  <view class="logo-section">
+    <image src="/images/tabs/充电站-充电.png" class="logo" />
+    <view class="app-name">EV充电 v1.0.0</view>
+    <!-- <text class="app-version">Version 1.0.0</text> -->
+  </view>
+
+  <!-- 菜单列表增加悬浮效果 -->
+  <view class="menu-list">
+    <block wx:for="{{menuItems}}" wx:key="index">
+      <view class="menu-item">
+        <view class="menu-left">
+          <image src="{{item.icon}}" class="menu-icon" wx:if="{{item.icon}}"/>
+          <text class="menu-text">{{item.text}}</text>
+        </view>
+        <image src="/images/tabs/小于.png" class="arrow-icon" />
+      </view>
+    </block>
+  </view>
+</view>

@@ -1,0 +1,45 @@
+<view class="container">
+  <view class="search-bar">
+    <view class="search-input-container">
+      <text class="search-icon-text">🔍</text>
+      <input type="text" placeholder="搜索站点" class="search-input" bindinput="onSearchInput" value="{{searchText}}" />
+    </view>
+    <view class="filter-button" bindtap="toggleDropdown">
+      <text class="filter-icon-text">⚙️</text>
+    </view>
+  </view>
+  <view wx:if="{{showDropdown}}" class="dropdown-menu">
+    <scroll-view scroll-y style="max-height: 200px;">
+      <view wx:for="{{stations}}" wx:key="id" class="dropdown-item" bindtap="selectStationFromDropdown" data-id="{{item.id}}">
+        {{item.stationName}}
+      </view>
+    </scroll-view>
+  </view>
+
+  <view class="map-container">
+    <map id="map" longitude="{{longitude}}" latitude="{{latitude}}" scale="{{scale}}" markers="{{markers}}" show-location="true" bindmarkertap="onMarkerTap" bindtap="onMapTap">
+    </map>
+  </view>
+
+  <view class="map-tools">
+    <view class="tool-button" bindtap="showStationList">
+      <text class="tool-icon-text">📋</text>
+    </view>
+    <view class="tool-button" bindtap="centerMap">
+      <text class="tool-icon-text">📍</text>
+    </view>
+  </view>
+
+  <!-- 弹窗 -->
+  <view wx:if="{{showPopup}}" class="popup">
+    <view class="popup-content">
+      <image class="station-photo" src="{{selectedStation.iconPath}}" mode="aspectFill" wx:if="{{selectedStation.stationPhoto}}" />
+      <view class="station-name">{{selectedStation.stationName}}</view>
+      <view class="station-address">{{selectedStation.stationAddress}}</view>
+      <view class="popup-buttons">
+        <button class="btn" bind:tap="viewStationDetails" data-id="{{selectedStation.id}}">查看</button>
+        <button class="btn btn-primary" bind:tap="goDH">导航</button>
+      </view>
+    </view>
+  </view>
+</view>

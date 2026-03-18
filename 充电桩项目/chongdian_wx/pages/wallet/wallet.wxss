@@ -1,0 +1,319 @@
+:root {
+  --primary-color: #00C853; /* 主色调统一使用品牌绿 */
+  --white: #FFFFFF;
+  --text-dark: #333333;
+  --text-light: #666666;
+  --border-color: #F5F5F5;
+}
+
+/* 通用样式 */
+.flex-row {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+}
+
+/* 容器样式 */
+.container {
+  padding: 10rpx;
+  background: #F8F8F8;
+}
+
+/* 标题栏样式 */
+.title {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 32rpx;
+}
+
+.title-left {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  margin-right: 260px;
+}
+
+.title-icon {
+  width: 55rpx;
+  height: 48rpx;
+}
+
+.title-text {
+  font-size: 40rpx;
+  font-weight: bolder;
+  color: #333;
+}
+
+.title-right .search-icon {
+  width: 50rpx;
+  height: 48rpx;
+  opacity: 1;
+}
+
+/* 搜索栏样式 */
+.search-bar {
+  margin-bottom: 24rpx;
+}
+
+.search-input-container {
+  display: flex;
+  align-items: center;
+  background: #FFFFFF;
+  height: 72rpx;
+  border-radius: 36rpx;
+  padding: 0 24rpx;
+}
+
+.search-icon {
+  width: 32rpx;
+  height: 32rpx;
+  margin-right: 12rpx;
+  opacity: 0.4;
+}
+
+.search-input {
+  flex: 1;
+  font-size: 28rpx;
+  color: #333;
+}
+
+/* 钱包卡片样式 */
+.wallet-card {
+  width: 84%;
+  height: 150px;
+  background: #00C853;
+  border-radius: 30rpx;
+  padding: 50rpx 40rpx;
+  color: #FFFFFF;
+  margin-bottom: 32rpx;
+}
+
+.card-logo {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24rpx;
+}
+
+.logo-text {
+  font-size: 32rpx;
+  font-weight: 500;
+}
+
+.card-brand {
+  display: flex;
+  gap: 12rpx;
+}
+
+.brand-icon {
+  width: 48rpx;
+  height: 32rpx;
+  object-fit: contain;
+}
+
+.card-details {
+  margin-bottom: 24rpx;
+}
+
+.card-number {
+  font-size: 26rpx;
+  opacity: 0.9;
+  letter-spacing: 2rpx;
+}
+
+.card-balance {
+  margin-bottom: 32rpx;
+}
+
+.balance-label {
+  display: block;
+  font-size: 24rpx;
+  opacity: 0.9;
+  margin-bottom: 8rpx;
+}
+
+.balance-amount {
+  display: block;
+  font-size: 65rpx;
+  font-weight: 500;
+}
+
+.card-action {
+  width: 100px;
+  margin-top: 30px;
+  margin-left: 90px;
+}
+
+.btn-recharge {
+  background: #FFFFFF;
+  color: #00C853;
+  font-size: 28rpx;
+  font-weight: 500;
+  border-radius: 30rpx;
+  padding: 12rpx 32rpx;
+  display: inline-flex;
+  align-items: center;
+  gap: 8rpx;
+  line-height: 1;
+  width: 50px;
+}
+
+.recharge-icon {
+  width: 32rpx;
+  height: 32rpx;
+}
+
+/* 交易列表样式 */
+.transaction-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin: 20rpx 0 24rpx;
+  padding: 0 4rpx;
+}
+
+.transaction-title {
+  font-size: 40rpx;
+  font-weight: bolder;
+  color: #333;
+  margin-right: 200px;
+}
+
+.view-all {
+  font-size: 26rpx;
+  color: #02b772;
+}
+
+.transaction-list {
+  width: 355px;
+  padding: 20rpx 20rpx;
+}
+
+.transaction-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 30rpx 20rpx;
+  margin-bottom: 20rpx;
+  background: #ffffff;
+  border-radius: 16rpx;
+  box-shadow: 0 2rpx 10rpx rgba(0, 0, 0, 0.05);
+}
+
+.transaction-item-active {
+  background-color: #f5f5f5;
+}
+
+.transaction-item::after {
+  content: '';
+  position: absolute;
+  left: 24rpx;
+  right: 24rpx;
+  bottom: 0;
+  height: 1rpx;
+  background: rgba(0, 0, 0, 0.05);
+}
+
+.transaction-item:last-child::after {
+  display: none;
+}
+
+.transaction-left {
+  flex: 1;
+}
+
+.transaction-info {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  margin-bottom: 8rpx;
+}
+
+.transaction-tag {
+  font-size: 24rpx;
+  padding: 4rpx 12rpx;
+  border-radius: 6rpx;
+}
+
+.transaction-tag.expense {
+  color: #FF3B30;
+  background: rgba(255, 59, 48, 0.1);
+}
+
+.transaction-tag.income {
+  color: #34C759;
+  background: rgba(52, 199, 89, 0.1);
+}
+
+.transaction-name {
+  font-size: 28rpx;
+  color: #333;
+  margin-bottom: 8rpx;
+}
+
+.transaction-date {
+  font-size: 24rpx;
+  color: #999;
+}
+
+.transaction-right {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+}
+
+.transaction-amount {
+  font-size: 32rpx;
+  font-weight: 500;
+}
+
+.transaction-amount.expense {
+  color: #FF3B30;
+}
+
+.transaction-amount.income {
+  color: #34C759;
+}
+
+.arrow-icon {
+  width: 32rpx;
+  height: 32rpx;
+  opacity: 0.3;
+}
+
+/* 交易列表新样式 */
+.transaction-content {
+  flex: 1;
+}
+
+.transaction-type-tag {
+  display: inline-block;
+  padding: 4rpx 16rpx;
+  border-radius: 8rpx;
+  font-size: 24rpx;
+  margin-bottom: 12rpx;
+}
+
+.charge-tag {
+  background-color: rgba(0, 200, 83, 0.1);
+  color: #00C853;
+}
+
+.pay-tag {
+  background-color: rgba(255, 59, 48, 0.1);
+  color: #FF3B30;
+}
+
+.transaction-time {
+  font-size: 24rpx;
+  color: #999;
+}
+
+.income-amount {
+  color: #00C853;
+}
+
+.expense-amount {
+  color: #FF3B30;
+}

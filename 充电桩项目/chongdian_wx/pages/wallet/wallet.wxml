@@ -1,0 +1,57 @@
+<!-- <van-nav-bar title="钱包" left-text="返回" right-text="" left-arrow bind:click-left="onClickLeft" bind:click-right="onClickRight" class="van-nav-bar" /> -->
+<view class="container">
+  <!-- <view class="title">
+    <view class="title-left">
+      <image src="/images/tabs/充电站-充电.png" class="title-icon" />
+      <text class="title-text">钱包</text>
+    </view>
+    <view class="title-right">
+      <image src="/images/tabs/搜索 .png" class="search-icon" bindtap="onSearchTap" />
+    </view>
+  </view> -->
+  
+  <view class="wallet-card">
+    <view class="card-logo">{{name}}</view>
+    <view class="card-details">
+      <view class="card-number">{{card.maskedCard || '暂无卡号'}}</view>
+    </view>
+    <view style="display: flex;">
+      <view class="card-balance">
+        <text class="balance-label">金额</text>
+        <text class="balance-amount">¥{{money}}</text>
+      </view>
+      <view class="card-action">
+        <view class="btn-recharge" bindtap="showRecharge">
+          <image src="/images/tabs/充值.png" class="recharge-icon" />
+          充值
+        </view>
+      </view>
+    </view>
+  </view>
+  
+  <view class="transaction-header">
+    <text class="transaction-title">近期交易</text>
+    <text class="view-all" bind:tap="viewAllTransactions">查看全部 →</text>
+  </view>
+  
+  <view class="transaction-list">
+    <view class="transaction-item {{item.type}}" 
+          wx:for="{{transactions}}" 
+          wx:key="id" 
+          bindtap="viewTransactionDetail" 
+          data-id="{{item.id}}" 
+          hover-class="transaction-item-active">
+      <view class="transaction-left">
+        <view class="transaction-info">
+          <view class="transaction-tag {{item.type}}">{{item.type === 'income' ? '充值' : '支出'}}</view>
+          <text class="transaction-name">{{item.name}}</text>
+        </view>
+        <view class="transaction-date">{{item.date}} · {{item.time}}</view>
+      </view>
+      <view class="transaction-right">
+        <text class="transaction-amount {{item.type}}">{{item.type === 'income' ? '+' : '-'}}¥{{item.amount}}</text>
+        <image src="/images/icons/arrow.png" class="arrow-icon" />
+      </view>
+    </view>
+  </view>
+</view>

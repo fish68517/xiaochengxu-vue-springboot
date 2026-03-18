@@ -1,0 +1,77 @@
+<view class="container">
+  <view class="section">
+    <view class="title">选择充电功率</view>
+    <view class="select-wrapper">
+      <picker bindchange="selectPower" value="{{powerIndex}}" range="{{powerOptions}}" range-key="label">
+        <view class="picker">
+          {{powerOptions[powerIndex].label}}
+        </view>
+      </picker>
+    </view>
+  </view>
+
+  <view class="section">
+    <view class="title">充电时长(小时)</view>
+    <view class="time-input">
+      <input type="number" value="{{chargeTime}}" bindinput="onTimeChange" />
+    </view>
+  </view>
+
+  <view class="section">
+    <view class="title">费用计算</view>
+    <view class="price-display">
+      <text>预计费用：</text>
+      <text class="price">¥{{totalPrice}}</text>
+    </view>
+  </view>
+
+  <view class="section">
+    <view class="title">支付方式</view>
+    <view class="payment-list">
+      <view class="payment-item {{selectedPayment === 'wallet' ? 'selected' : ''}}" bindtap="selectPayment" data-type="wallet">
+        <view class="payment-left">
+          <image class="payment-icon" src="/images/tabs/钱包支付.png" mode="aspectFit"></image>
+          <text>电子钱包</text>
+        </view>
+        <view class="payment-right">
+          <text class="wallet-balance">¥{{money}}</text>
+          <radio checked="{{selectedPayment === 'wallet'}}"></radio>
+        </view>
+      </view>
+
+      <view class="payment-item {{selectedPayment === 'wechat' ? 'selected' : ''}}" bindtap="selectPayment" data-type="wechat">
+        <view class="payment-left">
+          <image class="payment-icon" src="/images/tabs/微信支付.png" mode="aspectFit"></image>
+          <text>微信支付</text>
+        </view>
+        <view class="payment-right">
+          <radio checked="{{selectedPayment === 'wechat'}}"></radio>
+        </view>
+      </view>
+
+      <view class="payment-item {{selectedPayment === 'alipay' ? 'selected' : ''}}" bindtap="selectPayment" data-type="alipay">
+        <view class="payment-left">
+          <image class="payment-icon" src="/images/tabs/支付宝支付.png" mode="aspectFit"></image>
+          <text>支付宝支付</text>
+        </view>
+        <view class="payment-right">
+          <radio checked="{{selectedPayment === 'alipay'}}"></radio>
+        </view>
+      </view>
+
+      <view class="payment-item {{selectedPayment === 'yinlian' ? 'selected' : ''}}" bindtap="selectPayment" data-type="yinlian">
+        <view class="payment-left">
+          <image class="payment-icon" src="/images/tabs/银联支付.png" mode="aspectFit"></image>
+          <text>银联支付</text>
+        </view>
+        <view class="payment-right">
+          <radio checked="{{selectedPayment === 'yinlian'}}"></radio>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <view class="next-button" bindtap="goToNext">
+    生成订单
+  </view>
+</view> 

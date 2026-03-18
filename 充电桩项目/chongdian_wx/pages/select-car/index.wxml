@@ -1,0 +1,31 @@
+<view class="container">
+  <view class="header">
+    <view class="back-icon" bindtap="goBack">
+      <image src="/images/tabs/返回.png" mode="aspectFit"></image>
+    </view>
+    <text class="title">选择车辆</text>
+    <view class="add-icon" bindtap="addCar">
+      <image src="/images/tabs/添加.png" mode="aspectFit"></image>
+    </view>
+  </view>
+
+  <!-- 给 scroll-view 添加底部 padding 防止被按钮遮挡 -->
+  <view class="car-list">
+    <view class="car-item" wx:for="{{cars}}" wx:key="id" bindtap="selectCar" data-car="{{item}}">
+      <view class="car-info">
+        <image class="car-icon" src="{{item.modelImage}}" mode="aspectFit"></image>
+        <view class="car-details">
+          <text class="brand">{{carsMap[item.carBrandId]}}</text>
+          <text class="model">{{item.carModel}}</text>
+        </view>
+      </view>
+      <view class="select-indicator {{item.selected ? 'selected' : ''}}"></view>
+    </view>
+    <!-- 额外空白区域，防止最后一项被遮住 -->
+    <view style="height: 140rpx;"></view>
+  </view>
+
+  <view class="next-step">
+    <button class="next-button" bindtap="onNextStep">下一步</button>
+  </view>
+</view>

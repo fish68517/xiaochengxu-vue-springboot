@@ -1,0 +1,51 @@
+<!--pages/lognVerifyCode/lognVerifyCode.wxml-->
+<text>pages/lognVerifyCode/lognVerifyCode.wxml</text>
+<view class="container">
+  <view class="header">
+    <view class="back-button" bindtap="goBack">
+    </view>
+  </view>
+
+  <view class="content">
+    <text class="title">验证码</text>
+    <text class="description">我们已将验证码发送到邮箱 {{maskedEmail}}，请输入验证码进行注册。</text>
+
+    <view class="code-input-area">
+      <view class="code-box {{code.length > 0 ? 'filled' : ''}} {{focusIndex === 0 ? 'focused' : ''}}">{{code[0] || ''}}</view>
+      <view class="code-box {{code.length > 1 ? 'filled' : ''}} {{focusIndex === 1 ? 'focused' : ''}}">{{code[1] || ''}}</view>
+      <view class="code-box {{code.length > 2 ? 'filled' : ''}} {{focusIndex === 2 ? 'focused' : ''}}">{{code[2] || ''}}</view>
+      <view class="code-box {{code.length > 3 ? 'filled' : ''}} {{focusIndex === 3 ? 'focused' : ''}}">{{code[3] || ''}}</view>
+    </view>
+
+    <view class="resend-area">
+      <text class="resend-question">没有收到验证码么?</text>
+      <text class="resend-link" wx:if="{{countdown === 0}}" bindtap="resendCode">重新发送</text>
+      <text class="resend-timer" wx:else>您可以在 {{countdown}} 秒后重新发送</text>
+    </view>
+  </view>
+
+  <view class="number-pad">
+    <view class="pad-row">
+      <view class="pad-key" bindtap="onKeyPress" data-key="1">1</view>
+      <view class="pad-key" bindtap="onKeyPress" data-key="2">2</view>
+      <view class="pad-key" bindtap="onKeyPress" data-key="3">3</view>
+    </view>
+    <view class="pad-row">
+      <view class="pad-key" bindtap="onKeyPress" data-key="4">4</view>
+      <view class="pad-key" bindtap="onKeyPress" data-key="5">5</view>
+      <view class="pad-key" bindtap="onKeyPress" data-key="6">6</view>
+    </view>
+    <view class="pad-row">
+      <view class="pad-key" bindtap="onKeyPress" data-key="7">7</view>
+      <view class="pad-key" bindtap="onKeyPress" data-key="8">8</view>
+      <view class="pad-key" bindtap="onKeyPress" data-key="9">9</view>
+    </view>
+    <view class="pad-row">
+      <view class="pad-key special">*</view> <!-- Placeholder for alignment -->
+      <view class="pad-key" bindtap="onKeyPress" data-key="0">0</view>
+      <view class="pad-key special" bindtap="onKeyPress" data-key="backspace">
+        <image src="/assets/icons/backspace.png" class="backspace-icon"></image>
+      </view>
+    </view>
+  </view>
+</view> 

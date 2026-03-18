@@ -1,0 +1,10 @@
+image{
+  width: 750rpx;
+  height: 1400rpx;
+}
+.back{
+  color: black;
+  font-size: 22px;
+  position: absolute;
+  bottom: 1400rpx;
+}

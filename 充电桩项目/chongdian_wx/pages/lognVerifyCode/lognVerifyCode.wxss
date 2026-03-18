@@ -1,0 +1,148 @@
+/* pages/lognVerifyCode/lognVerifyCode.wxss */
+/* pages/verifyCode/verifyCode.wxss */
+.container {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    background-color: #FFFFFF;
+  }
+  
+  .header {
+    padding: 60rpx 40rpx 20rpx;
+    box-sizing: border-box;
+  }
+  
+  .back-button {
+    width: 60rpx;
+    height: 60rpx;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  
+  .back-icon {
+    font-size: 40rpx;
+    font-weight: bold;
+    color: #333;
+  }
+  
+  .content {
+    flex: 1;
+    padding: 0 40rpx;
+    display: flex;
+    flex-direction: column;
+  }
+  
+  .title {
+    font-size: 48rpx;
+    font-weight: bold;
+    color: #333;
+    margin-bottom: 20rpx;
+  }
+  
+  .description {
+    font-size: 28rpx;
+    color: #666;
+    line-height: 1.6;
+    margin-bottom: 60rpx;
+  }
+  
+  .code-input-area {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 40rpx;
+  }
+  
+  .code-box {
+    width: 120rpx;
+    height: 120rpx;
+    border: 1px solid #E0E0E0;
+    border-radius: 16rpx;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 48rpx;
+    font-weight: bold;
+    color: #333;
+    background-color: #F7F7F7;
+    transition: border-color 0.2s, background-color 0.2s;
+  }
+  
+  .code-box.filled {
+    background-color: #FFFFFF;
+    border-color: #E0E0E0;
+  }
+  
+  .code-box.focused {
+    border-color: var(--primary-color);
+    background-color: #E8F5E9; /* Light green background */
+  }
+  
+  .resend-area {
+    text-align: center;
+    margin-bottom: 60rpx;
+  }
+  
+  .resend-question {
+    font-size: 26rpx;
+    color: #888;
+    display: block;
+    margin-bottom: 10rpx;
+  }
+  
+  .resend-link,
+  .resend-timer {
+    font-size: 28rpx;
+    color: var(--primary-color);
+  }
+  
+  .resend-timer {
+    color: #666;
+  }
+  
+  .number-pad {
+    background-color: #F0F0F0; /* Slightly different background for the pad */
+    padding: 20rpx 0;
+  }
+  
+  .pad-row {
+    display: flex;
+    justify-content: space-around;
+    margin-bottom: 15rpx;
+  }
+  
+  .pad-key {
+    width: 200rpx;
+    height: 100rpx;
+    background-color: #FFFFFF;
+    border-radius: 10rpx;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 48rpx;
+    color: #333;
+    font-weight: 500;
+    box-shadow: 0 2rpx 4rpx rgba(0, 0, 0, 0.1);
+    transition: background-color 0.1s;
+  }
+  
+  .pad-key:active {
+    background-color: #E0E0E0;
+  }
+  
+  .pad-key.special {
+    background-color: transparent;
+    box-shadow: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  
+  .pad-key.special:active {
+    background-color: rgba(0, 0, 0, 0.05);
+  }
+  
+  .backspace-icon {
+    width: 50rpx;
+    height: 50rpx;
+  } 

@@ -1,0 +1,45 @@
+/* 基础样式 */
+.section-title {
+  font-weight: bold;
+  margin: 20rpx 0;
+  color: #333;
+  font-weight: bolder;
+}
+.container{
+  padding: 25px;
+  font-size: 17px;
+}
+.section{
+  padding-top: 25px;
+}
+.nav-bar{
+  display: flex;
+  margin-left: -237px;
+}
+.nav-left image{
+  width: 65x;
+  height: 50px;
+}
+.nav-title{
+  font-size: 20px;
+}
+.info-item {
+  margin: 10rpx 0;
+  line-height: 1.6;
+}
+
+.label {
+  color: #666;
+  min-width: 180rpx;
+  display: inline-block;
+}
+
+.detail {
+  color: #444;
+}
+
+.contact-section {
+  margin-top: 40rpx;
+  padding-top: 20rpx;
+  border-top: 1rpx solid #eee;
+}

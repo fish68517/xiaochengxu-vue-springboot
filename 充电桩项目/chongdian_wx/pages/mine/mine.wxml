@@ -1,0 +1,106 @@
+<!-- 顶部标题 -->
+<van-nav-bar  left-text="我的"   bind:click-left="onClickLeft"  class="van-nav-bar" />
+<view class="container">
+  <view class="header">
+    <view class="title">
+      <image src="/images/tabs/充电站-可用.png" class="title-icon" />
+      <text class="title-text">我的</text>
+    </view>
+    <image src="/images/icons/more.png" class="more-icon" />
+  </view>
+
+  <!-- 用户信息 -->
+  <view class="user-info" bindtap="navigateToUserDetail">
+    <view class="user-left">
+      <image src="/images/avatar.png" class="avatar" />
+      <view class="user-detail">
+        <text class="username">Koto</text>
+        <text class="phone">131****8888</text>
+      </view>
+    </view>
+    <image src="/images/icons/arrow.png" class="arrow-icon" />
+  </view>
+
+  <!-- 功能列表 -->
+  <view class="menu-list">
+    <!-- 我的车辆 -->
+    <view class="menu-item" bindtap="navigateToCars">
+      <view class="menu-left">
+        <image src="/images/icons/car.png" class="menu-icon" />
+        <text class="menu-text">我的车辆</text>
+      </view>
+      <image src="/images/icons/arrow.png" class="arrow-icon" />
+    </view>
+
+    <!-- 付款方式 -->
+    <view class="menu-item" bindtap="navigateToPayment">
+      <view class="menu-left">
+        <image src="/images/icons/payment.png" class="menu-icon" />
+        <text class="menu-text">付款方式</text>
+      </view>
+      <image src="/images/icons/arrow.png" class="arrow-icon" />
+    </view>
+
+    <!-- 个人信息 -->
+    <view class="menu-item" bindtap="navigateToProfile">
+      <view class="menu-left">
+        <image src="/images/icons/profile.png" class="menu-icon" />
+        <text class="menu-text">个人信息</text>
+      </view>
+      <image src="/images/icons/arrow.png" class="arrow-icon" />
+    </view>
+
+    <!-- 安全设置 -->
+    <view class="menu-item" bindtap="navigateToSecurity">
+      <view class="menu-left">
+        <image src="/images/icons/security.png" class="menu-icon" />
+        <text class="menu-text">安全设置</text>
+      </view>
+      <image src="/images/icons/arrow.png" class="arrow-icon" />
+    </view>
+
+    <!-- 语言设置 -->
+    <view class="menu-item" bindtap="navigateToLanguage">
+      <view class="menu-left">
+        <image src="/images/icons/language.png" class="menu-icon" />
+        <text class="menu-text">语言设置</text>
+      </view>
+      <view class="menu-right">
+        <text class="language-text">简体中文</text>
+        <image src="/images/icons/arrow.png" class="arrow-icon" />
+      </view>
+    </view>
+
+    <!-- 帮助中心 -->
+    <view class="menu-item" bindtap="navigateToHelp">
+      <view class="menu-left">
+        <image src="/images/icons/help.png" class="menu-icon" />
+        <text class="menu-text">帮助中心</text>
+      </view>
+      <image src="/images/icons/arrow.png" class="arrow-icon" />
+    </view>
+
+    <!-- 隐私政策 -->
+    <view class="menu-item" bindtap="navigateToPrivacy">
+      <view class="menu-left">
+        <image src="/images/icons/privacy.png" class="menu-icon" />
+        <text class="menu-text">隐私政策</text>
+      </view>
+      <image src="/images/icons/arrow.png" class="arrow-icon" />
+    </view>
+
+    <!-- 关于我们 -->
+    <view class="menu-item" bindtap="navigateToAbout">
+      <view class="menu-left">
+        <image src="/images/icons/about.png" class="menu-icon" />
+        <text class="menu-text">关于我们</text>
+      </view>
+      <image src="/images/icons/arrow.png" class="arrow-icon" />
+    </view>
+  </view>
+
+  <!-- 退出登录 -->
+  <view class="logout-button" bindtap="handleLogout">
+    <text class="logout-text">退出登录</text>
+  </view>
+</view> 

@@ -1,0 +1,17 @@
+<van-nav-bar title="" left-text="返回" right-text="" left-arrow bind:click-left="onClickLeft" bind:click-right="onClickRight" class="van-nav-bar" />
+<view class="container">
+  <view class="header">
+    <text class="title">选择取消的原因:</text>
+  </view>
+<!-- 原因 -->
+  <view class="reason-list">
+    <radio-group bindchange="onReasonChange">
+      <label class="reason-item" wx:for="{{reasons}}" wx:key="index">
+        <radio value="{{index}}" color="#00C853" />
+        <text class="reason-text">{{item}}</text>
+      </label>
+    </radio-group>
+  </view>
+
+  <button class="submit-btn" bindtap="onSubmit">提交</button>
+</view>

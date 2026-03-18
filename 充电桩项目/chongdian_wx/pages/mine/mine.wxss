@@ -1,0 +1,142 @@
+.container {
+  min-height: 100vh;
+  background: #F8F8F8;
+  padding: 0 32rpx;
+}
+
+/* 顶部标题样式 */
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20rpx 0;
+}
+
+.title {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+}
+
+.title-icon {
+  width: 48rpx;
+  height: 48rpx;
+}
+
+.title-text {
+  font-size: 40rpx;
+  font-weight: bold;
+  color: #333;
+}
+
+.more-icon {
+  width: 48rpx;
+  height: 48rpx;
+  opacity: 0.6;
+}
+
+/* 用户信息样式 */
+.user-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 32rpx 0;
+  margin-bottom: 32rpx;
+}
+
+.user-left {
+  display: flex;
+  align-items: center;
+  gap: 24rpx;
+}
+
+.avatar {
+  width: 120rpx;
+  height: 120rpx;
+  border-radius: 60rpx;
+  background: #FFB300;
+}
+
+.user-detail {
+  display: flex;
+  flex-direction: column;
+  gap: 8rpx;
+}
+
+.username {
+  font-size: 36rpx;
+  font-weight: 500;
+  color: #333;
+}
+
+.phone {
+  font-size: 28rpx;
+  color: #999;
+}
+
+/* 功能列表样式 */
+.menu-list {
+  background: #FFFFFF;
+  border-radius: 24rpx;
+  overflow: hidden;
+  margin-bottom: 32rpx;
+}
+
+.menu-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 32rpx 24rpx;
+  border-bottom: 1rpx solid rgba(0, 0, 0, 0.05);
+}
+
+.menu-item:last-child {
+  border-bottom: none;
+}
+
+.menu-left {
+  display: flex;
+  align-items: center;
+  gap: 24rpx;
+}
+
+.menu-icon {
+  width: 48rpx;
+  height: 48rpx;
+}
+
+.menu-text {
+  font-size: 32rpx;
+  color: #333;
+}
+
+.menu-right {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+}
+
+.language-text {
+  font-size: 28rpx;
+  color: #999;
+}
+
+.arrow-icon {
+  width: 32rpx;
+  height: 32rpx;
+  opacity: 0.6;
+}
+
+/* 退出登录按钮 */
+.logout-button {
+  margin: 48rpx 0;
+  padding: 24rpx;
+  background: #FFFFFF;
+  border-radius: 24rpx;
+  text-align: center;
+}
+
+.logout-text {
+  font-size: 32rpx;
+  color: #ff4d4f;
+} 

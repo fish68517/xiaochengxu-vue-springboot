@@ -1,0 +1,77 @@
+.container {
+  padding: 20rpx;
+  background-color:white;
+}
+
+.section {
+  width: 710rpx;
+  margin-bottom: 20rpx;
+  /* border: 2rpx solid red; */
+  background-color: #FAFAFA;
+  border-radius: 20rpx;
+  margin: 20 0rpx;
+}
+
+.section-title {
+  font-size: 32rpx;
+  font-weight: bold;
+  margin-bottom: 10rpx;
+}
+
+.card {
+  display: flex;
+  align-items: center;
+  background-color: #FAFAFA;
+  border-radius: 16rpx;
+  padding: 20rpx;
+  box-shadow: 0 2rpx 10rpx rgba(0, 0, 0, 0.05);
+}
+
+.car-icon, .station-icon {
+  width: 120rpx;
+  height: 120rpx;
+  margin-right: 20rpx;
+  border-right: 1rpx solid #ececec;
+}
+
+.car-info, .station-info {
+  margin-left: 20rpx;
+  display: flex;
+  flex-direction: column;
+}
+
+.car-name, .station-name {
+  font-size: 28rpx;
+  font-weight: bold;
+  margin-bottom: 15rpx;
+}
+
+.car-model, .station-address {
+  font-size: 24rpx;
+  color: #888888;
+}
+
+.charger-type, .charger-power {
+  font-size: 28rpx;
+  margin-bottom: 10rpx;
+}
+
+.order-info {
+  display: flex;
+  justify-content: space-between;
+  padding: 10rpx 0;
+  font-size: 28rpx;
+}
+.order-details{
+  font-weight: bold;
+}
+.cancel-btn {
+  width: 100%;
+  height: 80rpx;
+  background-color: #00c853;
+  color: #ffffff;
+  border-radius: 40rpx;
+  text-align: center;
+  line-height: 75rpx;
+  font-size: 32rpx;
+}

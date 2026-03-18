@@ -1,0 +1,18 @@
+<!-- pages/addCar/addCar.wxml -->
+<view class="container">
+  <view class="header">
+    <view class="back-button" bindtap="goBack">
+    </view>
+  </view>
+
+  <view class="content">
+    <text class="title">通过添加车辆给您带来个性化您的体验</text>
+    <text class="description">我们将匹配和您的车辆兼容的充电站。</text>
+    <image class="illustration" src="/assets/images/car-illustration.png"></image>
+  </view>
+
+  <view class="button-group">
+    <button class="skip-button" bindtap="skipAddCar">稍后添加</button>
+    <button class="add-button" bindtap="addCar">添加车辆</button>
+  </view>
+</view> 

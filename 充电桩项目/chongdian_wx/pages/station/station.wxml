@@ -1,0 +1,67 @@
+<van-nav-bar title="收藏" left-text="返回" right-text="" left-arrow bind:click-left="onClickLeft" bind:click-right="onClickRight" class="van-nav-bar" />
+<view class="container">
+  <view class="search-bar">
+    <view class="search-input-container">
+      <image src="https://cdn8.axureshop.com/demo2024/2269080/images/23_%E5%85%85%E7%94%B5%E7%AB%99%E4%BF%A1%E6%81%AF-%E5%B7%B2%E6%BB%A1/vector_u10349.svg" class="search-icon"></image>
+      <input type="text" placeholder="搜索站点" class="search-input" bindinput="handleSearch" confirm-type="search" value="{{searchKeyword}}" />
+    </view>
+    <view class="filter-button" bindtap="toggleFilter">
+      <text class="filter-icon-text">⚙️</text>
+    </view>
+  </view>
+  <block>
+    <view class="station-header" wx:for="{{stations}}"  wx:key="id">
+      <view class="station-name">{{item.stationName}}
+        <view class="actions-btn navigates-btn">
+          <image src="https://cdn8.axureshop.com/demo2024/2269080/images/23_%E5%85%85%E7%94%B5%E7%AB%99%E4%BF%A1%E6%81%AF-%E5%B7%B2%E6%BB%A1/vector_u10349.svg" class="actions-icon"></image>
+        </view>
+      </view>
+      <view class="station-address">{{item.stationAddress}}</view>
+
+      <!-- Rating Section -->
+      <view class="rating-container">
+        <view class="rating-stars">
+          <text class="rating-number">{{ gradeStats[item.id].averageGrade }}</text>
+          <view class="stars">
+            <van-rate value="{{ gradeStats[item.id].averageGrade }}" allow-half void-icon="star" void-color="#FDD9A5" color="#FBA72D" bind:change="onChange" />
+          </view>
+          <text class="review-count">({{gradeStats[item.id].commentCount}} 评论)</text>
+        </view>
+      </view>
+
+      <!-- Availability & Distance Info -->
+      <view class="info-container">
+        <view class="availability-tag">有空位</view>
+        <view class="location-info">
+          <view class="location-item">
+            <image src="https://cdn8.axureshop.com/demo2024/2269080/images/25_%E5%85%85%E7%94%B5%E7%AB%99-%E8%AF%A6%E6%83%85/exclude_u10597.svg" class="location-icon"></image>
+            <text>1.6 km</text>
+          </view>
+          <view class="location-item">
+            <image src="https://cdn8.axureshop.com/demo2024/2269080/images/25_%E5%85%85%E7%94%B5%E7%AB%99-%E8%AF%A6%E6%83%85/vector_u10600.svg" class="location-icon"></image>
+            <text>5 分钟</text>
+          </view>
+        </view>
+      </view>
+      <view class="jiekou">
+        <view class="jiekou-image">
+          <image class="images" src="https://cdn8.axureshop.com/demo2024/2269080/images/24_%E5%85%85%E7%94%B5%E7%AB%99%E4%BF%A1%E6%81%AF-%E5%8F%AF%E7%94%A8/vector_u10517.svg" mode="" />
+          <image class="images" src="https://cdn8.axureshop.com/demo2024/2269080/images/24_%E5%85%85%E7%94%B5%E7%AB%99%E4%BF%A1%E6%81%AF-%E5%8F%AF%E7%94%A8/vector_u10520.svg" mode="" />
+          <image class="images" src="https://cdn8.axureshop.com/demo2024/2269080/images/23_%E5%85%85%E7%94%B5%E7%AB%99%E4%BF%A1%E6%81%AF-%E5%B7%B2%E6%BB%A1/vector_u10362.svg" mode="" />
+          <image class="images" src="https://cdn8.axureshop.com/demo2024/2269080/images/24_%E5%85%85%E7%94%B5%E7%AB%99%E4%BF%A1%E6%81%AF-%E5%8F%AF%E7%94%A8/vector_u10526.svg" mode="" />
+          <image class="images" src="https://cdn8.axureshop.com/demo2024/2269080/images/23_%E5%85%85%E7%94%B5%E7%AB%99%E4%BF%A1%E6%81%AF-%E5%B7%B2%E6%BB%A1/vector_u10365.svg" mode="" />
+          <image class="images" src="https://cdn8.axureshop.com/demo2024/2269080/images/23_%E5%85%85%E7%94%B5%E7%AB%99%E4%BF%A1%E6%81%AF-%E5%B7%B2%E6%BB%A1/vector_u10368.svg" mode="" />
+        </view>
+        <text class="number">{{item.stumpNum}}充电桩></text>
+      </view>
+      <view class="action-buttons">
+        <button class="action-btns route-btn" bind:tap="goToStationDetail" data-id="{{item.id}}">
+          <text>查看</text>
+        </button>
+        <button class="action-btns navigate-btn">
+          <text>下单</text>
+        </button>
+      </view>
+    </view>
+    </block>
+</view>

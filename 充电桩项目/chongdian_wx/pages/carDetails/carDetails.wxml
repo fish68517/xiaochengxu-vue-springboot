@@ -1,0 +1,18 @@
+<!--pages/carDetails/carDetails.wxml-->
+<view class="container">
+  <view class="back-button">
+  </view>
+  <view class="image-container">
+    <image src="/assets/images/car-illustration.png" mode="widthFix" class="car-image"/>
+  </view>
+  <picker mode="selector" range="{{carBrands}}" bindchange="onBrandChange" class="detail-item" style="background-color: #fafafa;">
+    <view>{{selectedBrand}}</view>
+  </picker>
+  <picker mode="selector" range="{{carModels}}" bindchange="onModelChange" class="detail-item" style="background-color: #fafafa;">
+    <view>{{selectedModel}}</view>
+  </picker>
+  <picker mode="selector" range="{{carRanges}}" bindchange="onRangeChange" class="detail-item" style="background-color: #fafafa;">
+    <view>{{selectedRange}}</view>
+  </picker>
+  <button class="confirm-button" bindtap="confirmAddition">车辆添加确认</button>
+</view>

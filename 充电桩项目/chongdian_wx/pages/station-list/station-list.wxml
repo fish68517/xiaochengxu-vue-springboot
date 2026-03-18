@@ -1,0 +1,30 @@
+<view class="container">
+  <!-- 搜索框 -->
+  <view class="search-header">
+    <view class="search-box">
+      <icon type="search" size="14"></icon>
+      <input placeholder="搜索站点" focus="true" bindinput="onSearchInput"/>
+    </view>
+  </view>
+
+  <!-- 充电站列表 -->
+  <view class="station-list">
+    <view class="station-item" wx:for="{{stations}}" wx:key="id" bindtap="onStationTap" data-id="{{item.id}}">
+      <view class="station-icon">
+        <image src="{{stations[item.id-1].stationPhoto}}" mode="aspectFit"></image>
+      </view>
+      <view class="station-info">
+        <view class="station-name">{{item.stationName}}</view>
+        <view class="station-address">{{item.stationAddress}}</view>
+      </view>
+      <view class="station-arrow">
+        <image src="/images/tabs/箭头 左 小.png" mode="aspectFit"></image>
+      </view>
+    </view>
+  </view>
+
+  <!-- 返回首页按钮 -->
+  <view class="home-button" bindtap="navigateToHome">
+    <image src="/images/tabs/地图.png" mode="aspectFit"></image>
+  </view>
+</view>

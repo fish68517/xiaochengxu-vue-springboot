@@ -1,0 +1,32 @@
+<view class="container">
+  <view class="back-button" bindtap="goBack"/>
+  <view class="image-container">
+    <image src="/assets/images/login-illustration.png" class="login-image" mode="aspectFit"></image>
+  </view>
+  
+  <view class="title">Let's Go</view>
+  
+  <view class="login-options-vertical">
+    <button class="login-btn wechat-btn" bindtap="loginWithWechat">
+      <image src="/assets/icons/wechat.png" class="btn-icon"></image>
+      <text class="btn-text">微信</text>
+    </button>
+    
+    <button class="login-btn alipay-btn" bindtap="loginWithAlipay">
+      <image src="/assets/icons/alipay.png" class="btn-icon"></image>
+      <text class="btn-text">支付宝</text>
+    </button>
+    
+    <!-- <button class="login-btn phone-btn" bindtap="loginWithPhone">
+      <image src="/assets/icons/phone.png" class="btn-icon"></image>
+      <text class="btn-text">手机号</text>
+    </button> -->
+  </view>
+  
+  <button class="phone-login-btn" bindtap="goToOtherLogin">其他登录</button>
+  
+  <view class="register-text">
+    <text>还没有账号？</text>
+    <text class="register-link" bindtap="goToRegister">去注册</text>
+  </view>
+</view> 

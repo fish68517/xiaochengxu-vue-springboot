@@ -1,0 +1,28 @@
+<view class="container">
+  <view class="search-bar">
+    <view class="search-input-container">
+      <image src="assets/icons/search.png" class="search-icon"></image>
+      <input type="text" placeholder="搜索收藏站点" class="search-input" bindinput="onSearchInput" value="{{searchText}}"/>
+    </view>
+    <view class="filter-button" bindtap="toggleFilter">
+      <image src="assets/icons/filter.png" class="filter-icon"></image>
+    </view>
+  </view>
+  
+  <view class="favorite-list-container">
+    <scroll-view scroll-y class="favorite-scroll-view">
+      <view class="favorite-item" wx:for="{{favoriteStations}}" wx:key="id" bindtap="goToStationDetail" data-id="{{item.id}}">
+        <view class="station-icon-container {{item.status === 'available' ? 'available-bg' : 'busy-bg'}}">
+          <image src="/assets/icons/charging-station-white.png" class="station-icon"></image>
+        </view>
+        <view class="station-info">
+          <view class="station-name">{{item.name}}</view>
+          <view class="station-address">{{item.address}}</view>
+        </view>
+        <view class="station-arrow">
+          <image src="/assets/icons/arrow-right-grey.png" class="arrow-icon"></image>
+        </view>
+      </view>
+    </scroll-view>
+  </view>
+</view> 

@@ -1,0 +1,21 @@
+image{
+  width: 750rpx;
+  height: 1200rpx;
+  /* height: 100vh; */
+}
+button{
+  width: 600rpx;
+  height: 80rpx;
+  background-color: #01b763;
+  color: white;
+  border-radius: 50px;
+  line-height: 80rpx;
+  text-align: center;
+  margin: 40rpx auto;
+}
+.back{
+  color: black;
+  font-size: 22px;
+  position: absolute;
+  bottom: 1400rpx;
+}

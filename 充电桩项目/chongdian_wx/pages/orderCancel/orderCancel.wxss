@@ -1,0 +1,71 @@
+.container {
+  min-height: 100vh;
+  background-color: #ffffff;
+  padding: 0 30rpx;
+  /* border: 1rpx solid red; */
+}
+
+.header {
+  padding: 30rpx 0;
+  /* background-color: red; */
+  margin-left: -320rpx;
+}
+
+.title {
+  font-size: 32rpx;
+  font-weight: bold;
+  color: #333;
+}
+
+.reason-list {
+  padding: 20rpx 0;
+  margin-left: -200rpx;
+}
+
+.reason-item {
+  display: flex;
+  align-items: center;
+  padding: 24rpx 0;
+}
+
+.reason-text {
+  margin-left: 20rpx;
+  font-size: 28rpx;
+  color: #333;
+}
+
+/* 自定义radio样式 */
+radio {
+  transform: scale(0.9);
+}
+
+radio .wx-radio-input {
+  border-radius: 50%;
+  width: 36rpx;
+  height: 36rpx;
+  border: 2rpx solid #00C853;
+}
+
+radio .wx-radio-input.wx-radio-input-checked {
+  background-color: #00C853 !important;
+  border-color: #00C853 !important;
+}
+
+.submit-btn {
+  /* position: fixed; */
+  bottom: 40rpx;
+  left: 30rpx;
+  right: 30rpx;
+  height: 88rpx;
+  line-height: 60rpx;
+  text-align: center;
+  background-color: #00C853;
+  color: #ffffff;
+  border-radius: 44rpx;
+  font-size: 32rpx;
+  border: none;
+}
+
+.submit-btn::after {
+  border: none;
+}

@@ -1,0 +1,77 @@
+
+<view class="container">
+  <view class="profile-header">
+    <view class="avatar-container">
+      <image src="/assets/images/avatar-placeholder.jpg" class="avatar"/>
+    </view>
+    <view class="user-info">
+      <view class="username">{{name}}</view>
+      <view class="phone">{{phoneNum}}</view>
+    </view>
+    <view class="settings-button" bindtap="goToSettings" data-id="{{id}}">
+      <image src="/images/tabs/小于.png" class="settings-icon"></image>
+    </view>
+  </view>
+  
+  <view class="menu-list">
+    <view class="menu-item" bindtap="goToVehicles" hover-class="menu-item-hover">
+      <image src="/images/tabs/车辆图标.png" class="menu-icon"></image>
+      <text class="menu-text">我的车辆</text>
+      <image src="/images/tabs/小于.png" class="arrow-icon"></image>
+    </view>
+    
+    <view class="menu-item" bindtap="goToPayment" style="margin-bottom: 10px;" hover-class="menu-item-hover">
+      <image src="/images/tabs/付款方式.png" class="menu-icon"></image>
+      <text class="menu-text">付款方式</text>
+      <image src="/images/tabs/小于.png" class="arrow-icon"></image>
+    </view>
+    
+    <view class="menu-item" bindtap="goToPersonalInfo" hover-class="menu-item-hover">
+      <image src="/images/tabs/eye-solid.png" class="menu-icon"></image>
+      <text class="menu-text">个人信息</text>
+      <image src="/images/tabs/小于.png" class="arrow-icon" bind:tap="goToSettings"></image>
+    </view>
+    
+    <view class="menu-item" bindtap="goToSecurity" hover-class="menu-item-hover">
+      <image src="/images/tabs/安全设置.png" class="menu-icon"></image>
+      <text class="menu-text">安全设置</text>
+      <image src="/images/tabs/小于.png" class="arrow-icon"></image>
+    </view>
+    
+    <view class="menu-item" bindtap="toggleLanguage" hover-class="menu-item-hover">
+      <image src="/images/tabs/语言设置.png" class="menu-icon"></image>
+      <text class="menu-text">语言设置</text>
+      <text class="menu-value">简体中文</text>
+      <image src="/images/tabs/小于.png" class="arrow-icon"></image>
+    </view>
+    
+    <view class="menu-item" bindtap="toggleDarkMode" style="margin-bottom: 20px;" hover-class="menu-item-hover">
+      <image src="/images/tabs/ico关于我们.png" class="menu-icon"></image>
+      <text class="menu-text">深色模式</text>
+      <switch checked="{{darkMode}}" bindchange="toggleDarkMode" class="custom-switch"></switch>
+    </view>
+    
+    <view class="menu-item" bindtap="goToHelp" hover-class="menu-item-hover">
+      <image src="/images/tabs/帮助中心.png" class="menu-icon"></image>
+      <text class="menu-text">帮助中心</text>
+      <image src="/images/tabs/小于.png" class="arrow-icon"></image>
+    </view>
+    
+    <view class="menu-item" bindtap="goToPrivacy" hover-class="menu-item-hover">
+      <image src="/images/tabs/隐私设置.png" class="menu-icon"></image>
+      <text class="menu-text">隐私政策</text>
+      <image src="/images/tabs/小于.png" class="arrow-icon"></image>
+    </view>
+    
+    <view class="menu-item" bindtap="goToAbout" hover-class="menu-item-hover">
+      <image src="/images/tabs/ico关于我们.png" class="menu-icon"></image>
+      <text class="menu-text">关于我们</text>
+      <image src="/images/tabs/小于.png" class="arrow-icon"></image>
+    </view>
+    
+    <view class="menu-item logout" bindtap="logout" hover-class="menu-item-hover">
+      <image src="/images/tabs/退出登录.png" class="menu-icon"></image>
+      <text class="menu-text logout-text">退出登录</text>
+    </view>
+  </view>
+</view>

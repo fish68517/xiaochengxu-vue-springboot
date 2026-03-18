@@ -1,0 +1,173 @@
+.container {
+  display: flex;
+  flex-direction: column;
+  padding: 40rpx;
+  height: 100vh;
+  box-sizing: border-box;
+  background-color: #FFFFFF;
+}
+
+.back-button {
+  position: absolute;
+  top: 60rpx;
+  left: 30rpx;
+  padding: 16rpx;
+  z-index: 10;
+}
+
+.back-icon {
+  width: 40rpx;
+  height: 40rpx;
+}
+
+.image-container {
+  display: flex;
+  justify-content: center;
+  margin-top: 100rpx;
+  margin-bottom: 40rpx;
+  margin-left: 60rpx;
+}
+
+.login-image {
+  width: 300rpx;
+  height: 300rpx;
+}
+
+.title {
+  font-size: 48rpx;
+  font-weight: bold;
+  margin-bottom: 60rpx;
+  text-align: center;
+}
+
+.login-options {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 60rpx;
+}
+
+.login-options-vertical {
+  display: flex;
+  flex-direction: column;
+  gap: 20rpx;
+  margin-bottom: 60rpx;
+  width: 100%;
+}
+
+.login-options-vertical .login-btn {
+    border-radius: 100rpx;
+  width: 100%;
+  justify-content: flex-start;
+  padding-left: 270rpx;
+}
+
+.login-btn {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  width: 200rpx;
+  height: 90rpx;
+  border-radius: 10rpx;
+  font-size: 28rpx;
+  color: #333;
+  border: 1px solid #f0f0f0;
+  background-color: #ffffff;
+  padding: 0;
+  margin: 0;
+  line-height: 1;
+}
+
+.btn-icon {
+  width: 40rpx;
+  height: 40rpx;
+  margin-right: 10rpx;
+}
+
+.wechat-btn {
+  border-color: rgba(0, 200, 83, 0.2);
+}
+
+.alipay-btn {
+  border-color: rgba(30, 144, 255, 0.2);
+}
+
+.phone-btn {
+  border-color: rgba(0, 0, 0, 0.1);
+}
+
+.divider {
+  display: flex;
+  align-items: center;
+  margin: 20rpx 0 40rpx;
+}
+
+.line {
+  flex: 1;
+  height: 1px;
+  background-color: #e0e0e0;
+}
+
+.text {
+  padding: 0 20rpx;
+  color: #888;
+  font-size: 24rpx;
+}
+
+.phone-login-btn {
+  width: 100%;
+  height: 90rpx;
+  line-height: 90rpx;
+  background-color: var(--primary-color);
+  color: #FFFFFF;
+  border-radius: 45rpx;
+  font-size: 32rpx;
+  margin-bottom: 40rpx;
+}
+
+.register-text {
+  text-align: center;
+  font-size: 28rpx;
+  color: #666;
+}
+
+.register-link {
+  color: var(--primary-color);
+  margin-left: 10rpx;
+}
+
+.back-text {
+  font-size: 40rpx;
+  font-weight: bold;
+}
+
+.btn-text {
+  font-size: 28rpx;
+}
+
+.email-login-container {
+  width: 100%;
+  margin-bottom: 40rpx;
+}
+
+.email-input {
+  width: 100%;
+  height: 90rpx;
+  border: 1px solid #e0e0e0;
+  border-radius: 45rpx;
+  padding: 0 40rpx;
+  font-size: 28rpx;
+  margin-bottom: 30rpx;
+  box-sizing: border-box;
+}
+
+.next-btn {
+  width: 100%;
+  height: 90rpx;
+  line-height: 60rpx;
+  background-color: var(--primary-color);
+  color: #FFFFFF;
+  border-radius: 45rpx;
+  font-size: 32rpx;
+  border: none;
+} 

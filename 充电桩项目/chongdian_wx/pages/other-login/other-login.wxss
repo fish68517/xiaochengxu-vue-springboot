@@ -1,0 +1,158 @@
+
+.container {
+    min-height: 100vh;
+    background-color: #ffffff;
+    padding: 30rpx;
+  }
+  
+  button {
+    margin: 0;
+    padding: 0;
+    border: none;
+    background: none;
+    line-height: 1;
+    text-align: center;
+    font-size: inherit;
+    color: inherit;
+    position: relative;
+    display: inline-block;
+    box-sizing: border-box;
+    overflow: hidden;
+    text-decoration: none;
+    border-radius: 0;
+    width: auto;
+  }
+  
+  button::after {
+    display: none;
+  }
+  
+  .back-button {
+    width: 60rpx;
+    height: 60rpx;
+    margin-bottom: 40rpx;
+  }
+  
+  .back-icon {
+    width: 100%;
+    height: 100%;
+  }
+  
+  .login-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    margin-top: 100rpx;
+  }
+  
+  .login-title {
+    font-size: 48rpx;
+    font-weight: bold;
+    color: #333333;
+    margin-bottom: 60rpx;
+  }
+  
+  .login-form {
+    width: 100%;
+    max-width: 600rpx;
+  }
+  
+  .login-tabs {
+    display: flex;
+    margin-bottom: 40rpx;
+    border-bottom: 2rpx solid #eeeeee;
+  }
+  
+  .tab-item {
+    flex: 1;
+    text-align: center;
+    padding: 20rpx 0;
+    font-size: 32rpx;
+    color: #999999;
+    position: relative;
+  }
+  
+  .tab-item.active {
+    color: #00C853;
+    font-weight: bold;
+  }
+  
+  .tab-item.active::after {
+    content: '';
+    position: absolute;
+    bottom: -2rpx;
+    left: 0;
+    width: 100%;
+    height: 4rpx;
+    background-color: #00C853;
+  }
+  
+  .tab-content {
+    margin-bottom: 40rpx;
+  }
+  
+  .form-item {
+    display: flex;
+    align-items: center;
+    background-color: #f8f8f8;
+    border-radius: 12rpx;
+    padding: 20rpx;
+    margin-bottom: 30rpx;
+  }
+  
+  .form-icon {
+    width: 40rpx;
+    height: 40rpx;
+    margin-right: 20rpx;
+  }
+  
+  .form-input {
+    flex: 1;
+    font-size: 32rpx;
+    color: #333333;
+  }
+  
+  .login-btn {
+    width: 100%;
+    height: 88rpx;
+    line-height: 88rpx;
+    text-align: center;
+    background-color: #00C853;
+    color: #ffffff;
+    font-size: 32rpx;
+    border-radius: 44rpx;
+    margin-top: 40rpx;
+    border: none;
+  }
+
+  .verify-code-item {
+    padding-right: 0;
+    display: flex;
+    align-items: center;
+  }
+
+  .verify-input {
+    flex: 1;
+    margin-right: 20rpx;
+    width: 0;
+  }
+
+  .send-code-btn {
+    width: 60rpx;
+    height: 50rpx;
+    line-height: 50rpx;
+    text-align: center;
+    color: #00C853;
+    font-size: 26rpx;
+    border-radius: 10rpx;
+    margin-right: 20rpx;
+    padding: 0;
+    border: none;
+    flex-shrink: 0;
+  }
+
+  .send-code-btn[disabled] {
+    background-color: #cccccc;
+    color: #ffffff;
+  }

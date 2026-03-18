@@ -1,0 +1,236 @@
+.container {
+  /* min-height: 100vh; */
+  background: #F8F8F8;
+}
+
+/* 标签页样式 */
+.tabs {
+  width: 376px;
+  display: flex;
+  background: #FFFFFF;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.tab-item {
+  flex: 1;
+  height: 88rpx;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+
+.tab-item text {
+  font-size: 32rpx;
+  color: #666666;
+}
+
+.tab-item.active text {
+  color: #00C853;
+  font-weight: 500;
+}
+.divider-vertical {
+  width: 1rpx;
+  height: 88rpx;
+  background-color: #ebebeb;
+  margin: 0 30rpx;
+  align-self: center;
+}
+.tab-line {
+  position: absolute;
+  bottom: 0;
+  width: 355rpx;
+  height: 1rpx;
+  background: #00C853;
+  border-radius: 2rpx;
+}
+
+/* 搜索框样式 */
+.search-box {
+  width: 332px;
+  margin: 41rpx 60rpx;
+  background: #FFFFFF;
+  border-radius: 32rpx;
+  display: flex;
+  align-items: center;
+  padding: 16rpx 24rpx;
+}
+
+.search-icon {
+  width: 32rpx;
+  height: 32rpx;
+  margin-right: 16rpx;
+}
+
+.search-input {
+  flex: 1;
+  font-size: 28rpx;
+  color: #333;
+}
+
+/* 二级标签页样式 */
+.sub-tabs {
+  white-space: nowrap;
+  padding: 0 32rpx;
+  background: #FFFFFF;
+  margin-bottom: 20rpx;
+  margin-top: 10px;
+}
+
+.sub-tab {
+  display: inline-block;
+  padding: 24rpx 49rpx;
+  font-size: 28rpx;
+  color: #666;
+  position: relative;
+}
+
+.sub-tab.active {
+  background-color:#00c853;
+  border-radius: 23px;
+  color:white;
+  font-weight: 500;
+}
+
+.sub-tab-line {
+  position: absolute;
+  bottom: 0;
+  left: 32rpx;
+  right: 32rpx;
+  height: 4rpx;
+  background: #00C853;
+  transition: all 0.3s;
+}
+
+/* 内容区域样式 */
+/* .content {
+  padding: 32rpx;
+} */
+
+/* 常见问题列表样式 */
+.faq-list {
+  background: #FFFFFF;
+  border-radius: 16rpx;
+  overflow: hidden;
+  width: 368px;
+  margin-left: 20px;
+}
+
+.faq-item {
+  border-bottom: 1rpx solid rgba(0, 0, 0, 0.05);
+}
+
+.faq-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 32rpx;
+}
+
+.faq-title {
+  flex: 1;
+  font-size: 30rpx;
+  color: #333;
+}
+
+.faq-content {
+  font-size: 28rpx;
+  color: #666;
+  padding: 0 32rpx;
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.3s ease-out;
+}
+
+.faq-content.expanded {
+  padding: 0 32rpx 32rpx;
+  max-height: 1000rpx;
+}
+
+.arrow-icon {
+  width: 32rpx;
+  height: 32rpx;
+  transition: transform 0.3s;
+}
+
+.arrow-icon.expanded {
+  transform: rotate(-90deg);
+}
+
+/* 联系我们列表样式 */
+.contact-section {
+  background: #FFFFFF;
+  border-radius: 16rpx;
+  overflow: hidden;
+  margin-bottom: 32rpx;
+}
+
+.section-title {
+  padding: 24rpx 32rpx;
+  font-size: 28rpx;
+  color: #999;
+  border-bottom: 1rpx solid rgba(0, 0, 0, 0.05);
+}
+
+.contact-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 40rpx;
+  border-bottom: 1rpx solid rgba(0, 0, 0, 0.05);
+}
+
+.contact-left {
+  display: flex;
+  align-items: center;
+  flex: 1;
+  margin-right: 220px;
+}
+
+.contact-icon {
+  width: 48rpx;
+  height: 48rpx;
+  margin-right: 24rpx;
+}
+
+.contact-info {
+  flex: 1;
+}
+
+.contact-title {
+  font-size: 30rpx;
+  color: #333;
+  margin-bottom: 4rpx;
+}
+
+.contact-desc {
+  font-size: 26rpx;
+  color: #999;
+}
+
+/* 社交媒体样式 */
+.social-media {
+  display: flex;
+  justify-content: space-around;
+  padding: 32rpx;
+}
+
+.social-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.social-icon {
+  width: 80rpx;
+  height: 80rpx;
+  margin-bottom: 16rpx;
+}
+
+.social-name {
+  font-size: 26rpx;
+  color: #666;
+}

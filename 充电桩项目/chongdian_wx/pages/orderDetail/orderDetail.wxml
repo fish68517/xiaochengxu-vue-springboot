@@ -1,0 +1,91 @@
+<!-- <van-nav-bar title="订单详情" left-text="返回" right-text="" left-arrow bind:click-left="onClickLeft" bind:click-right="onClickRight" class="van-nav-bar" /> -->
+<view class="container">
+  <view class="section">
+    <text class="section-title">车辆信息</text>
+    <view class="card">
+      <image class="car-icon" src="{{modelImage}}" >{{modelImage}}</image>
+      <view class="car-info">
+        <text class="car-name">{{carModel}}</text>
+        <text class="car-model">{{licenceNumber}}</text>
+      </view>
+    </view>
+  </view>
+
+  <view class="section">
+    <text class="section-title">充电站点</text>
+    <view class="card">
+      <image class="station-icon" src="/assets/images/chongdianzhuang1.png" />
+      <view class="station-info">
+        <text class="station-name">{{stationName}}</text>
+        <text class="station-address">{{stationAddress}}</text>
+      </view>
+    </view>
+  </view>
+
+  <view class="section">
+    <text class="section-title">Charger</text>
+    <view class="card">
+      <text class="charger-type">Tesla (Plug) • AC/DC</text>
+      <text class="charger-power">最大功率 100 kW</text>
+    </view>
+  </view>
+
+  <view class="section">
+    <view class="order-info">
+      <text>下单时间</text>
+      <text class="order-details">{{date}}</text>
+    </view>
+    <view class="order-info">
+      <text>充电开始时间</text>
+      <text class="order-details">{{time}}</text>
+    </view>
+    <view class="order-info">
+      <text>充电时长</text>
+      <text class="order-details">{{orderDetail.chargingTime}}</text>
+    </view>
+  </view>
+  <view class="section">
+    <view class="order-info">
+      <text>充电费用</text>
+      <text class="order-details">￥{{orderDetail.orderPrice}}</text>
+    </view>
+    
+    <view class="order-info">
+      <text>税费</text>
+      <text class="order-details">免税</text>
+    </view>
+    <view class="order-info">
+      <text>实付</text>
+      <text class="order-details">￥{{orderDetail.orderPrice}}</text>
+    </view>
+  </view>
+  <view class="section">
+    <text class="section-title">支付方式</text>
+    <view class="card"  wx:if="{{orderDetail.payWay === '微信支付'}}" >
+      <image class="car-icon" src="/assets/images/weixin.png">{{modelImage}}</image>
+      <view class="car-info">
+        <text class="car-name">微信支付</text>
+      </view>
+    </view>
+    <view class="card"  wx:elif="{{orderDetail.payWay === '支付宝'}}" >
+      <image class="car-icon" src="/assets/images/zhifubao.png">{{modelImage}}</image>
+      <view class="car-info">
+        <text class="car-name">支付宝支付</text>
+      </view>
+    </view>
+    <view class="card"  wx:elif="{{orderDetail.payWay === '电子钱包'}}" >
+      <image class="car-icon" src="/assets/images/qita.png">{{modelImage}}</image>
+      <view class="car-info">
+        <text class="car-name">电子钱包</text>
+      </view>
+    </view>
+    <view class="card"  wx:else="{{orderDetail.payWay === '银联支付'}}" >
+      <image class="car-icon" src="/assets/images/yinlian.png">{{modelImage}}</image>
+      <view class="car-info">
+        <text class="car-name">银联支付</text>
+      </view>
+    </view>
+    
+  </view>
+  <button class="cancel-btn" wx:if="{{state == 0}}" data-id="{{id}}" bind:tap="goCharging">查看充电</button>
+</view>

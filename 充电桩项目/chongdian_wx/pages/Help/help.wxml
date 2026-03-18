@@ -1,0 +1,83 @@
+<!-- <van-nav-bar
+  left-text="帮助中心"
+  left-arrow
+  bind:click-left="onClickLeft"/> -->
+<view class="container">
+  <!-- 顶部标签页 -->
+  <view class="tabs">
+    <view class="tab-item {{activeTab === 0 ? 'active' : ''}}" bindtap="switchTab" data-index="0">
+      <text>常见问题</text>
+      <view class="tab-line" wx:if="{{activeTab === 0}}"></view>
+    </view>
+    <view class="divider-vertical"></view>
+    <view class="tab-item {{activeTab === 1 ? 'active' : ''}}" bindtap="switchTab" data-index="1">
+      <text>联系我们</text>
+      <view class="tab-line" wx:if="{{activeTab === 1}}"></view>
+    </view>
+  </view>
+
+  <!-- 常见问题内容区域 -->
+  <view class="content" hidden="{{activeTab !== 0}}">
+
+<!-- 二级标签页 -->
+    <scroll-view class="sub-tabs" scroll-x="true">
+      <view class="sub-tab {{currentSubTab === index ? 'active' : ''}}" 
+            wx:for="{{subTabs}}" 
+            wx:key="index"
+            bindtap="switchSubTab" 
+            data-index="{{index}}">
+        {{item}}
+        <view class="sub-tab-line" wx:if="{{currentSubTab === index}}"></view>
+      </view>
+    </scroll-view>
+
+    <!-- 搜索框 -->
+    <view class="search-box">
+      <image class="search-icon" src="/images/tabs/搜索 .png" mode="aspectFit"/>
+      <input class="search-input" 
+             placeholder="搜索问题" 
+             value="{{searchText}}"
+             bindinput="onSearchInput"/>
+    </view>
+
+    
+
+    <!-- FAQ列表 -->
+    <view class="faq-list">
+      <view class="faq-item" 
+            wx:for="{{filteredFaqList}}" 
+            wx:key="index" 
+            hidden="{{!item.show}}">
+        <view class="faq-header" bindtap="toggleFaq" data-index="{{index}}">
+          <view class="faq-title">{{item.question}}</view>
+          <image class="arrow-icon {{item.expanded ? 'expanded' : ''}}" 
+                 src="/images/tabs/小于.png" 
+                 mode="aspectFit"/>
+        </view>
+        <view class="faq-content {{item.expanded ? 'expanded' : ''}}">
+          <text>{{item.answer}}</text>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 联系我们内容区域 -->
+  <view class="content" hidden="{{activeTab !== 1}}">
+    <view class="contact-list">
+      <view class="contact-item" 
+            wx:for="{{contactList}}" 
+            wx:key="index" 
+            bindtap="handleContact" 
+            data-type="{{item.type}}">
+        <view class="contact-left">
+          <image class="contact-icon" src="{{item.icon}}" mode="aspectFit"/>
+          <view class="contact-info">
+            <text class="contact-title">{{item.title}}</text>
+            <text class="contact-desc" wx:if="{{item.desc}}">{{item.desc}}</text>
+          </view>
+        </view>
+        <image class="arrow-icon" src="/images/tabs/小于.png" mode="aspectFit"/>
+      </view>
+    </view>
+  </view>
+</view>

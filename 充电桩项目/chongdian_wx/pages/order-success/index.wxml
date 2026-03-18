@@ -1,0 +1,20 @@
+<view class="container">
+  <view class="success-icon">
+    <view class="circle">
+      <view class="check"></view>
+    </view>
+    <view class="dots">
+      <view class="dot dot1"></view>
+      <view class="dot dot2"></view>
+      <view class="dot dot3"></view>
+      <view class="dot dot4"></view>
+    </view>
+  </view>
+  
+  <view class="success-text">订单提交成功!</view>
+  <view class="sub-text">您可以随时查看接下的订单详情</view>
+  
+  <view class="confirm-button" bindtap="goToOrderList">
+    好的
+  </view>
+</view> 

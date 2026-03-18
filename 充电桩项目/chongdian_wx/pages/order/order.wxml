@@ -1,0 +1,165 @@
+<van-nav-bar title="订单"   class="van-nav-bar" />
+<view class="container">
+  <view class="tab-header">
+    <view class="tab {{activeTab === 'pending' ? 'active' : ''}}" bindtap="switchTab" data-tab="pending">充电中</view>
+    <view class="tab {{activeTab === 'completed' ? 'active' : ''}}" bindtap="switchTab" data-tab="completed">已完成</view>
+    <view class="tab {{activeTab === 'cancelled' ? 'active' : ''}}" bindtap="switchTab" data-tab="cancelled">已取消</view>
+    <view class="tab-line" style="left: {{tabLineLeft}}; width: {{tabLineWidth}};"></view>
+  </view>
+  <!-- 待使用 -->
+  <view class="order-list" wx:if="{{activeTab === 'pending' && pendingOrders.length > 0}}">
+    <view class="order-card" wx:for="{{AllOrders}}" wx:key="id" wx:if="{{item.state==0}}">
+      <view class="order-header">
+        <view class="order-date">{{item.createTime}}</view>
+        <!-- <view class="order-time">{{item.time}}</view> -->
+        <switch checked="{{item.reminder}}" bindchange="toggleReminder" data-chargingStationID="{{item.chargingStationID}}" data-userid="{{item.userID}}" color="#00C853" class="reminder-switch" />
+        <text class="reminder-text">记住我</text>
+      </view>
+
+      <view class="order-content" wx:for="{{AllChargingStation}}" wx:for-item="myItem" wx:for-index="id" wx:key="id"  wx:if="{{item.chargingStationID==myItem.id}}">
+        <view class="station-info" >
+          <view>
+            <view class="station-name" >{{myItem.stationName}}</view>
+            <view class="station-address">{{myItem.stationAddress}}</view>
+          </view>
+        </view>
+
+        <view class="direction-icon3">
+          <!-- <image src="assets/icons/navigate.png" class="navigate-icon"></image> -->
+          <text style="font-size: 24rpx;width: 100rpx;margin-left: 10rpx;">充电中</text>
+        </view>
+      </view>
+
+      <view class="order-details">
+        <view class="detail-row">
+          <text class="detail-icon">充电类型</text>
+          <text class="detail-label">{{item.carType}}</text>
+        </view>
+        <view class="detail-row">
+          <text class="detail-icon">最大功率</text>
+          <text class="detail-label">{{item.maxPower}}</text>
+        </view>
+        <view class="detail-row">
+          <text class="detail-icon">充电时长</text>
+          <text class="detail-label">{{item.chargingTime}}小时</text>
+        </view>
+        <view class="detail-row">
+          <text class="detail-icon">金额</text>
+          <text class="detail-label">￥{{item.orderPrice}}</text>
+        </view>
+      </view>
+      <view class="order-actions">
+        <button class="action-btn cancel-btn" bindtap="cancelOrder" data-id="{{item.id}}">取消订单</button>
+        <button class="action-btn detail-btn" bindtap="viewOrderDetail" data-id="{{item.id}}" data-chargingStationID="{{item.chargingStationID}}" data-carInfoID="{{item.carInfoID}}" data-state="{{item.state}}">查看</button>
+      </view>
+      <!-- <view class="order-alert" wx:if="{{pendingOrders.alert}}"> -->
+      <view class="order-alert">
+        <text class="alert-icon-text">ℹ️</text>
+        <text class="alert-text">{{alert}}</text>
+      </view>
+    </view>
+  </view>
+  <!-- 已完成 -->
+  <view class="order-list" wx:if="{{activeTab === 'completed' && completedOrders.length > 0}}">
+    <view class="order-card" wx:for="{{AllOrders}}" wx:key="id" wx:if="{{item.state==1}}">
+      <!-- Same structure as pending orders but with different actions -->
+      <view class="order-header">
+        <view class="order-date">{{item.createTime}}</view>
+        <!-- <view class="order-time">{{item.time}}</view> -->
+      </view>
+
+      <view class="order-content" wx:for="{{AllChargingStation}}" wx:for-item="myItem" wx:for-index="id" wx:key="id"  wx:if="{{item.chargingStationID==myItem.id}}">
+        <view class="station-info" >
+          <view>
+            <view class="station-name" >{{myItem.stationName}}</view>
+            <view class="station-address">{{myItem.stationAddress}}</view>
+          </view>
+        </view>
+
+        <view class="direction-icon">
+          <!-- <image src="assets/icons/navigate.png" class="navigate-icon"></image> -->
+          <text style="font-size: 24rpx;width: 100rpx;margin-left: 10rpx;">已完成</text>
+        </view>
+      </view>
+
+      <view class="order-details">
+        <view class="detail-row">
+          <text class="detail-icon">充电类型</text>
+          <!-- <text class="detail-label">{{item.carType}}</text> -->
+          <text class="detail-label">Tesla</text>
+        </view>
+        <view class="detail-row">
+          <text class="detail-icon">最大功率</text>
+          <text class="detail-label">{{item.maxPower}}</text>
+        </view>
+        <view class="detail-row">
+          <text class="detail-icon">充电时长</text>
+          <text class="detail-label">{{item.chargingTime}}小时</text>
+        </view>
+        <view class="detail-row">
+          <text class="detail-icon">金额</text>
+          <text class="detail-label">￥{{item.orderPrice}}</text>
+        </view>
+      </view>
+
+      <view class="order-actions">
+        <button class="action-btn cancel-btn" bind:tap="viewOrderDetail" data-id="{{item.id}}" data-chargingStationID="{{item.chargingStationID}}" data-carInfoID="{{item.carInfoID}}" data-state="{{item.state}}">查看</button>
+        <button class="action-btn detail-btn" bind:tap="toStationById"data-chargingStationID="{{item.chargingStationID}}" >再次充电</button>
+      </view>
+    </view>
+  </view>
+  <!-- 已取消 -->
+  <view class="order-list" wx:if="{{activeTab === 'cancelled' && cancelledOrders.length > 0}}">
+    <!-- Similar structure for cancelled orders -->
+    <view class="order-card" wx:for="{{AllOrders}}" wx:key="id" wx:if="{{item.state==2}}">
+      <!-- Same structure as pending orders but with different actions -->
+      <view class="order-header">
+        <view class="order-date">{{item.createTime}}</view>
+        <!-- <view class="order-time">{{item.time}}</view> -->
+      </view>
+
+      <view class="order-content" wx:for="{{AllChargingStation}}" wx:for-item="myItem" wx:for-index="id" wx:key="id"  wx:if="{{item.chargingStationID==myItem.id}}">
+        <view class="station-info" >
+          <view>
+            <view class="station-name" >{{myItem.stationName}}</view>
+            <view class="station-address">{{myItem.stationAddress}}</view>
+          </view>
+        </view>
+
+        <view class="direction-icon2">
+          <!-- <image src="assets/icons/navigate.png" class="navigate-icon"></image> -->
+          <text style="font-size: 24rpx;width: 100rpx;margin-left: 10rpx;">已取消</text>
+        </view>
+      </view>
+
+      <view class="order-details">
+        <view class="detail-row">
+          <text class="detail-icon">充电类型</text>
+          <text class="detail-label">Tesla</text>
+        </view>
+        <view class="detail-row">
+          <text class="detail-icon">最大功率</text>
+          <text class="detail-label">{{item.maxPower}}</text>
+        </view>
+        <view class="detail-row">
+          <text class="detail-icon">充电时长 </text>
+          <text class="detail-label"> {{item.chargingTime}}小时</text>
+        </view>
+        <view class="detail-row">
+          <text class="detail-icon">金额</text>
+          <text class="detail-label">￥{{item.orderPrice}}</text>
+        </view>
+      </view>
+
+      <view class="order-actions">
+        <button class="action-btn detail-btn" bindtap="viewOrderDetail" data-id="{{item.id}}" data-chargingStationID="{{item.chargingStationID}}" data-carInfoID="{{item.carInfoID}}" data-state="{{item.state}}">查看</button>
+      </view>
+    </view>
+  </view>
+
+  <view class="empty-state" wx:if="{{activeTab === 'pending' && pendingOrders.length === 0 || activeTab === 'completed' && completedOrders.length === 0 || activeTab === 'cancelled' && cancelledOrders.length === 0}}">
+    <view class="empty-image-placeholder">📋</view>
+    <text class="empty-text">暂无订单</text>
+    <button class="btn-primary" bindtap="goToHome">立即充电</button>
+  </view>
+</view>

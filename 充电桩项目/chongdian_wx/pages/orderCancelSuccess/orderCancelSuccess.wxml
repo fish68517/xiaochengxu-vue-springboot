@@ -1,0 +1,20 @@
+<view class="container">
+  <view class="success-modal">
+    <view class="success-icon">
+      <view class="circle-bg">
+        <view class="check-icon"></view>
+      </view>
+      <view class="dots">
+        <view class="dot dot1"></view>
+        <view class="dot dot2"></view>
+        <view class="dot dot3"></view>
+        <view class="dot dot4"></view>
+        <view class="dot dot5"></view>
+        <view class="dot dot6"></view>
+      </view>
+    </view>
+    <view class="success-title">取消成功</view>
+    <view class="success-desc">您的提交订单已成功取消。</view>
+    <button class="confirm-btn" bind:tap="onConfirm">好的</button>
+  </view>
+</view>

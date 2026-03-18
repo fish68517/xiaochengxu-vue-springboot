@@ -1,0 +1,55 @@
+# =============================================
+# 智能充电桩项目 - 通用 Git 忽略规则
+# 忽略 SpringBoot / RuoYi / Vue / 微信小程序
+# =============================================
+
+# 1. 后端 SpringBoot + RuoYi 忽略
+充电桩项目/RuoYi-Vue-master/**/target/
+充电桩项目/RuoYi-Vue-master/**/logs/
+充电桩项目/RuoYi-Vue-master/**/.idea/
+充电桩项目/RuoYi-Vue-master/**/*.iml
+充电桩项目/SpringBoot/**/target/
+充电桩项目/SpringBoot/**/logs/
+充电桩项目/SpringBoot/**/.idea/
+充电桩项目/SpringBoot/**/*.iml
+
+**/mvnw
+**/mvnw.cmd
+**/.mvn/
+*.log
+*.tmp
+*.old
+*.bak
+
+# 2. Vue3 前端项目忽略
+充电桩项目/charger-vue3/node_modules/
+充电桩项目/charger-vue3/dist/
+充电桩项目/charger-vue3/.vscode/
+充电桩项目/charger-vue3/.idea/
+充电桩项目/charger-vue3/.env.local
+充电桩项目/charger-vue3/.env.development.local
+充电桩项目/charger-vue3/.env.production.local
+充电桩项目/charger-vue3/npm-debug.log*
+充电桩项目/charger-vue3/yarn-debug.log*
+充电桩项目/charger-vue3/yarn-error.log*
+
+# 3. 微信小程序项目忽略
+充电桩项目/chongdian_wx/node_modules/
+充电桩项目/chongdian_wx/miniprogram_npm/
+充电桩项目/chongdian_wx/.setting/
+充电桩项目/chongdian_wx/dist/
+充电桩项目/chongdian_wx/build/
+充电桩项目/chongdian_wx/.env
+充电桩项目/chongdian_wx/*.log
+
+# 4. 项目临时文件
+充电桩项目/_tmp_api_urls_*.txt
+
+# 5. 系统/IDE 通用文件
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+*.swo
+*~

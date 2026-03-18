@@ -1,0 +1,108 @@
+.van-nav-bar{
+    width: 100%;
+    z-index: 1000;
+    position: fixed;
+    top: 0rpx;
+  }
+  
+.container {
+  min-height: 100vh;
+  padding-bottom: 40rpx;
+}
+
+/* Navigation Bar Customization */
+.nav-right-icon {
+  display: flex;
+  align-items: center;
+  height: 100%;
+}
+
+.share-icon {
+  width: 44rpx;
+  height: 44rpx;
+}
+
+/* Payment List Styles */
+.payment-list {
+  padding: 30rpx;
+  margin-top: 300rpx;
+}
+
+.payment-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background-color: #ffffff;
+  padding: 30rpx;
+  margin-bottom: 20rpx;
+  border-radius: 16rpx;
+}
+
+.payment-left {
+  display: flex;
+  align-items: center;
+}
+
+.payment-icon {
+  width: 60rpx;
+  height: 60rpx;
+  margin-right: 20rpx;
+}
+
+.payment-name {
+  font-size: 32rpx;
+  color: #333;
+}
+
+.remove-btn {
+  color: #00C853;
+  font-size: 28rpx;
+}
+
+/* Add Payment Button */
+.add-payment-button {
+  margin: 40rpx 30rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #e8f5ec;
+  padding: 30rpx;
+  border-radius: 16rpx;
+}
+
+.add-payment-button .add-icon {
+  width: 40rpx;
+  height: 40rpx;
+  margin-right: 10rpx;
+}
+
+.add-payment-button text {
+  color: #00C853;
+  font-size: 32rpx;
+}
+
+/* Icon specific colors */
+.wallet-icon {
+  /* background-color: #00C853; */
+  border-radius: 12rpx;
+}
+
+.wechat-icon {
+  /* background-color: #07C160; */
+  border-radius: 12rpx;
+}
+
+.alipay-icon {
+  /* background-color: #1677FF; */
+  border-radius: 12rpx;
+}
+
+.apple-icon {
+  /* background-color: #000000; */
+  border-radius: 12rpx;
+}
+
+.card-icon {
+  /* background-color: #FF6B22; */
+  border-radius: 12rpx;
+} 

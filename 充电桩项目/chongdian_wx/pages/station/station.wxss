@@ -1,0 +1,385 @@
+.van-nav-bar{
+  width: 100%;
+  z-index: 1000;
+  position: fixed;
+  top: 0rpx;
+}
+
+.container {
+  display: flex;
+  flex-direction: column;
+  padding: 20rpx;
+  box-sizing: border-box;
+}
+
+.search-bar {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  margin-bottom: 160rpx;
+  position: fixed;
+  top: 200rpx;
+  z-index: 1000;
+}
+
+.search-input-container {
+  flex: 1;
+  height: 80rpx;
+  background-color: rgb(238, 234, 234);
+  border-radius: 40rpx;
+  display: flex;
+  align-items: center;
+  padding: 0 30rpx;
+  box-shadow: 0 2rpx 10rpx rgba(0, 0, 0, 0.1);
+}
+
+.search-icon {
+  width: 40rpx;
+  height: 40rpx;
+  margin-right: 20rpx;
+  
+}
+
+.search-input {
+  flex: 1;
+  height: 80rpx;
+  font-size: 28rpx;
+  
+}
+.filter-icon-text{
+  font-size: 50rpx;
+}
+.filter-button {
+  width: 80rpx;
+  height: 80rpx;
+  background-color: rgb(238, 234, 234);
+  border-radius: 40rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: 20rpx;
+  box-shadow: 0 2rpx 10rpx rgba(0, 0, 0, 0.1);
+}
+
+.filter-icon {
+  width: 40rpx;
+  height: 40rpx;
+}
+
+.station-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.station-card {
+  background-color: var(--white);
+  border-radius: 16rpx;
+  margin-bottom: 20rpx;
+  padding: 30rpx;
+  display: flex;
+  flex-direction: row;
+  box-shadow: 0 2rpx 10rpx rgba(0, 0, 0, 0.05);
+}
+
+.station-info {
+  flex: 1;
+}
+
+.station-name {
+  font-size: 32rpx;
+  font-weight: bold;
+  margin-bottom: 10rpx;
+}
+
+.station-address {
+  font-size: 24rpx;
+  color: var(--light-text);
+  margin-bottom: 10rpx;
+}
+
+.station-rating {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  margin-bottom: 20rpx;
+}
+
+.rating-stars {
+  display: flex;
+  flex-direction: row;
+}
+
+.star-icon {
+  width: 24rpx;
+  height: 24rpx;
+  margin-right: 4rpx;
+}
+
+.rating-text {
+  font-size: 24rpx;
+  font-weight: bold;
+  margin: 0 10rpx;
+}
+
+.reviews-text {
+  font-size: 22rpx;
+  color: var(--light-text);
+}
+
+.station-metrics {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+}
+
+.metric {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  margin-right: 20rpx;
+  margin-bottom: 10rpx;
+}
+
+.metric-icon {
+  width: 28rpx;
+  height: 28rpx;
+  margin-right: 8rpx;
+}
+
+.metric-text {
+  font-size: 22rpx;
+  color: var(--light-text);
+}
+
+.station-actions {
+  display: flex;
+  align-items: center;
+}
+
+.action-btn {
+  width: 60rpx;
+  height: 60rpx;
+  background-color: #f5f5f5;
+  border-radius: 30rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  top: -70rpx;
+  left: 500rpx;
+}
+
+
+
+
+
+
+.station-header {
+  background-color:#fcf8f8;
+  padding: 20rpx 20rpx 42rpx 20rpx;
+  border: 2rpx solid #dddcdc;
+  border-radius: 20rpx;
+  position: relative;
+  top: 285rpx;
+  width: 90%;
+  margin: auto auto 20rpx auto;
+}
+
+.station-name {
+  font-size: 60rpx;
+  font-weight: 600;
+  margin: 10rpx 0 0 40rpx;
+  color: #333;
+}
+
+.station-address {
+  font-size: 34rpx;
+  color: #666;
+  margin: -52rpx auto 25rpx 40rpx;
+}
+
+.rating-container {
+  display: flex;
+  align-items: center;
+  margin-bottom: 20rpx;
+}
+
+.rating-stars {
+  display: flex;
+  align-items: center;
+}
+
+.rating-number {
+  font-size: 34rpx;
+  font-weight: bold;
+  margin: auto auto 25rpx 40rpx;
+}
+
+.stars {
+  display: flex;
+  margin: auto auto 25rpx 40rpx;
+  position: relative;
+  top: 4rpx;
+  left: -25rpx;
+}
+.review-count {
+  font-size: 30rpx;
+  color: #666;
+  position: relative;
+  top: -12rpx;
+  left: -10rpx;
+}
+.info-container {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: auto 40rpx 40rpx 40rpx;
+  padding-bottom: 41rpx;
+  border-bottom: solid 2rpx rgb(177, 174, 174);
+}
+.availability-tag {
+  display: inline-block;
+  background-color: #00c251;
+  color: white;
+  font-size: 24rpx;
+  font-weight: 600;
+  height: 50rpx;
+  width: 90rpx;
+  padding: 14rpx 16rpx 0 36rpx;
+  border-radius: 15rpx;
+}
+
+.location-info {
+  display: flex;
+  position: relative;
+  left: -150rpx;
+}
+
+.location-item {
+  display: flex;
+  align-items: center;
+  margin-left: 20rpx;
+}
+
+.location-icon {
+  width: 28rpx;
+  height: 34rpx;
+  margin-right: 8rpx;
+}
+.jiekou{
+  width: 90%;
+  margin: auto;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  position: relative;
+  top: -20rpx;
+}
+.jiekou-image{
+  vertical-align: middle;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 60%;
+}
+.images{
+  height: 50rpx;
+  width: 50rpx;
+}
+.number{
+  vertical-align: middle;
+  font-size: 40rpx;
+  font-weight: 600;
+  color: #00C251;
+}
+
+.action-buttons {
+  width: 90%;
+  margin: auto;
+  display: flex;
+  justify-content: space-around;
+  border-top: solid 2rpx rgb(177, 174, 174);
+}
+.navigate-btn {
+  background-color: #00c251;
+  color: white;
+  margin-top: 30rpx;
+  height: 78rpx !important;
+}
+.action-btns {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 70%;
+  height: 76rpx;
+  border-radius: 45rpx;
+  font-size: 30rpx;
+  font-weight: 600;
+}
+
+.route-btn {
+  background-color: white;
+  color: #00c251;
+  border: 4rpx solid #00c251;
+  margin-top: 30rpx;
+  margin-right: 36rpx;
+}
+.actions-icon{
+  height: 35rpx;
+  width: 35rpx;
+}
+
+.actions-btn{
+  width: 80rpx;
+  height: 80rpx;
+  background-color: #00C251;
+  border-radius: 50%;
+  position: relative;
+  top: -80rpx;
+  right: -480rpx;
+}
+.actions-icon{
+  width: 40rpx;
+  height: 40rpx;
+  margin: 20rpx;
+}
+/* 搜索框样式 */
+.search-container {
+  padding: 15px;
+  background: #fff;
+  display: flex;
+  align-items: center;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.search-input {
+  flex: 1;
+  height: 36px;
+  padding: 0 15px;
+  background: #f5f5f5;
+  border-radius: 18px;
+  font-size: 14px;
+}
+
+.clear-icon {
+  width: 16px;
+  height: 16px;
+  margin-left: 10px;
+}
+
+/* 无结果提示 */
+.no-result {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 50px 0;
+  color: #999;
+}
+
+.no-result image {
+  width: 100px;
+  height: 100px;
+  margin-bottom: 15px;
+}

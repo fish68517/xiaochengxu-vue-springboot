@@ -1,0 +1,209 @@
+.container {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  position: relative;
+  background-color: var(--background-color);
+}
+
+.search-bar {
+  position: absolute;
+  top: 100rpx;
+  left: 30rpx;
+  right: 30rpx;
+  z-index: 10;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+}
+
+.search-input-container {
+  flex: 1;
+  height: 80rpx;
+  background-color: var(--white);
+  border-radius: 40rpx;
+  display: flex;
+  align-items: center;
+  padding: 0 30rpx;
+  box-shadow: 0 2rpx 10rpx rgba(0, 0, 0, 0.1);
+}
+
+.search-icon {
+  width: 40rpx;
+  height: 40rpx;
+  margin-right: 20rpx;
+}
+
+.search-input {
+  flex: 1;
+  height: 80rpx;
+  font-size: 28rpx;
+}
+
+.filter-button {
+  width: 80rpx;
+  height: 80rpx;
+  background-color: var(--white);
+  border-radius: 40rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: 20rpx;
+  box-shadow: 0 2rpx 10rpx rgba(0, 0, 0, 0.1);
+}
+
+.filter-icon {
+  width: 40rpx;
+  height: 40rpx;
+}
+
+.map-container {
+  flex: 1;
+  width: 100%;
+  position: absolute;
+  overflow: hidden;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 1;
+}
+
+map {
+  width: 100%;
+  height: 100%;
+}
+
+.map-tools {
+  position: absolute;
+  right: 30rpx;
+  bottom: 500rpx;
+  display: flex;
+  flex-direction: column;
+  z-index: 10;
+}
+
+.tool-button {
+  width: 100rpx;
+  height: 100rpx;
+  background-color: var(--white);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 20rpx;
+  box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.1);
+}
+
+.tool-icon {
+  width: 50rpx;
+  height: 50rpx;
+}
+
+.search-icon-text {
+  font-size: 40rpx;
+  margin-right: 20rpx;
+}
+
+.filter-icon-text {
+  font-size: 40rpx;
+}
+
+.user-avatar-placeholder {
+  width: 70rpx;
+  height: 70rpx;
+  border-radius: 50%;
+  background-color: #ffeb3b;
+}
+
+.tool-icon-text {
+  font-size: 50rpx;
+} 
+
+.popup {
+  height: 400rpx;
+  overflow-y: auto;
+  position: fixed;
+  bottom: 50px;
+  width: 90%;
+  background: #fff;
+  border-top-left-radius: 16rpx;
+  border-top-right-radius: 16rpx;
+  box-shadow: 0 -4rpx 20rpx rgba(0, 0, 0, 0.1);
+  z-index: 100;
+}
+
+.popup-content {
+  padding: 24rpx;
+}
+
+.station-name {
+  font-size: 45rpx;
+  font-weight: bold;
+  margin-bottom: 8rpx;
+}
+
+.station-address {
+  color: #666;
+  font-size: 28rpx;
+  margin-bottom: 12rpx;
+}
+.station-photo {
+  width: 100%;
+  height: 200rpx;
+  border-radius: 16rpx;
+  object-fit: cover;
+  margin-bottom: 16rpx;
+}
+
+.station-info {
+  font-size: 28rpx;
+  margin-bottom: 16rpx;
+  margin-top: 20rpx;
+}
+
+.popup-buttons {
+  display: flex;
+  justify-content: space-between;
+  gap: 20rpx;
+}
+
+.btn {
+  flex: 1;
+  padding: 20rpx;
+  border-radius: 8rpx;
+  height: 70rpx;
+  background-color: #f0f0f0;
+  border: none;
+  margin-top: 20rpx;
+  padding-bottom: 80rpx;
+  line-height: 70rpx;
+  font-size: 40rpx;
+}
+
+.btn-primary {
+  background-color: #00c292;
+  color: #fff;
+}
+
+.dropdown-menu {
+  text-align: center;
+  position: absolute;         /* 让它脱离文档流，浮在指定位置 */
+  top: 200rpx;                /* 根据你的搜索框高度微调 */
+  right: 20rpx;
+  z-index: 999;       
+  width: 200rpx;        /* 确保它在地图上层 */
+  background-color: white;
+  border-radius: 50rpx;
+  margin-top: 10rpx;
+  box-shadow: 0 0 10rpx rgba(0,0,0,0.3);
+}
+
+.dropdown-item {
+  padding: 20rpx;
+  border-bottom: 1rpx solid #eee;
+}
+
+.dropdown-item:last-child {
+  border-bottom: none;
+}

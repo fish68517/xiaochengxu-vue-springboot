@@ -1,0 +1,101 @@
+{
+  "pages": [
+    "pages/onboarding/onboarding",
+    "pages/login/login",
+    "pages/register/register",
+    "pages/verifyCode/verifyCode",
+    "pages/userInfo/userInfo",
+    "pages/permission/permission",
+    "pages/home/home",
+    "pages/station/station",
+    "pages/order/order",
+    "pages/orderDetail/orderDetail",
+    "pages/orderCancel/orderCancel",
+    "pages/orderCancelSuccess/orderCancelSuccess",
+    "pages/orderCharging/orderCharging",
+    "pages/wallet/wallet",
+    "pages/profile/profile",
+    "pages/personalDetails/personalDetails",
+    "pages/index/index",
+    "pages/logs/logs",
+    "pages/chongdianzhuang/chongdianzhuang",
+    "pages/addCar/addCar",
+    "pages/carDetails/carDetails",
+    "pages/lognVerifyCode/lognVerifyCode",
+    "pages/other-login/other-login",
+    "pages/privacy/privacy",
+    "pages/about/index",
+    "pages/Help/help",
+    "pages/station-list/station-list",
+    "pages/select-car/index",
+    "pages/charge-calculate/index",
+    "pages/order-confirm/index",
+    "pages/order-success/index",
+    "pages/routePlanning/routePlanning",
+    "pages/daohang/daohang",
+    "pages/walletMany/walletMany",
+    "pages/vehicles/vehicles",
+    "pages/payment/payment",
+    "pages/security/security"
+  ],
+  "permission": {
+    "scope.userLocation": {
+      "desc": "你的位置信息将用于小程序位置接口的效果展示"
+    }
+  },
+  "requiredPrivateInfos": ["getLocation"],
+  "window": {
+    "navigationBarTextStyle": "black",
+    "navigationBarTitleText": "EV充电站",
+    "navigationBarBackgroundColor": "#ffffff"
+    
+
+  },
+  "tabBar": {
+    "color": "#888888",
+    "selectedColor": "#00C853",
+    "backgroundColor": "#ffffff",
+    "list": [
+      {
+        "pagePath": "pages/home/home",
+        "text": "首页",
+        "iconPath": "images/tabs/home.png",
+        "selectedIconPath": "images/tabs/home_selected.png"
+      },
+      {
+        "pagePath": "pages/station/station",
+        "text": "收藏",
+        "iconPath": "images/tabs/favorite.png",
+        "selectedIconPath": "images/tabs/favorite_selected.png"
+      },
+      {
+        "pagePath": "pages/order/order",
+        "text": "订单",
+        "iconPath": "images/tabs/order.png",
+        "selectedIconPath": "images/tabs/order_selected.png"
+      },
+      {
+        "pagePath": "pages/wallet/wallet",
+        "text": "钱包",
+        "iconPath": "images/tabs/wallet.png",
+        "selectedIconPath": "images/tabs/wallet_selected.png"
+      },
+      {
+        "pagePath": "pages/profile/profile",
+        "text": "我的",
+        "iconPath": "images/tabs/profile.png",
+        "selectedIconPath": "images/tabs/profile_selected.png"
+      }
+    ]
+  },
+  "componentFramework": "glass-easel",
+  "sitemapLocation": "sitemap.json",
+  "lazyCodeLoading": "requiredComponents",
+
+  "usingComponents": {
+    "van-button": "@vant/weapp/button/index",
+    "van-nav-bar": "@vant/weapp/nav-bar/index",
+    "van-popup": "@vant/weapp/popup/index"
+  }
+
+}

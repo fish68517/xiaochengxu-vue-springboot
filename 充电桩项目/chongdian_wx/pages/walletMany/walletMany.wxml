@@ -1,0 +1,32 @@
+<!-- <van-nav-bar left-text="交易记录" left-arrow bindtap="transactionRecord">
+  <van-icon name="search" slot="right"  />
+</van-nav-bar> -->
+<view>
+<!-- <view class="transaction_title">
+<view class="title" bind:tap="">
+<image src="/images/tabs/箭头符号 .png" mode=""/>
+<view>交易记录</view>
+</view>
+<image src="/images/tabs/搜索 .png" mode=""/>
+</view> -->
+<view class="transaction-list">
+  <view class="transaction-item {{item.type}}" 
+        wx:for="{{transactions}}" 
+        wx:key="id" 
+        bindtap="viewTransactionDetail" 
+        data-id="{{item.id}}" 
+        hover-class="transaction-item-active">
+    <view class="transaction-left">
+      <view class="transaction-info">
+        <view class="transaction-tag {{item.type}}">{{item.type === 'income' ? '充值' : '支出'}}</view>
+        <text class="transaction-name">{{item.name}}</text>
+      </view>
+      <view class="transaction-date">{{item.date}} · {{item.time}}</view>
+    </view>
+    <view class="transaction-right">
+      <text class="transaction-amount {{item.type}}">{{item.type === 'income' ? '+' : '-'}}¥{{item.amount}}</text>
+      <image src="/images/icons/arrow.png" class="arrow-icon" />
+    </view>
+  </view>
+</view>
+</view>

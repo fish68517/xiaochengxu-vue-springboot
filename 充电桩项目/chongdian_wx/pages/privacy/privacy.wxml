@@ -1,0 +1,86 @@
+<!-- 页面容器
+<van-nav-bar
+  left-text="隐私政策"
+  left-arrow
+  bind:click-left="onClickLeft"/> -->
+<view class="container">
+  <!-- 顶部导航栏 -->
+  <!-- <view class="nav-bar">
+    <view class="nav-left" bindtap="goBack">
+      <image src="/images/tabs/箭头符号 .png" class="back-icon" />
+    </view>
+    <view class="nav-title">隐私政策</view>
+  </view> -->
+
+  <!-- 内容区域 -->
+  <view class="content">
+    <!-- 简介 -->
+    <view class="intro">
+      感谢您对我们电动汽车充电站APP的关注。以下是我们的隐私政策，旨在保护您的个人信息和数据的安全和隐私。
+    </view>
+
+    <!-- 信息收集 -->
+    <view class="section">
+      <view class="section-title">收集的信息</view>
+      <view class="section-content">
+        <view class="info-item">
+          <text class="label">我们在您使用我们的电动汽车充电站APP时可能会收集一些必要的个人信息和数据，包括但不限于:</text>
+          <text class="detail">联系信息(如姓名、电子邮件地址、电话号码):用于与您进行沟通和提供相关服务位置信息:用于确定您所在的地理位置，以便为您提供附近充电站的信息。</text>
+          <text>交易信息:如果您选择使用我们的充电服务我们可能会收集您的支付信息和交易历史。</text>
+        </view>
+       
+      </view>
+    </view>
+
+    <!-- 信息用途 -->
+    <view class="section">
+      <view class="section-title">信息使用</view>
+      <view class="section-content">
+        <view class="info-item">我们收集的个人信息和数据将用于以下目的:提供和改进我们的充电服务，包括定位附近的充电站、充电桩状态和可用性。</view>
+        <view class="info-item">处理充电订单与支付</view>
+        <view class="info-item">向您发送有关充电站服务更新、促销活动和相关通知。</view>
+        <view class="info-item">分析和改进我们的APP功能和性能</view>
+        <view class="info-item">遵循适用法律的要求</view>
+      </view>
+    </view>
+
+    <!-- 信息保护 -->
+    <view class="section">
+      <view class="section-title">信息保护</view>
+      <view class="section-content">
+        我们采取安全措施来保护您的个人信息和数据的安全性。我们使用加密技术来保护信息的传输，并采取合理的措施来防止未经授权的访问、使用或披露个人信息。
+      </view>
+    </view>
+
+    <!-- 信息共享 -->
+    <view class="section">
+      <view class="section-title">信息共享</view>
+      <view class="section-content">
+        <text>我们不会出售、出租或以其他方式与第三方共享您的个人信息，除非获得您的明确许可或法律要求。我们可能与合作伙伴共享一些必要的信息，以提供更好的服务和支持。</text>
+      </view>
+    </view>
+
+    <!-- 第三方链接 -->
+    <view class="section">
+      <view class="section-title">第三方链接</view>
+      <view class="section-content">
+        我们的APP可能包含指向第三方网站或服务的链接。请注意，我们的隐私政策不适用于这些第三方网站或服务。我们建议您在访问这些链接时查阅其隐私政策。
+      </view>
+    </view>
+
+    <!-- 政策更新 -->
+    <view class="section">
+      <view class="section-title">政策更新</view>
+      <view class="section-content">
+        隐私政策的更新:我们可能会不时更新我们的隐私政策，以反映我们的实践和法律要求。我们将通过APP通知您重大变更，并建议您定期查阅最新的隐私政策。
+      </view>
+    </view>
+
+    <!-- 联系方式 -->
+    <view class="contact-section">
+      <view class="section-content">
+        如果您对我们的隐私政策有任何疑问或需要进一步的信息，请随时与我们联系。我们将尽力保护您的个人信息和数据的隐私和安全。
+      </view>
+    </view>
+  </view>
+</view>

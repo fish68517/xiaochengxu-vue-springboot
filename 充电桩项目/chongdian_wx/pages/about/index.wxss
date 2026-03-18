@@ -1,0 +1,98 @@
+.container {
+  background: white;
+}
+
+/* 头部优化 */
+.header {
+  padding: 32rpx 40rpx;
+  background: #fff;
+  box-shadow: 0 4rpx 12rpx rgba(0,0,0,0.04);
+}
+
+.title {
+  font-size: 38rpx;
+  font-weight: 600;
+  color: #1a1a1a;
+  letter-spacing: 0.8rpx;
+}
+
+/* Logo区域优化 */
+.logo-section {
+  width: 400px;
+  padding: 64rpx 0;
+  margin: 32rpx;
+  border-radius: 24rpx;
+  background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+  box-shadow: 0 4rpx 16rpx rgba(0,0,0,0.06);
+  position: relative;
+}
+
+.logo {
+  width: 240rpx;
+  height: 240rpx;
+  border-radius: 36rpx;
+  box-shadow: 0 4rpx 12rpx rgba(0,0,0,0.08);
+  margin-bottom: 32rpx;
+  margin-left: 126px;
+}
+
+.app-name {
+  font-size: 43rpx;
+  color: #2d3436;
+  font-weight: 500;
+  margin-left: 130px;
+}
+/* 菜单列表优化 */
+.menu-list {
+  width: 374px;
+  background: #fff;
+  border-radius: 24rpx;
+  /* margin: 32rpx; */
+  overflow: hidden;
+  box-shadow: 0 4rpx 16rpx rgba(0,0,0,0.06);
+}
+
+.menu-item {
+  display: flex;
+  padding: 25rpx 25rpx;
+  transition: all 0.2s ease;
+}
+
+.menu-item:active {
+  background: #f8f9fa;
+  transform: scale(0.99);
+}
+
+.menu-left {
+  gap: 32rpx;
+}
+
+.menu-icon {
+  width: 44rpx;
+  height: 44rpx;
+  filter: opacity(0.9);
+}
+
+.menu-text {
+  font-size: 32rpx;
+  color: #2d3436;
+  font-weight: 450;
+  letter-spacing: 0.5rpx;
+}
+
+.arrow-icon {
+  width: 28rpx;
+  height: 28rpx;
+  opacity: 0.4;
+  transition: opacity 0.2s ease;
+  margin-left: 257px;
+}
+
+.menu-item:hover .arrow-icon {
+  opacity: 0.7;
+}
+
+/* 最后一项处理 */
+.menu-item:last-child {
+  border-bottom: none;
+}

@@ -1,0 +1,145 @@
+.container {
+  min-height: 100vh;
+  background: #ffffff;
+  padding: 0 32rpx;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  height: 88rpx;
+  margin-top: 20rpx;
+}
+
+.close {
+  font-size: 48rpx;
+  color: #333;
+  font-weight: 200;
+}
+
+.title {
+  font-size: 34rpx;
+  color: #333;
+  font-weight: 500;
+}
+
+.more {
+  font-size: 48rpx;
+  color: #333;
+  font-weight: bold;
+}
+
+.power-circle-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin: 60rpx 0;
+  position: relative;
+}
+
+.power-circle {
+  width: 320rpx;
+  height: 320rpx;
+  border-radius: 50%;
+  background: #fff;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  box-shadow: 0 0 100rpx rgba(0, 200, 83, 0.15);
+}
+
+.power-circle::after {
+  content: '';
+  position: absolute;
+  top: -20rpx;
+  left: -20rpx;
+  right: -20rpx;
+  bottom: -20rpx;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(0, 200, 83, 0.1) 0%, rgba(0, 200, 83, 0) 70%);
+  z-index: -1;
+}
+
+.lightning {
+  width: 48rpx;
+  height: 48rpx;
+  margin-bottom: 20rpx;
+}
+
+.power-number {
+  display: flex;
+  align-items: baseline;
+  margin-bottom: 8rpx;
+}
+
+.number {
+  font-size: 80rpx;
+  font-weight: bold;
+  color: #333;
+  line-height: 1;
+}
+
+.unit {
+  font-size: 32rpx;
+  color: #333;
+  margin-left: 4rpx;
+}
+
+.label {
+  font-size: 28rpx;
+  color: #999;
+}
+
+.info-card {
+  background: #fafafa;
+  border-radius: 20rpx;
+  padding: 32rpx;
+  margin-bottom: 40rpx;
+  box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.08);
+}
+
+.info-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 32rpx;
+  /* background-color: yellow; */
+}
+
+.info-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  /* border: 1rpx solid #AAAAAA; */
+}
+
+.info-item .value {
+  font-size: 36rpx;
+  color: #333;
+  font-weight: bold;
+  margin-bottom: 8rpx;
+}
+
+.info-item .label {
+  font-size: 28rpx;
+  color: #999;
+}
+
+.stop-button {
+  width: 100%;
+  height: 96rpx;
+  line-height: 86rpx;
+  background: #00C853;
+  color: #fff;
+  font-size: 32rpx;
+  border-radius: 48rpx;
+  border: none;
+  margin-bottom: 80rpx;
+  box-shadow: 0 6rpx 20rpx rgba(0, 200, 83, 0.2);
+}
+
+.stop-button::after {
+  border: none;
+}

@@ -1,0 +1,10 @@
+{
+"navigationBarTitleText": "帮助中心",
+"navigationBarBackgroundColor": "#ffffff",
+"navigationBarTextStyle":"black",
+"backgroundColor": "#f7f8fa",
+"enablePullDownRefresh": true,
+"usingComponents": {
+  "van-nav-bar": "@vant/weapp/nav-bar/index"
+}
+}

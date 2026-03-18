@@ -1,0 +1,49 @@
+<!-- pages/register/register.wxml -->
+<view class="container">
+  <view class="title">欢迎</view>
+  <view class="subtitle">请输入您的邮箱账号，通过收到的验证码登录。</view>
+
+  <view class="input-section">
+    <view class="email-container">
+      <view class="email-input-container {{ isFocused ? 'focused' : '' }}">
+        <input 
+          class="email-input" 
+          type="text" 
+          placeholder="请输入邮箱账号" 
+          value="{{email}}" 
+          bindinput="onEmailInput"
+          bindfocus="onFocus"
+          bindblur="onBlur"
+        />
+      </view>
+    </view>
+
+    <view class="verify-code-container">
+      <view class="verify-input-wrapper">
+        <view class="email-input-container {{ isFocused ? 'focused' : '' }}" style="width: 400rpx;">
+          <input 
+            class="email-input" 
+            type="text" 
+            placeholder="请输入验证码" 
+            value="{{verifyCode}}" 
+            bindinput="onVerifyCodeInput"
+            bindfocus="onFocus"
+            bindblur="onBlur"
+          />
+        </view>
+        <button class="send-code-btn" bindtap="sendVerifyCode" disabled="{{countdown > 0}}">
+          {{countdown > 0 ? countdown + 's' : '发送验证码'}}
+        </button>
+      </view>
+    </view>
+  </view>
+
+  <view class="policy-container">
+    <checkbox-group bindchange="toggleAgreePolicy">
+       <checkbox class="checkbox" value="agree" checked="{{agreePolicy}}"/>
+    </checkbox-group>
+    <text class="policy-text">我同意 </text>
+    <text class="policy-link" bindtap="goToPrivacyPolicy">《EV充电隐私政策》</text>
+  </view>
+  <button class="next-button" bindtap="nextStep">下一步</button>
+</view>

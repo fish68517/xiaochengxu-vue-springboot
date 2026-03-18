@@ -1,0 +1,20 @@
+<view class="container">
+  <view class="permission-card">
+    <view class="bubbles">
+      <view class="small-bubble" style="top: 50rpx; left: 40rpx;"></view>
+      <view class="small-bubble" style="top: 80rpx; right: 60rpx;"></view>
+      <view class="small-bubble" style="bottom: 70rpx; left: 20rpx;"></view>
+      <view class="small-bubble" style="bottom: 100rpx; right: 40rpx;"></view>
+    </view>
+    
+    <view class="green-circle">
+      <text class="icon-text">📍</text>
+    </view>
+    
+    <view class="title">位置授权</view>
+    <view class="desc">我们需要访问您的位置以查找您周围的电动汽车充电站</view>
+    
+    <button class="btn-primary authorize-btn" bindtap="authorizeLocation">位置授权</button>
+    <button class="btn-secondary cancel-btn" bindtap="skipAuthorization">取消</button>
+  </view>
+</view> 

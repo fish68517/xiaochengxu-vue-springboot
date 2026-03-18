@@ -1,0 +1,230 @@
+<van-nav-bar title="充电驿站" left-text="返回" right-text="" left-arrow bind:click-left="onClickLeft" bind:click-right="onClickRight" class="van-nav-bar" />
+<view class="container">
+  <!-- Header Image -->
+  <view class="header-image">
+    <image src="{{chongdianzhan.stationPhoto}}" mode="aspectFill"></image>
+  </view>
+
+  <!-- Station Header Info -->
+  <view class="station-header">
+    <view class="station-name">{{chongdianzhan.stationName}}
+      <view class="shoucang">
+        <image class="shoucang-star" src="https://cdn8.axureshop.com/demo2024/2269080/images/25_%E5%85%85%E7%94%B5%E7%AB%99-%E8%AF%A6%E6%83%85/vector_u10572.svg" mode="" />
+      </view>
+    </view>
+    <view class="station-address">{{chongdianzhan.stationAddress}}</view>
+
+    <!-- Rating Section -->
+    <view class="rating-container">
+      <view class="rating-stars">
+        <!-- 平均分 -->
+        <text class="rating-number">{{avgGrade}}</text>
+        <view class="stars">
+          <van-rate value="{{ avgGrade }}" allow-half void-icon="star" void-color="#FDD9A5" color="#FBA72D" bind:change="onChange" />
+        </view>
+        <text class="review-count">({{gradeList.length}}评论)</text>
+      </view>
+    </view>
+
+    <!-- Availability & Distance Info -->
+    <view class="info-container">
+      <view wx:if="{{enable}}" class="availability-tag1">有空位</view>
+      <view wx:else class="availability-tag2">无空位</view>
+      <view class="location-info">
+        <view class="location-item">
+          <image src="https://cdn8.axureshop.com/demo2024/2269080/images/25_%E5%85%85%E7%94%B5%E7%AB%99-%E8%AF%A6%E6%83%85/exclude_u10597.svg" class="location-icon"></image>
+          <text>1.6 km</text>
+        </view>
+        <view class="location-item">
+          <image src="https://cdn8.axureshop.com/demo2024/2269080/images/25_%E5%85%85%E7%94%B5%E7%AB%99-%E8%AF%A6%E6%83%85/vector_u10600.svg" class="location-icon"></image>
+          <text>5 分钟</text>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- Action Buttons -->
+  <view class="action-buttons">
+    <button class="action-btn navigate-btn" bind:tap="daohang">
+      <image src="https://cdn8.axureshop.com/demo2024/2269080/images/25_%E5%85%85%E7%94%B5%E7%AB%99-%E8%AF%A6%E6%83%85/vector_u10608.svg" class="btn-icon"></image>
+      <text>导航至充电站</text>
+    </button>
+    <button class="action-btn route-btn" bind:tap="luxian">
+      <text>路线规划</text>
+    </button>
+  </view>
+  <!-- Tab Section -->
+  <view class="tabs">
+    <view class="tabs-van">
+      <van-tabs active="{{ active }}" animated swipeable color="#00c251" title-active-color="#00c251">
+        <van-tab title="详情" title-style="font-size:36rpx">
+          <view class="zhandian-title">站点介绍</view>
+          <view class="neirong">{{chongdianzhan.stationIntroduction}}</view>
+          <view class="fufeixiangmu">
+            <view class="box-item">
+              <view class="xiangmu">停车</view>
+              <view class="fufei">{{chongdianzhan.stop === 0? '免费' : '收费'}}</view>
+            </view>
+            <view class="box-item">
+              <view class="xiangmu">充电</view>
+              <view class="fufei">收费</view>
+            </view>
+          </view>
+          <view class="fufeixiangmu2">
+            <view class="opentime">
+              <image class="opentime-img" src="/images/tabs/开放时间.png" />
+              <view class="kaifangshijian">
+                <text style="color:#01b763;">开放时间</text>
+                <text style="padding-left: 20rpx;">24小时</text>
+              </view>
+            </view>
+            <block wx:if="{{openTimeList.length > 0}}">
+              <block wx:for="{{openTimeList}}" wx:key="id">
+                <view class="box-item">
+                  <view class="riqi">{{item.openData}}</view>
+                  <view class="shijian">{{item.openTimePeriod}}</view>
+                </view>
+              </block>
+            </block>
+            <view wx:else class="no-data">暂无开放时间信息</view>
+          </view>
+          <view class="fufeixiangmu3">
+            <view class="service">站点服务</view>
+            <block wx:if="{{serviceList.length > 0}}">
+              <block wx:for="{{serviceList}}" wx:key="*this" class="service-item">
+                <view class="logo">
+                  <image class="service-logo" src="{{item.icon}}" />
+                  {{item.serviceType}}
+                </view>
+              </block>
+            </block>
+            <view wx:else class="no-data">暂无站点服务信息</view>
+          </view>
+          <view class="zhandian-title">站点位置</view>
+          <view class="station-addresss">
+            <image class="service-logo" src="/images/tabs/定位.png" />
+            {{chongdianzhan.stationAddress}}
+          </view>
+          <image class="weizhitu" src="/images/tabs/位置图.png"></image>
+        </van-tab>
+        <!-- 充电桩详情 -->
+        <van-tab title="充电桩" title-style="font-size:36rpx">
+          <block wx:for="{{stumpList}}" wx:key="*this">
+            <view class="stump-box">
+              <view class="stump-top">
+                <text>24小时</text>
+                <text wx:if="{{!item.occupy}}" class="kongwei">可用</text>
+                <text wx:else class="occupy">被占用</text>
+              </view>
+              <view class="stump-bottom">
+                <view class="stump-info">
+                  <view class="stump-name">{{item.stumpName}}</view>
+                  <image class="stump-img" src="/images/tabs/充电桩.png" />
+                </view>
+                <view class="power-info">
+                  <view class="power-max">最大功率</view>
+                  <view class="power-num">{{powerList[item.powerId-1].maxPower}}kW</view>
+                </view>
+              </view>
+              <button class="chongdian" bind:tap="chongdian" data-id="{{item.id}}">充电</button>
+            </view>
+          </block>
+        </van-tab>
+
+        <!-- <van-tab title="登记" title-style="font-size:36rpx">登记</van-tab> -->
+        <van-tab title="评论" title-style="font-size:36rpx">
+          <!-- Rating Summary Section -->
+          <view class="rating-summary">
+            <view class="rating-big">
+              <text class="rating-number-big">{{avgGrade}}</text>
+              <view class="stars-big">
+                <van-rate value="{{ avgGrade }}" allow-half void-icon="star" void-color="#FDD9A5" color="#FBA72D" size="{{ 25 }}" bind:change="onChange" />
+              </view>
+              <text class="review-count-big">({{gradeList.length}}评论)</text>
+            </view>
+            <!-- Rating Bars -->
+            <view class="rating-bars">
+              <view class="rating-bar-item">
+                <text class="bar-label">5</text>
+                <view class="progress-bar">
+                  <view class="progress-fill" style="width: 80%"></view>
+                </view>
+              </view>
+              <view class="rating-bar-item">
+                <text class="bar-label">4</text>
+                <view class="progress-bar">
+                  <view class="progress-fill" style="width: 60%"></view>
+                </view>
+              </view>
+              <view class="rating-bar-item">
+                <text class="bar-label">3</text>
+                <view class="progress-bar">
+                  <view class="progress-fill" style="width: 15%"></view>
+                </view>
+              </view>
+              <view class="rating-bar-item">
+                <text class="bar-label">2</text>
+                <view class="progress-bar">
+                  <view class="progress-fill" style="width: 10%"></view>
+                </view>
+              </view>
+              <view class="rating-bar-item">
+                <text class="bar-label">1</text>
+                <view class="progress-bar">
+                  <view class="progress-fill" style="width: 5%"></view>
+                </view>
+              </view>
+            </view>
+          </view>
+          <view class="sort-by">
+            <text class="sort">Sort by</text>
+            <text class="sort-option" bindtap="sortByTime">时间排序 ↑↓</text>
+          </view>
+          <block wx:for="{{gradeList}}" wx:key="*this">
+            <view class="review">
+              <image class="avatar" src="{{userList[item.id-1].avatar}}" />
+              <view class="review-content">
+                <view class="review-header">
+                  <text class="name">{{userList[item.id-1].name}}</text>
+                  <!-- <text class="date">{{item.commentTime}}</text> -->
+                </view>
+                <view class="view-rating">
+                  <van-rate value="{{ item.grade }}" allow-half void-icon="star" void-color="#FDD9A5" color="#FBA72D" size="{{ 15 }}" bind:change="onChange" />
+                  <text class="text-rating-number">({{item.grade}})</text>
+                  <text class="time">{{item.commentTime}}</text>
+                </view>
+                <text class="text-comment">{{item.commentContent}}</text>
+              </view>
+            </view>
+          </block>
+          <button class="comment-btn" bind:tap="showPopup">写评论</button>
+        </van-tab>
+      </van-tabs>
+    </view>
+  </view>
+  <!-- Write Comment Button -->
+
+  <van-popup show="{{ show }}" round position="bottom" custom-style="height: 50%" bind:close="onClose" closeable>
+    <view class="write-view">
+      <text class="write">写评论</text>
+    </view>
+    <view class="pingfen-view">
+      <text class="pingfen">评分</text>
+      <view class="pingfen-star">
+        <van-rate value="{{ ratingValue }}" allow-half void-icon="star" void-color="#FDD9A5" color="#FBA72D" size="{{ 60 }}" bind:change="onRatingChange" />
+      </view>
+    </view>
+    <view class="pinglun-view">
+      <view class="pinglun-pinglun"><text class="pinglun">评论</text></view>
+      <view class="input-area">
+        <textarea class="comment-input" placeholder="写下你的评论..." placeholder-class="placeholder-style" maxlength="300" auto-height cursor-spacing="20" bind:input="onContentChange" value="{{commentContent}}"></textarea>
+
+        <!-- 字数统计 -->
+        <view class="word-count">{{commentContent.length}}/300</view>
+      </view>
+    </view>
+    <view class="btn-area">
+      <button class="submit-btn" type="primary" size="mini" bind:tap="submitComment">提交</button>
+    </view>
+  </van-popup>
+</view>

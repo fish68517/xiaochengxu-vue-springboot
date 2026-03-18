@@ -1,0 +1,131 @@
+/* pages/personalDetails/personalDetails.wxss */
+.container {
+  min-height: 100vh;
+  background: #ffffff;
+  padding: 0;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20rpx 32rpx;
+  position: relative;
+}
+
+.back-icon {
+  font-size: 40rpx;
+  color: #333;
+}
+
+.title {
+  font-size: 34rpx;
+  font-weight: 500;
+  color: #333;
+}
+
+.edit-icon {
+  font-size: 40rpx;
+  color: #333;
+}
+
+.avatar-section {
+  display: flex;
+  justify-content: center;
+  padding: 40rpx 0;
+}
+
+.avatar-wrapper {
+  position: relative;
+  width: 160rpx;
+  height: 160rpx;
+}
+
+.avatar {
+  width: 160rpx;
+  height: 160rpx;
+  border-radius: 50%;
+  background-color: #ffeb3b;
+}
+
+.edit-badge {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  width: 48rpx;
+  height: 48rpx;
+  background: #00C853;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.edit-icon-small {
+  width: 24rpx;
+  height: 24rpx;
+}
+
+.form-section {
+  padding: 0 32rpx;
+  margin-bottom: 450rpx;
+}
+
+.form-item {
+  display: flex;
+  align-items: center;
+  min-height: 100rpx;
+}
+
+.label {
+  font-size: 32rpx;
+  color: #333;
+  width: 160rpx;
+}
+
+.input {
+  flex: 1;
+  font-size: 32rpx;
+  color: #333;
+}
+
+.picker-wrapper {
+  flex: 1;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.picker-text {
+  font-size: 32rpx;
+  color: #333;
+}
+
+.arrow-icon,
+.calendar-icon {
+  width: 40rpx;
+  height: 40rpx;
+}
+
+.divider {
+  height: 1rpx;
+  background: #f0f0f0;
+}
+
+.save-btn {
+  position: fixed;
+  bottom: 40rpx;
+  left: 32rpx;
+  right: 32rpx;
+  height: 88rpx;
+  line-height: 88rpx;
+  background: #00C853;
+  color: #ffffff;
+  font-size: 32rpx;
+  border-radius: 44rpx;
+  border: none;
+}
+
+.save-btn::after {
+  border: none;
+}

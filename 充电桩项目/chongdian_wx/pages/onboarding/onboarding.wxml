@@ -1,0 +1,99 @@
+<view class="container">
+  <swiper class="swiper" current="{{currentIndex}}" bindchange="onSwiperChange">
+    <!-- 第一页 -->
+    <swiper-item>
+      <view class="onboarding-page">
+        <view class="bubbles">
+          <view class="small-bubble" style="top: 100rpx; left: 80rpx;"></view>
+          <view class="small-bubble" style="top: 150rpx; right: 100rpx;"></view>
+          <view class="small-bubble" style="top: 400rpx; left: 30rpx;"></view>
+          <view class="small-bubble" style="bottom: 200rpx; right: 60rpx;"></view>
+        </view>
+        
+        <view class="green-circle main-circle">
+          <text class="icon-text">⚡</text>
+        </view>
+        
+        <view class="content">
+          <view class="title">轻松找到您身边的电动汽车充电站</view>
+          <view class="desc">只需打开您的地图应用，搜索"电动汽车充电站"，即可找到离您最近的充电站。</view>
+        </view>
+        
+        <view class="dots">
+          <view class="dot active"></view>
+          <view class="dot"></view>
+          <view class="dot"></view>
+        </view>
+        
+        <view class="buttons">
+          <view class="btn-skip" bindtap="skipOnboarding">跳过</view>
+          <view class="btn-primary" bindtap="nextPage">下一步</view>
+        </view>
+      </view>
+    </swiper-item>
+    
+    <!-- 第二页 -->
+    <swiper-item>
+      <view class="onboarding-page">
+        <view class="bubbles">
+          <view class="small-bubble" style="top: 100rpx; left: 80rpx;"></view>
+          <view class="small-bubble" style="top: 150rpx; right: 100rpx;"></view>
+          <view class="small-bubble" style="top: 400rpx; left: 30rpx;"></view>
+          <view class="small-bubble" style="bottom: 200rpx; right: 60rpx;"></view>
+        </view>
+        
+        <view class="green-circle main-circle">
+          <text class="icon-text">🕒</text>
+        </view>
+        
+        <view class="content">
+          <view class="title">快速简单的进行充电预约</view>
+          <view class="desc">您可以轻松地查找附近的充电站，选择合适的充电时间、支付充电费用等。</view>
+        </view>
+        
+        <view class="dots">
+          <view class="dot"></view>
+          <view class="dot active"></view>
+          <view class="dot"></view>
+        </view>
+        
+        <view class="buttons">
+          <view class="btn-skip" bindtap="skipOnboarding">跳过</view>
+          <view class="btn-primary" bindtap="nextPage">下一步</view>
+        </view>
+      </view>
+    </swiper-item>
+    
+    <!-- 第三页 -->
+    <swiper-item>
+      <view class="onboarding-page">
+        <view class="bubbles">
+          <view class="small-bubble" style="top: 100rpx; left: 80rpx;"></view>
+          <view class="small-bubble" style="top: 150rpx; right: 100rpx;"></view>
+          <view class="small-bubble" style="top: 400rpx; left: 30rpx;"></view>
+          <view class="small-bubble" style="bottom: 200rpx; right: 60rpx;"></view>
+        </view>
+        
+        <view class="green-circle main-circle">
+          <text class="icon-text">💳</text>
+        </view>
+        
+        <view class="content">
+          <view class="title">使用EV充电安全快速地进行支付</view>
+          <view class="desc">使用EV充电安全快速地进行支付不仅可以节省时间，还可以提高充电的便利性。</view>
+        </view>
+        
+        <view class="dots">
+          <view class="dot"></view>
+          <view class="dot"></view>
+          <view class="dot active"></view>
+        </view>
+        
+        <view class="buttons">
+          <view class="btn-skip" bindtap="skipOnboarding">跳过</view>
+          <view class="btn-primary" bindtap="startApp">下一步</view>
+        </view>
+      </view>
+    </swiper-item>
+  </swiper>
+</view> 

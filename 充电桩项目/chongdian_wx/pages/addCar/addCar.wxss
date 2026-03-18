@@ -1,0 +1,88 @@
+/* pages/addCar/addCar.wxss */
+.container {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  background-color: #FFFFFF;
+}
+
+.header {
+  padding: 60rpx 40rpx 20rpx;
+  box-sizing: border-box;
+}
+
+.back-button {
+  width: 60rpx;
+  height: 60rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.back-icon {
+  font-size: 40rpx;
+  font-weight: bold;
+  color: #333;
+}
+
+.content {
+  flex: 1;
+  padding: 0 40rpx;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.title {
+  font-size: 36rpx;
+  font-weight: bold;
+  color: #333;
+  text-align: center;
+  margin-bottom: 20rpx;
+}
+
+.description {
+  font-size: 28rpx;
+  color: #666;
+  text-align: center;
+  margin-bottom: 40rpx;
+}
+
+.illustration {
+  width: 700rpx;
+  height: 600rpx;
+  margin-bottom: 40rpx;
+}
+
+.button-group {
+  display: flex;
+  justify-content: space-around;
+  padding: 20rpx;
+}
+
+.skip-button {
+  height: 80rpx;
+  background-color: #e6f8ef;
+  color: #00c853;
+  font-size: 30rpx;
+  border-radius: 40rpx;
+  text-align: center;
+  line-height: 80rpx;
+}
+
+.add-button {
+  height: 80rpx;
+  background-color: #00C853;
+  color: #FFFFFF;
+  font-size: 30rpx;
+  border-radius: 40rpx;
+  text-align: center;
+  line-height: 80rpx;
+} 
+wx-button:not([size=mini]) {
+    margin-left: 10rpx;
+    margin-right: 10rpx;
+    width: 140px; /* Updated width */
+    margin-bottom: 40rpx;
+}
