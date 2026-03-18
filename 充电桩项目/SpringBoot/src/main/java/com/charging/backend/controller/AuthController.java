@@ -297,16 +297,6 @@ public class AuthController {
             child("collect", "SC/collect/index", "收藏记录"),
             child("searchrecord", "SC/searchrecord/index", "搜索记录")
         ));
-        routers.add(moduleRoute("breaks", "报障管理", "bug",
-            child("breaktype", "breaks/breaktype/index", "故障类型"),
-            child("breakdown", "breaks/breakdown/index", "故障单"),
-            child("question", "breaks/question/index", "常见问题"),
-            child("answer", "breaks/answer/index", "问题答案")
-        ));
-        routers.add(moduleRoute("staff", "人员管理", "peoples",
-            child("stafftype", "staff/stafftype/index", "人员类型"),
-            child("staff", "staff/staff/index", "维修人员")
-        ));
         return routers;
     }
 
@@ -355,4 +345,3 @@ public class AuthController {
         }
     }
 }
-

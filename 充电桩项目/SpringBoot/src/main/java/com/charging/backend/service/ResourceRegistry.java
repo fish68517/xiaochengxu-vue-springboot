@@ -13,11 +13,6 @@ public class ResourceRegistry {
     private final Map<String, String> routeToTable = new LinkedHashMap<>();
 
     public ResourceRegistry() {
-        register("breaks/answer", "answer");
-        register("breaks/breakdown", "breakdown");
-        register("breaks/breaktype", "breaktype");
-        register("breaks/question", "question");
-
         register("car/carbrand", "carbrand");
         register("car/carinfo", "carinfo");
         register("car/carmodel", "carmodel");
@@ -39,11 +34,6 @@ public class ResourceRegistry {
 
         register("sc/collect", "collect");
         register("sc/searchrecord", "searchrecord");
-
-        register("staff/staff", "staff");
-        register("staff/stafftype", "stafftype");
-        register("stafftype/stafftype", "stafftype");
-        register("mapper/stump", "stump");
     }
 
     public Optional<String> resolveTable(String module, String resource) {
@@ -63,4 +53,3 @@ public class ResourceRegistry {
         return (module + "/" + resource).toLowerCase(Locale.ROOT);
     }
 }
-

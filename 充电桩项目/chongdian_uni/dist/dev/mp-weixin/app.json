@@ -1,0 +1,20 @@
+{
+  "pages": [
+    "pages/login/index",
+    "pages/home/index"
+  ],
+  "window": {
+    "navigationBarTextStyle": "black",
+    "navigationBarBackgroundColor": "#ffffff",
+    "backgroundColor": "#f5f7fb"
+  },
+  "requiredPrivateInfos": [
+    "getLocation"
+  ],
+  "permission": {
+    "scope.userLocation": {
+      "desc": "用于展示附近充电站位置"
+    }
+  },
+  "usingComponents": {}
+}

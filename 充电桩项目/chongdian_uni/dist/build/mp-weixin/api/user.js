@@ -1,0 +1,1 @@
+"use strict";const e=require("../common/http/request.js");exports.fetchUserById=async function(t){return((await function(t={}){return e.get("member/userinfo/list",t)}({id:t,pageSize:1})).rows||[])[0]||null};

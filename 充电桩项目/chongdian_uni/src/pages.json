@@ -1,0 +1,45 @@
+{
+  "pages": [
+    {
+      "path": "pages/login/index",
+      "style": {
+        "navigationBarTitleText": "登录"
+      }
+    },
+    {
+      "path": "pages/home/index",
+      "style": {
+        "navigationBarTitleText": "首页"
+      }
+    },
+    {
+      "path": "pages/order-create/index",
+      "style": {
+        "navigationBarTitleText": "预约下单"
+      }
+    },
+    {
+      "path": "pages/order-confirm/index",
+      "style": {
+        "navigationBarTitleText": "预约确认"
+      }
+    },
+    {
+      "path": "pages/order-list/index",
+      "style": {
+        "navigationBarTitleText": "我的订单"
+      }
+    },
+    {
+      "path": "pages/order-detail/index",
+      "style": {
+        "navigationBarTitleText": "订单详情"
+      }
+    }
+  ],
+  "globalStyle": {
+    "navigationBarTextStyle": "black",
+    "navigationBarBackgroundColor": "#ffffff",
+    "backgroundColor": "#f5f7fb"
+  }
+}

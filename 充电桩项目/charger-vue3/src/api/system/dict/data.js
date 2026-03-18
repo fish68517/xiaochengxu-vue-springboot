@@ -21,7 +21,8 @@ export function getData(dictCode) {
 export function getDicts(dictType) {
   return request({
     url: '/system/dict/data/type/' + dictType,
-    method: 'get'
+    method: 'get',
+    silent404: true
   })
 }
 

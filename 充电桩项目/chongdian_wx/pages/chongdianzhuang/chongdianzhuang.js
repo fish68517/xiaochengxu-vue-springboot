@@ -394,8 +394,8 @@ Page({
       success: function (res) {
         wx.hideLoading();
         that.setData({
-          gradeLists: res.data.rows,
-          total: res.data.total // 总评论数
+          gradeLists: (res.data && (res.data.data || res.data.rows)) || [],
+          total: (res.data && (res.data.total || ((res.data.data || []).length))) || 0 // 总评论数
         });
       },
     });

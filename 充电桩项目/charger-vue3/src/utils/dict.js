@@ -14,8 +14,12 @@ export function useDict(...args) {
         res.value[dictType] = dicts;
       } else {
         getDicts(dictType).then(resp => {
-          res.value[dictType] = resp.data.map(p => ({ label: p.dictLabel, value: p.dictValue, elTagType: p.listClass, elTagClass: p.cssClass }))
+          const rawList = Array.isArray(resp?.data) ? resp.data : [];
+          res.value[dictType] = rawList.map(p => ({ label: p.dictLabel, value: p.dictValue, elTagType: p.listClass, elTagClass: p.cssClass }))
           useDictStore().setDict(dictType, res.value[dictType]);
+        }).catch(() => {
+          // 字典接口不存在时降级为空，避免页面报错中断
+          res.value[dictType] = [];
         })
       }
     })

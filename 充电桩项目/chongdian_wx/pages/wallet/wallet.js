@@ -282,7 +282,7 @@ onCloseRecharge() {
       },
       success: (res) => {
         wx.hideLoading();
-        if (res && res.code === 200) {
+        if (res && res.data && res.data.code === 200) {
           const newMoney=(Number(this.data.money)+amount).toFixed(2);
           this.setData({
             money: Number(newMoney),

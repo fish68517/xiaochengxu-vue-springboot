@@ -109,6 +109,13 @@ service.interceptors.response.use(res => {
   },
   error => {
     console.log('err' + error)
+    const status = error?.response?.status
+    const requestUrl = error?.config?.url || ''
+    // 后端精简后，部分历史接口可能返回404。此处静默处理，避免前端弹错干扰使用。
+    if (status === 404) {
+      console.warn(`[silent 404] ${requestUrl}`)
+      return Promise.reject(error)
+    }
     let { message } = error;
     if (message == "Network Error") {
       message = "后端接口连接异常";
