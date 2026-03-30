@@ -1,0 +1,25 @@
+{
+  "name": "recipe-user-mobile",
+  "appid": "",
+  "description": "uni-app user client for the recipe ordering system",
+  "versionName": "1.0.0",
+  "versionCode": "100",
+  "transformPx": false,
+  "vueVersion": "3",
+  "app-plus": {
+    "usingComponents": true
+  },
+  "h5": {
+    "title": "Recipe User Mobile",
+    "router": {
+      "base": "/"
+    }
+  },
+  "mp-weixin": {
+    "appid": "",
+    "setting": {
+      "urlCheck": false
+    },
+    "usingComponents": true
+  }
+}

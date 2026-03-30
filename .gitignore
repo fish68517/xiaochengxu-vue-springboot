@@ -1,0 +1,38 @@
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.idea/
+.vscode/
+*.iml
+
+# Logs
+*.log
+logs/
+
+# Java / Maven / SpringBoot
+target/
+SpringBoot/target/
+SpringBoot/logs/
+
+# Node / uni-app / Vite
+node_modules/
+dist/
+dist-ssr/
+unpackage/
+.hbuilderx/
+uniapp/node_modules/
+uniapp/dist/
+
+# Env / temp
+.env
+.env.*
+*.tmp
+*.temp
+
+# Runtime cache
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
