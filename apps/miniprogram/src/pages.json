@@ -1,0 +1,18 @@
+{
+  "pages": [
+    { "path": "pages/home/index", "style": { "navigationStyle": "custom" } },
+    { "path": "pages/mall/index", "style": { "navigationStyle": "custom" } },
+    { "path": "pages/product/detail", "style": { "navigationStyle": "custom" } },
+    { "path": "pages/lottery/detail", "style": { "navigationStyle": "custom" } },
+    { "path": "pages/lottery/result", "style": { "navigationStyle": "custom" } },
+    { "path": "pages/checkout/index", "style": { "navigationStyle": "custom" } },
+    { "path": "pages/cart/index", "style": { "navigationStyle": "custom" } },
+    { "path": "pages/profile/index", "style": { "navigationStyle": "custom" } }
+  ],
+  "globalStyle": {
+    "navigationBarTextStyle": "black",
+    "navigationBarTitleText": "萌宠生活商城",
+    "navigationBarBackgroundColor": "#FFF9F1",
+    "backgroundColor": "#FFF9F1"
+  }
+}

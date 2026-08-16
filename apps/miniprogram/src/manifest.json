@@ -1,0 +1,18 @@
+{
+  "name": "萌宠生活商城",
+  "appid": "__UNI__PETLIFEMALL",
+  "description": "萌宠交易商城、活动抽奖和我的萌宠服务",
+  "versionName": "0.1.0",
+  "versionCode": "100",
+  "transformPx": false,
+  "h5": {
+    "router": { "mode": "hash", "base": "/" },
+    "title": "萌宠生活商城"
+  },
+  "mp-weixin": {
+    "appid": "",
+    "setting": { "urlCheck": false },
+    "usingComponents": true
+  },
+  "vueVersion": "3"
+}
