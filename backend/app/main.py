@@ -6,12 +6,12 @@ from uuid import uuid4
 
 from fastapi import Depends, FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
-from sqlalchemy import select
+from sqlalchemy import select, text
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
-from app.core.config import get_settings
 from app.api.v1.admin import router as admin_router
+from app.core.config import get_settings
 from app.db.session import Base, SessionLocal, engine, get_db
 from app.models.entities import LotteryActivity, LotteryParticipant, Order, Product, User
 from app.schemas.api import (
@@ -89,7 +89,13 @@ def activity_to_out(activity: LotteryActivity, joined: bool) -> LotteryActivityO
 @app.get("/health")
 @app.get("/api/v1/health")
 def health() -> dict:
-    return {"status": "ok", "environment": settings.app_env, "database": "connected"}
+    with engine.connect() as connection:
+        connection.execute(text("SELECT 1"))
+    return {
+        "status": "ok",
+        "environment": settings.app_env,
+        "database": engine.dialect.name,
+    }
 
 
 @app.get("/api/v1/products", response_model=list[ProductOut])

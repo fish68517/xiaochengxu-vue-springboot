@@ -30,8 +30,7 @@ from app.schemas.admin import (
     ProductAdminUpdate,
     ShipmentUpdate,
 )
-from app.schemas.api import OrderOut, ProductOut
-
+from app.schemas.api import OrderOut
 
 router = APIRouter(tags=["管理后台"])
 settings = get_settings()
@@ -118,7 +117,9 @@ def dashboard(
 ) -> DashboardOut:
     recent_orders = list(db.scalars(select(Order).order_by(Order.id.desc()).limit(5)).all())
     paid_amount = db.scalar(
-        select(func.coalesce(func.sum(Order.total_amount), 0)).where(Order.status != "PENDING_PAYMENT")
+        select(func.coalesce(func.sum(Order.total_amount), 0)).where(
+            Order.status != "PENDING_PAYMENT"
+        )
     )
     return DashboardOut(
         product_count=db.scalar(select(func.count(Product.id))) or 0,
@@ -128,9 +129,7 @@ def dashboard(
         or 0,
         activity_count=db.scalar(select(func.count(LotteryActivity.id))) or 0,
         registering_activity_count=db.scalar(
-            select(func.count(LotteryActivity.id)).where(
-                LotteryActivity.status == "REGISTERING"
-            )
+            select(func.count(LotteryActivity.id)).where(LotteryActivity.status == "REGISTERING")
         )
         or 0,
         participant_count=db.scalar(select(func.count(LotteryParticipant.id))) or 0,
@@ -181,12 +180,34 @@ def update_product(
 ) -> ProductAdminOut:
     product = db.get(Product, product_id)
     if product is None:
-        raise HTTPException(status_code=404, detail={"code": "PRODUCT_NOT_FOUND", "message": "商品不存在"})
+        raise HTTPException(
+            status_code=404, detail={"code": "PRODUCT_NOT_FOUND", "message": "商品不存在"}
+        )
     values = payload.model_dump(exclude={"tags"})
     for key, value in values.items():
         setattr(product, key, value)
     product.tags = ",".join(payload.tags)
     write_audit(db, operator, "UPDATE", "PRODUCT", product.id, product.name)
+    db.commit()
+    db.refresh(product)
+    return product_out(product)
+
+
+@router.delete("/products/{product_id}", response_model=ProductAdminOut)
+def delete_product(
+    product_id: int,
+    operator: str = Depends(require_admin),
+    db: Session = Depends(get_db),
+) -> ProductAdminOut:
+    """Soft-delete a product so existing order references remain valid."""
+    product = db.get(Product, product_id)
+    if product is None:
+        raise HTTPException(
+            status_code=404,
+            detail={"code": "PRODUCT_NOT_FOUND", "message": "商品不存在"},
+        )
+    product.is_active = False
+    write_audit(db, operator, "DELETE", "PRODUCT", product.id, product.name)
     db.commit()
     db.refresh(product)
     return product_out(product)
@@ -207,9 +228,7 @@ def create_activity(
     operator: str = Depends(require_admin),
     db: Session = Depends(get_db),
 ) -> ActivityAdminOut:
-    if not (
-        payload.registration_start_at < payload.registration_end_at < payload.draw_at
-    ):
+    if not (payload.registration_start_at < payload.registration_end_at < payload.draw_at):
         raise HTTPException(
             status_code=422,
             detail={"code": "ACTIVITY_TIME_INVALID", "message": "报名和开奖时间顺序不正确"},
@@ -243,9 +262,13 @@ def update_activity(
 ) -> ActivityAdminOut:
     activity = db.get(LotteryActivity, activity_id)
     if activity is None:
-        raise HTTPException(status_code=404, detail={"code": "ACTIVITY_NOT_FOUND", "message": "活动不存在"})
+        raise HTTPException(
+            status_code=404, detail={"code": "ACTIVITY_NOT_FOUND", "message": "活动不存在"}
+        )
     if activity.status in {"DRAWING", "DRAWN", "CLOSED"}:
-        raise HTTPException(status_code=409, detail={"code": "ACTIVITY_LOCKED", "message": "已开奖活动不可修改"})
+        raise HTTPException(
+            status_code=409, detail={"code": "ACTIVITY_LOCKED", "message": "已开奖活动不可修改"}
+        )
     for key in (
         "title",
         "subtitle",
@@ -270,9 +293,14 @@ def publish_activity(
 ) -> ActivityAdminOut:
     activity = db.get(LotteryActivity, activity_id)
     if activity is None:
-        raise HTTPException(status_code=404, detail={"code": "ACTIVITY_NOT_FOUND", "message": "活动不存在"})
+        raise HTTPException(
+            status_code=404, detail={"code": "ACTIVITY_NOT_FOUND", "message": "活动不存在"}
+        )
     if activity.status not in {"DRAFT", "PUBLISHED"}:
-        raise HTTPException(status_code=409, detail={"code": "ACTIVITY_STATUS_INVALID", "message": "当前状态不可发布"})
+        raise HTTPException(
+            status_code=409,
+            detail={"code": "ACTIVITY_STATUS_INVALID", "message": "当前状态不可发布"},
+        )
     now = datetime.now()
     activity.status = "REGISTERING" if activity.registration_start_at <= now else "PUBLISHED"
     write_audit(db, operator, "PUBLISH", "LOTTERY_ACTIVITY", activity.id, activity.title)
@@ -313,11 +341,15 @@ def draw_activity(
 ) -> ActivityAdminOut:
     activity = db.get(LotteryActivity, activity_id)
     if activity is None:
-        raise HTTPException(status_code=404, detail={"code": "ACTIVITY_NOT_FOUND", "message": "活动不存在"})
+        raise HTTPException(
+            status_code=404, detail={"code": "ACTIVITY_NOT_FOUND", "message": "活动不存在"}
+        )
     if activity.status == "DRAWN":
         return activity_out(activity)
     if not force and datetime.now() < activity.draw_at:
-        raise HTTPException(status_code=409, detail={"code": "DRAW_TIME_NOT_REACHED", "message": "尚未到开奖时间"})
+        raise HTTPException(
+            status_code=409, detail={"code": "DRAW_TIME_NOT_REACHED", "message": "尚未到开奖时间"}
+        )
     participants = list(
         db.scalars(
             select(LotteryParticipant)
@@ -326,7 +358,9 @@ def draw_activity(
         ).all()
     )
     if not participants:
-        raise HTTPException(status_code=409, detail={"code": "NO_PARTICIPANTS", "message": "当前活动没有报名用户"})
+        raise HTTPException(
+            status_code=409, detail={"code": "NO_PARTICIPANTS", "message": "当前活动没有报名用户"}
+        )
     activity.status = "DRAWING"
     prizes = json.loads(activity.prizes_json)
     remaining = participants.copy()
@@ -373,14 +407,20 @@ def ship_order(
 ) -> Order:
     order = db.get(Order, order_id)
     if order is None:
-        raise HTTPException(status_code=404, detail={"code": "ORDER_NOT_FOUND", "message": "订单不存在"})
+        raise HTTPException(
+            status_code=404, detail={"code": "ORDER_NOT_FOUND", "message": "订单不存在"}
+        )
     if order.status not in {"PAID", "SHIPPED"}:
-        raise HTTPException(status_code=409, detail={"code": "ORDER_NOT_PAID", "message": "只有已支付订单可以发货"})
+        raise HTTPException(
+            status_code=409, detail={"code": "ORDER_NOT_PAID", "message": "只有已支付订单可以发货"}
+        )
     order.shipping_company = payload.shipping_company
     order.tracking_no = payload.tracking_no
     order.shipped_at = datetime.now()
     order.status = "SHIPPED"
-    write_audit(db, operator, "SHIP", "ORDER", order.id, f"{payload.shipping_company}:{payload.tracking_no}")
+    write_audit(
+        db, operator, "SHIP", "ORDER", order.id, f"{payload.shipping_company}:{payload.tracking_no}"
+    )
     db.commit()
     db.refresh(order)
     return order
