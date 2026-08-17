@@ -1,0 +1,15 @@
+{
+  "name": "加装电梯后期管理",
+  "appid": "__UNI__ELEVATOR_LOCAL",
+  "description": "业主与维修师傅共用的电梯后期管理小程序",
+  "versionName": "0.1.0",
+  "versionCode": "100",
+  "transformPx": false,
+  "h5": { "router": { "mode": "hash" }, "devServer": { "port": 5181 } },
+  "mp-weixin": {
+    "appid": "touristappid",
+    "setting": { "urlCheck": false, "es6": true, "postcss": true, "minified": true },
+    "usingComponents": true
+  }
+}
+

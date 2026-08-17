@@ -1,0 +1,41 @@
+Local-First development 版本已完成并保持运行，我已用浏览器实际打开并验证 MySQL 数据加载。
+
+可直接查看：
+
+- [业主/维修师傅端](http://127.0.0.1:5181/)
+- [管理员后台](http://127.0.0.1:5180/)
+- [FastAPI 接口文档](http://127.0.0.1:8010/docs)
+
+测试身份：
+
+- `owner_101`：101室，账单 ¥388.00
+- `owner_102`：102室，账单 ¥428.00
+- 个人中心可切换到 `technician_01` 维修师傅端
+- 管理后台身份为 `admin_01`
+
+已实现并验证：
+
+- uni-app 业主端、维修师傅端及微信小程序构建。
+- Vue 3 + Element Plus 管理后台。
+- FastAPI + MySQL 8.0.36。
+- Alembic 数据库迁移和初始化数据。
+- 按户不同收费金额及费用明细。
+- CSV/XLSX 导入、预览、错误行校验和事务入库。
+- Mock 支付成功、取消、失败及重复请求幂等。
+- 缴费记录和收据申请。
+- 普通报修、师傅接单、维修完成状态闭环。
+- 楼栋维保数据权限和跨房屋账单 403 拒绝。
+- LocalStorage 文件接口和 Mock Notification Outbox。
+- development、staging、production 三环境配置。
+- 管理后台、H5、mp-weixin 均构建成功，浏览器控制台无报错。
+
+主要说明文件：
+
+- [README.md](E:\bishe27\小程序\电梯维修\README.md)
+- [DEVELOPMENT.md](E:\bishe27\小程序\电梯维修\DEVELOPMENT.md)
+- [微信小程序首页](E:\bishe27\小程序\电梯维修\miniprogram\src\pages\home\index.vue)
+- [管理员后台](E:\bishe27\小程序\电梯维修\admin-web\src\App.vue)
+- [FastAPI 服务](E:\bishe27\小程序\电梯维修\backend\app\main.py)
+- [数据库迁移](E:\bishe27\小程序\电梯维修\backend\alembic\versions\508aac2de30d_initial_elevator_service_schema.py)
+
+当前端口为 `5181 / 5180 / 8010`，三个服务均在运行。正式微信支付、正式订阅消息、COS 和生产域名尚未接入，这是 Local-First 阶段的预期状态。

@@ -1,0 +1,8 @@
+<script setup lang="ts">
+import { ref } from 'vue';import { onShow } from '@dcloudio/uni-app';import { api } from '../../api/http'
+const items=ref<any[]>([]);onShow(async()=>{try{items.value=await api.renovations()}catch{}})
+const statusText=(s:string)=>({DEPOSIT_UNPAID:'未交押金',DEPOSIT_PAID:'已交押金',COMMITMENT_SIGNED:'已签承诺书',COMPLETED:'已办结'} as any)[s]||s
+</script>
+<template><view class="page renovation-page"><view class="notice"><view>📣 温馨提示</view><text>1. 装修需缴纳电梯装修押金 2000 元。</text><text>2. 线上仅登记报备，押金与承诺书需线下办理。</text><text>3. 办理完成后方可进场施工。</text></view><button class="primary-btn" @click="uni.showModal({title:'登记报备',content:'请携带身份证明、装修方案等资料前往管理公司线下办理押金和承诺书。',showCancel:false})">我要登记</button><view class="section-title"><text>我的装修记录</text><text>{{ items.length }} 条</text></view><view v-for="item in items" :key="item.id" class="record card"><view><strong>{{ item.plan }}</strong><text>{{ item.createdAt.replace('T',' ').slice(0,16) }}</text></view><text class="status OVERDUE">{{ statusText(item.status) }}</text></view><view v-if="!items.length" class="empty">暂无装修登记记录</view></view></template>
+<style lang="scss" scoped>.renovation-page{max-width:920rpx;margin:auto}.notice{background:linear-gradient(135deg,#fff1f1,#ffe7e7);border:1rpx solid #ffd2d2;border-radius:22rpx;padding:27rpx;color:#ed3535;line-height:1.8}.notice view{font-size:30rpx;font-weight:900;margin-bottom:9rpx}.notice text{display:block;font-size:23rpx;font-weight:600}.primary-btn{margin-top:22rpx}.record{padding:24rpx;display:flex;align-items:center;justify-content:space-between}.record strong,.record view>text{display:block}.record view>text{font-size:21rpx;color:#8c96a7;margin-top:9rpx}</style>
+

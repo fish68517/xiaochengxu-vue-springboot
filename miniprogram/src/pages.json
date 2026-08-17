@@ -1,0 +1,31 @@
+{
+  "pages": [
+    { "path": "pages/home/index", "style": { "navigationBarTitleText": "首页", "navigationStyle": "custom" } },
+    { "path": "pages/payment/list", "style": { "navigationBarTitleText": "缴费服务" } },
+    { "path": "pages/payment/detail", "style": { "navigationBarTitleText": "账单详情" } },
+    { "path": "pages/repair/index", "style": { "navigationBarTitleText": "报修服务" } },
+    { "path": "pages/maintenance/index", "style": { "navigationBarTitleText": "维保记录" } },
+    { "path": "pages/renovation/index", "style": { "navigationBarTitleText": "装修登记" } },
+    { "path": "pages/notice/index", "style": { "navigationBarTitleText": "公告通知" } },
+    { "path": "pages/profile/index", "style": { "navigationBarTitleText": "个人中心", "navigationStyle": "custom" } },
+    { "path": "pages/technician/index", "style": { "navigationBarTitleText": "师傅工作台", "navigationStyle": "custom" } }
+  ],
+  "tabBar": {
+    "color": "#7d8799",
+    "selectedColor": "#1768ed",
+    "backgroundColor": "#ffffff",
+    "borderStyle": "white",
+    "list": [
+      { "pagePath": "pages/home/index", "text": "首页" },
+      { "pagePath": "pages/notice/index", "text": "消息" },
+      { "pagePath": "pages/profile/index", "text": "我的" }
+    ]
+  },
+  "globalStyle": {
+    "navigationBarTextStyle": "black",
+    "navigationBarTitleText": "电梯云管家",
+    "navigationBarBackgroundColor": "#ffffff",
+    "backgroundColor": "#f5f7fa"
+  }
+}
+

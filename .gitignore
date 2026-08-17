@@ -1,0 +1,25 @@
+node_modules/
+dist/
+.env
+.env.local
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+backend/data/*.db
+backend/data/*.db-*
+.runtime/
+# Local development
+.env
+.env.*.local
+!.env.example
+.venv/
+__pycache__/
+*.py[cod]
+node_modules/
+dist/
+unpackage/
+backend/data/uploads/*
+!backend/data/uploads/.gitkeep
+.runtime/

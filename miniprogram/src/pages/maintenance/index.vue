@@ -1,0 +1,12 @@
+<script setup lang="ts">
+import { ref } from 'vue'
+import { onShow } from '@dcloudio/uni-app'
+import { api } from '../../api/http'
+import { useSessionStore } from '../../stores/session'
+const items=ref<any[]>([]);const store=useSessionStore()
+onShow(async()=>{if(!store.session)await store.load();try{items.value=await api.maintenance()}catch{}})
+function open(item:any){if(!item.pdfUrl)return uni.showModal({title:'本地 PDF 占位',content:'该演示记录尚未上传真实 PDF。管理员或维修师傅上传后，将通过 LocalStorage Adapter 打开。',showCancel:false})}
+</script>
+<template><view class="page maintenance-page"><view class="building card"><view class="icon">▣</view><view><text>当前楼栋</text><strong>{{ store.session?.house?.displayName?.split(' ')[0] }}</strong></view><text class="secure">权限已隔离</text></view><view class="section-title"><text>月度维保档案</text><text>{{ items.length }} 份</text></view><view v-for="item in items" :key="item.id" class="record card"><view class="pdf">PDF</view><view class="info"><strong>{{ item.title }}</strong><text>{{ item.elevatorName }} · {{ item.maintenanceDate }}</text><text>上传人：{{ item.uploaderName }}　{{ (item.fileSize/1024/1024).toFixed(1) }}MB</text></view><button class="ghost-btn" @click="open(item)">查看</button></view><view v-if="!items.length" class="empty">当前楼栋暂无维保记录</view><view class="permission-tip">🔒 服务端按当前业主绑定的 buildingId 过滤，无法查看其他楼栋档案。</view></view></template>
+<style lang="scss" scoped>.maintenance-page{max-width:920rpx;margin:auto}.building{display:flex;align-items:center;padding:24rpx;gap:18rpx}.building .icon{width:70rpx;height:70rpx;border-radius:18rpx;background:#e8f8ef;color:#13aa69;font-size:35rpx;display:grid;place-items:center}.building view:nth-child(2){flex:1}.building text,.building strong{display:block}.building text{font-size:21rpx;color:#8792a5}.building strong{font-size:28rpx;margin-top:5rpx}.secure{font-size:20rpx!important;color:#13a663!important;background:#e9f9f0;padding:7rpx 12rpx;border-radius:16rpx}.record{display:flex;align-items:center;padding:23rpx;margin-bottom:16rpx;gap:18rpx}.pdf{width:62rpx;height:72rpx;border-radius:10rpx;background:#f04444;color:white;font-size:19rpx;font-weight:800;display:grid;place-items:center}.info{flex:1}.info strong,.info text{display:block}.info strong{font-size:26rpx}.info text{font-size:20rpx;color:#8994a7;margin-top:8rpx}.permission-tip{font-size:21rpx;color:#55739f;background:#edf5ff;border-radius:15rpx;padding:18rpx;line-height:1.6;margin-top:20rpx}</style>
+
