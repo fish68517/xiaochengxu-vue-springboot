@@ -3,6 +3,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 BASE_DIR = Path(__file__).resolve().parents[1]
+ENV_FILES = (BASE_DIR / ".env",) if (BASE_DIR / ".env").exists() else (BASE_DIR / ".env.development",)
 
 
 class Settings(BaseSettings):
@@ -21,7 +22,7 @@ class Settings(BaseSettings):
     cors_origins: str = "http://127.0.0.1:5180,http://127.0.0.1:5181"
 
     model_config = SettingsConfigDict(
-        env_file=(BASE_DIR / ".env", BASE_DIR / ".env.development"),
+        env_file=ENV_FILES,
         env_file_encoding="utf-8",
         extra="ignore",
     )
@@ -32,4 +33,3 @@ class Settings(BaseSettings):
 
 
 settings = Settings()
-
