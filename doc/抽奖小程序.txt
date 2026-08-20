@@ -1,0 +1,18 @@
+腾讯云登录：
+   邮箱登录：dalu456@qq.com   密码： dalu456@
+   联系人：
+        卢奇17762400007
+        421022199207060018   
+  企业法人：
+    杨夕宇
+
+小程序登录：
+   管理员：卢奇微信扫码
+   开发者： xiny 微信扫码
+
+轻量应用服务器登录  124.222.131.30
+https://orcaterm.cloud.tencent.com/terminal?type=lighthouse&instanceId=lhins-otscien8&region=ap-shanghai&from=lh_console_login_btn
+
+远程ssh 连接服务器
+端口：3389
+密码验证：用户名 Admin 密码：dalu456
