@@ -12,7 +12,6 @@ Local-First 单仓库，包含：
 - 管理后台：`http://127.0.0.1:5180`
 - API 与 Swagger：`http://127.0.0.1:8010/docs`
 
-本地使用 `AUTH_MODE=mock`、`PAYMENT_MODE=mock`、`STORAGE_BACKEND=local`、`NOTIFICATION_MODE=mock`。小程序同时支持编译到 `mp-weixin`，H5 仅用于本地快速验收。
+本地使用数据库账号 + JWT 认证，业务数据通过 FastAPI 读写 MySQL；缴费采用管理员人工确认，通知事件写入 MySQL Outbox，上传文件保存在本地目录。小程序同时支持编译到 `mp-weixin`，H5 仅用于本地快速验收。
 
 详细运行与测试账号见 `DEVELOPMENT.md`。
-

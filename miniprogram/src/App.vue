@@ -2,7 +2,12 @@
 import { onLaunch } from '@dcloudio/uni-app'
 import { useSessionStore } from './stores/session'
 
-onLaunch(() => useSessionStore().load())
+onLaunch(async () => {
+  const store = useSessionStore()
+  if (uni.getStorageSync('access_token')) {
+    try { await store.load() } catch {}
+  }
+})
 </script>
 
 <style lang="scss">
@@ -21,4 +26,3 @@ button::after { border:0; }
 .status { font-size:22rpx;font-weight:700;padding:7rpx 15rpx;border-radius:20rpx; }.status.PENDING{color:#f04444;background:#fff0f0}.status.OVERDUE{color:#ed3f3f;background:#ffe9e9}.status.PAID,.status.COMPLETED{color:#16a661;background:#e9f9f0}.status.REPAIRING{color:#f28a16;background:#fff5e9}
 .safe-bottom { padding-bottom:calc(30rpx + env(safe-area-inset-bottom)); }
 </style>
-

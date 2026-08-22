@@ -1,5 +1,6 @@
 {
   "pages": [
+    { "path": "pages/login/index", "style": { "navigationBarTitleText": "账号登录", "navigationStyle": "custom" } },
     { "path": "pages/home/index", "style": { "navigationBarTitleText": "首页", "navigationStyle": "custom" } },
     { "path": "pages/payment/list", "style": { "navigationBarTitleText": "缴费服务" } },
     { "path": "pages/payment/detail", "style": { "navigationBarTitleText": "账单详情" } },
@@ -28,4 +29,3 @@
     "backgroundColor": "#f5f7fa"
   }
 }
-

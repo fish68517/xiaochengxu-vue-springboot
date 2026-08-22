@@ -1,0 +1,11 @@
+
+> elevator-admin-web@0.1.0 dev
+> vite --host 127.0.0.1 --port 5180
+
+
+  VITE v7.3.6  ready in 815 ms
+
+  ➜  Local:   http://127.0.0.1:5180/
+  ➜  press h + enter to show help
+下午2:36:41 [vite] changed tsconfig file detected: E:/bishe27/小程序/电梯维修/admin-web/tsconfig.json - Clearing cache and forcing full-reload to ensure TypeScript is compiled with updated config values.
+下午2:36:41 [vite] (client) hmr update /src/App.vue

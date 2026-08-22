@@ -7,6 +7,7 @@ from .models import (
     Bill, BillItem, Building, FeeItem, House, MaintenanceRecord, Notice,
     RepairOrder, Renovation, User,
 )
+from .security import hash_password
 
 
 FEE_ITEMS = [
@@ -66,10 +67,10 @@ def seed() -> None:
         db.add_all([h101, h102, h201])
         db.flush()
 
-        owner101 = User(username="owner_101", display_name="张先生", role="OWNER", phone="13800008888", building_id=b1.id, house_id=h101.id)
-        owner102 = User(username="owner_102", display_name="陈先生", role="OWNER", phone="13800006666", building_id=b1.id, house_id=h102.id)
-        tech = User(username="technician_01", display_name="李师傅", role="TECHNICIAN", phone="13800008886")
-        admin = User(username="admin_01", display_name="系统管理员", role="ADMIN", phone="13800000001")
+        owner101 = User(username="owner_101", display_name="张先生", role="OWNER", phone="13800008888", building_id=b1.id, house_id=h101.id, password_hash=hash_password("Owner@123456"))
+        owner102 = User(username="owner_102", display_name="陈先生", role="OWNER", phone="13800006666", building_id=b1.id, house_id=h102.id, password_hash=hash_password("Owner@123456"))
+        tech = User(username="technician_01", display_name="李师傅", role="TECHNICIAN", phone="13800008886", password_hash=hash_password("Tech@123456"))
+        admin = User(username="admin_01", display_name="系统管理员", role="ADMIN", phone="13800000001", password_hash=hash_password("Admin@123456"))
         db.add_all([owner101, owner102, tech, admin])
 
         for index, (code, name, default) in enumerate(FEE_ITEMS):
@@ -112,4 +113,3 @@ def seed() -> None:
 
 if __name__ == "__main__":
     seed()
-

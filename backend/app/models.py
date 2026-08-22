@@ -16,6 +16,11 @@ class User(Base):
     phone: Mapped[str] = mapped_column(String(24), default="")
     building_id: Mapped[int | None] = mapped_column(ForeignKey("buildings.id"), nullable=True)
     house_id: Mapped[int | None] = mapped_column(ForeignKey("houses.id"), nullable=True)
+    password_hash: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    wechat_openid: Mapped[str | None] = mapped_column(String(128), nullable=True, unique=True)
+    enabled: Mapped[bool] = mapped_column(Boolean, default=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
 
 class Building(Base):
@@ -84,7 +89,7 @@ class Payment(Base):
     bill_id: Mapped[int] = mapped_column(ForeignKey("bills.id"), index=True)
     amount_fen: Mapped[int] = mapped_column(Integer)
     status: Mapped[str] = mapped_column(String(20), default="CREATED")
-    provider: Mapped[str] = mapped_column(String(20), default="MOCK")
+    provider: Mapped[str] = mapped_column(String(20), default="MANUAL")
     provider_transaction_id: Mapped[str | None] = mapped_column(String(100), nullable=True, unique=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
     paid_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
@@ -165,7 +170,7 @@ class NotificationOutbox(Base):
     event_type: Mapped[str] = mapped_column(String(64), index=True)
     recipient: Mapped[str] = mapped_column(String(64))
     payload: Mapped[dict] = mapped_column(JSON)
-    status: Mapped[str] = mapped_column(String(20), default="MOCKED")
+    status: Mapped[str] = mapped_column(String(20), default="PENDING")
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
 
 
@@ -177,4 +182,3 @@ class ImportBatch(Base):
     status: Mapped[str] = mapped_column(String(20), default="PREVIEWED")
     rows_json: Mapped[list] = mapped_column(JSON)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
-

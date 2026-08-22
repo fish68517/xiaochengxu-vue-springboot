@@ -109,6 +109,7 @@ if (-not $Service) {
 
     $RootPassword = Get-RandomAlphaNumeric 36
     $AppPassword = Get-RandomAlphaNumeric 36
+    $JwtSecret = Get-RandomAlphaNumeric 64
     $Sql = @"
 ALTER USER 'root'@'localhost' IDENTIFIED BY '$RootPassword';
 CREATE DATABASE IF NOT EXISTS elevator_service DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci;
@@ -130,15 +131,16 @@ APP_ENV=staging
 API_HOST=127.0.0.1
 API_PORT=8010
 DATABASE_URL=mysql+pymysql://elevator_app:$AppPassword@127.0.0.1:3306/elevator_service?charset=utf8mb4
-AUTH_MODE=mock
-PAYMENT_MODE=mock
+AUTH_MODE=database
+PAYMENT_MODE=manual
 STORAGE_BACKEND=local
-NOTIFICATION_MODE=mock
-COMPANY_H5_MODE=mock
+NOTIFICATION_MODE=outbox
 LOCAL_UPLOAD_DIR=$UploadPath
 SCHEDULER_ENABLED=true
 LOG_LEVEL=INFO
 CORS_ORIGINS=http://127.0.0.1
+JWT_SECRET=$JwtSecret
+JWT_EXPIRE_MINUTES=720
 "@
     Set-Content -LiteralPath $SharedEnv -Value $SharedEnvContent -Encoding UTF8
     & icacls.exe $SharedEnv /inheritance:r /grant:r 'SYSTEM:(F)' 'Administrators:(F)' | Out-Null

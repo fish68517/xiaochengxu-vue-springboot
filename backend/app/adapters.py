@@ -24,11 +24,10 @@ class LocalStorageService:
         return {"fileKey": relative.as_posix(), "url": f"/uploads/{relative.as_posix()}", "size": len(content)}
 
 
-class MockNotificationService:
+class DatabaseOutboxService:
     def send(self, db: Session, event_type: str, recipient: str, payload: dict) -> None:
         db.add(NotificationOutbox(event_type=event_type, recipient=recipient, payload=payload))
 
 
 storage_service = LocalStorageService()
-notification_service = MockNotificationService()
-
+notification_service = DatabaseOutboxService()

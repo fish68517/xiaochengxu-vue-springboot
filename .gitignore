@@ -24,4 +24,5 @@ dist/
 unpackage/
 backend/data/uploads/*
 !backend/data/uploads/.gitkeep
+backend/data/backups/
 .runtime/
