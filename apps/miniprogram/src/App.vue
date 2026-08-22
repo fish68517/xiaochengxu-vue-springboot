@@ -1,8 +1,10 @@
 <script setup lang="ts">
 import { onLaunch } from '@dcloudio/uni-app'
+import { useAuthStore } from '@/stores/auth'
 
-onLaunch(() => {
+onLaunch(async () => {
   console.info('萌宠生活商城 development 环境启动')
+  await useAuthStore().restoreSession()
 })
 </script>
 

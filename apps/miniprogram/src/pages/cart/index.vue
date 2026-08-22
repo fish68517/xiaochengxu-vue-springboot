@@ -4,20 +4,25 @@ import AppTabBar from '@/components/AppTabBar.vue'
 import PetArtwork from '@/components/PetArtwork.vue'
 import { useCartStore } from '@/stores/cart'
 import { money } from '@/utils/format'
+import { onShow } from '@dcloudio/uni-app'
 
 const cart = useCartStore()
+onShow(() => { cart.load().catch((error) => uni.showToast({ title: error instanceof Error ? error.message : '购物车加载失败', icon: 'none' })) })
 const checkout = () => {
   if (!cart.items.length) return uni.showToast({ title: '购物车还是空的', icon: 'none' })
-  uni.navigateTo({ url: `/pages/checkout/index?productId=${cart.items[0].product.id}` })
+  uni.navigateTo({ url: `/pages/checkout/index?cartItemIds=${cart.items.map((item) => item.id).join(',')}` })
 }
 const openMall = () => uni.reLaunch({ url: '/pages/mall/index' })
+async function change(id: number, quantity: number) { try { await cart.update(id, quantity) } catch (error) { uni.showToast({ title: error instanceof Error ? error.message : '更新失败', icon: 'none' }) } }
+async function remove(id: number) { try { await cart.remove(id) } catch (error) { uni.showToast({ title: error instanceof Error ? error.message : '删除失败', icon: 'none' }) } }
 </script>
 
 <template>
   <view class="app-shell cart-page">
     <AppHeader title="购物车" />
-    <view v-if="!cart.items.length" class="empty-cart"><text>🛒</text><b>购物车还是空的</b><small>去商城挑选喜欢的萌宠好物吧</small><button class="primary-button" @click="openMall">去逛逛</button></view>
-    <view v-else class="page-body"><view v-for="item in cart.items" :key="item.product.id" class="cart-item app-card"><PetArtwork :type="item.product.image_key" size="sm" /><view><b>{{ item.product.name }}</b><text>{{ item.product.subtitle }}</text><text class="price">¥{{ money(item.product.price) }}</text></view><view class="quantity">x{{ item.quantity }}<button @click="cart.remove(item.product.id)">删除</button></view></view><view class="cart-summary app-card"><text>共 {{ cart.count }} 件</text><text>合计：<b class="price">¥{{ money(cart.total) }}</b></text><button class="primary-button" @click="checkout">去结算</button></view></view>
+    <view v-if="cart.loading" class="loading-block">正在读取 MySQL 购物车...</view>
+    <view v-else-if="!cart.items.length" class="empty-cart"><text>🛒</text><b>购物车还是空的</b><small>去商城挑选喜欢的萌宠好物吧</small><button class="primary-button" @click="openMall">去逛逛</button></view>
+    <view v-else class="page-body"><view v-for="item in cart.items" :key="item.id" class="cart-item app-card"><PetArtwork :type="item.product.image_key" size="sm" /><view><b>{{ item.product.name }}</b><text>{{ item.product.subtitle }}</text><text class="price">¥{{ money(item.product.price) }}</text></view><view class="quantity"><view><button @click="change(item.id,item.quantity-1)">−</button><text>{{ item.quantity }}</text><button @click="change(item.id,item.quantity+1)">＋</button></view><button @click="remove(item.id)">删除</button></view></view><view class="cart-summary app-card"><text>共 {{ cart.count }} 件</text><text>合计：<b class="price">¥{{ money(cart.total) }}</b></text><button class="primary-button" @click="checkout">去结算</button></view></view>
     <AppTabBar current="cart" />
   </view>
 </template>

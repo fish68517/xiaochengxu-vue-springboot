@@ -9,6 +9,8 @@ Requires-Dist: sqlalchemy==2.0.43
 Requires-Dist: alembic==1.16.5
 Requires-Dist: pydantic-settings==2.10.1
 Requires-Dist: pymysql==1.1.2
+Requires-Dist: PyJWT==2.10.1
+Requires-Dist: pwdlib[argon2]==0.2.1
 Provides-Extra: dev
 Requires-Dist: httpx==0.28.1; extra == "dev"
 Requires-Dist: pytest==8.4.1; extra == "dev"

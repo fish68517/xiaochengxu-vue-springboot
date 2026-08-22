@@ -4,33 +4,37 @@ import { onLoad } from '@dcloudio/uni-app'
 import AppHeader from '@/components/AppHeader.vue'
 import AppTabBar from '@/components/AppTabBar.vue'
 import ProductCard from '@/components/ProductCard.vue'
-import { getProducts } from '@/api/product'
-import type { Product } from '@/models'
+import { getCategories, getProducts } from '@/api/product'
+import type { Category, Product } from '@/models'
 
-const categories = ['爬宠', '用品', '套餐']
+const categories = ref<Category[]>([])
 const filters = ['综合', '销量', '价格', '新品']
-const activeCategory = ref('爬宠')
+const activeCategory = ref('全部')
 const activeFilter = ref('综合')
 const keyword = ref('')
 const products = ref<Product[]>([])
 const loading = ref(true)
 const error = ref('')
 
-onLoad((options) => { if (options?.category && categories.includes(options.category)) activeCategory.value = options.category })
+let requestedCategory = '全部'
+onLoad((options) => { requestedCategory = options?.category || '全部' })
 
 async function load() {
   loading.value = true; error.value = ''
   try {
-    let data = await getProducts(activeCategory.value, keyword.value)
-    if (activeFilter.value === '销量') data = [...data].sort((a, b) => b.sales - a.sales)
-    if (activeFilter.value === '价格') data = [...data].sort((a, b) => Number(a.price) - Number(b.price))
-    if (activeFilter.value === '新品') data = data.filter((item) => item.badge === '新品')
-    products.value = data
+    const sortMap: Record<string, string> = { 综合: 'default', 销量: 'sales', 价格: 'price', 新品: 'new' }
+    products.value = await getProducts(activeCategory.value, keyword.value, sortMap[activeFilter.value])
   } catch (err) { error.value = err instanceof Error ? err.message : '加载失败' }
   finally { loading.value = false }
 }
 
-onMounted(load)
+onMounted(async () => {
+  try {
+    categories.value = await getCategories()
+    if (requestedCategory === '全部' || categories.value.some((item) => item.name === requestedCategory)) activeCategory.value = requestedCategory
+  } catch (err) { error.value = err instanceof Error ? err.message : '分类加载失败' }
+  await load()
+})
 const setCategory = (value: string) => { activeCategory.value = value; load() }
 const setFilter = (value: string) => { activeFilter.value = value; load() }
 </script>
@@ -40,7 +44,7 @@ const setFilter = (value: string) => { activeFilter.value = value; load() }
     <AppHeader title="萌宠生活商城" />
     <view class="page-body controls">
       <view class="search"><text>⌕</text><input v-model="keyword" placeholder="搜索商品，如“巴西龟”" confirm-type="search" @confirm="load" /><button @click="load">搜索</button></view>
-      <view class="categories"><button v-for="item in categories" :key="item" :class="{ active: activeCategory === item }" @click="setCategory(item)">{{ item }}</button></view>
+      <view class="categories"><button v-for="item in [{ id: 0, name: '全部' }, ...categories]" :key="item.id" :class="{ active: activeCategory === item.name }" @click="setCategory(item.name)">{{ item.name }}</button></view>
       <view class="filters"><button v-for="item in filters" :key="item" :class="{ active: activeFilter === item }" @click="setFilter(item)">{{ item }}</button></view>
     </view>
     <view v-if="loading" class="loading-block">正在加载商品...</view>

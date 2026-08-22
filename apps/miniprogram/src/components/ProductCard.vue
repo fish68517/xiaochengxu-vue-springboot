@@ -7,7 +7,10 @@ import PetArtwork from './PetArtwork.vue'
 const props = defineProps<{ product: Product }>()
 const cart = useCartStore()
 const open = () => uni.navigateTo({ url: `/pages/product/detail?id=${props.product.id}` })
-const add = () => { cart.add(props.product); uni.showToast({ title: '已加入购物车', icon: 'success' }) }
+const add = async () => {
+  try { await cart.add(props.product.id); uni.showToast({ title: '已加入购物车', icon: 'success' }) }
+  catch (error) { uni.showToast({ title: error instanceof Error ? error.message : '加入失败', icon: 'none' }) }
+}
 </script>
 
 <template>

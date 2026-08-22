@@ -3,7 +3,7 @@ import { ref } from 'vue'
 import { onLoad } from '@dcloudio/uni-app'
 import AppHeader from '@/components/AppHeader.vue'
 import PetArtwork from '@/components/PetArtwork.vue'
-import { getProduct } from '@/api/product'
+import { addFavorite, getFavorite, getProduct, removeFavorite } from '@/api/product'
 import { useCartStore } from '@/stores/cart'
 import { money } from '@/utils/format'
 import type { Product } from '@/models'
@@ -15,13 +15,30 @@ const favorite = ref(false)
 const cart = useCartStore()
 
 onLoad(async (options) => {
-  try { product.value = await getProduct(Number(options?.id || 1)) }
+  try {
+    const id = Number(options?.id)
+    if (!id) throw new Error('缺少商品 ID')
+    ;[product.value, favorite.value] = await Promise.all([getProduct(id), getFavorite(id).then((result) => result.favorite)])
+  }
   catch (err) { error.value = err instanceof Error ? err.message : '商品加载失败' }
   finally { loading.value = false }
 })
 
-const addCart = () => { if (product.value) { cart.add(product.value); uni.showToast({ title: '已加入购物车', icon: 'success' }) } }
-const buyNow = () => { if (product.value) uni.navigateTo({ url: `/pages/checkout/index?productId=${product.value.id}` }) }
+async function addCart() {
+  if (!product.value) return
+  try { await cart.add(product.value.id); uni.showToast({ title: '已加入购物车', icon: 'success' }) }
+  catch (err) { uni.showToast({ title: err instanceof Error ? err.message : '加入失败', icon: 'none' }) }
+}
+async function buyNow() {
+  if (!product.value) return
+  try { const item = await cart.add(product.value.id); uni.navigateTo({ url: `/pages/checkout/index?cartItemIds=${item.id}` }) }
+  catch (err) { uni.showToast({ title: err instanceof Error ? err.message : '操作失败', icon: 'none' }) }
+}
+async function toggleFavorite() {
+  if (!product.value) return
+  try { favorite.value = (favorite.value ? await removeFavorite(product.value.id) : await addFavorite(product.value.id)).favorite }
+  catch (err) { uni.showToast({ title: err instanceof Error ? err.message : '操作失败', icon: 'none' }) }
+}
 </script>
 
 <template>
@@ -32,7 +49,7 @@ const buyNow = () => { if (product.value) uni.navigateTo({ url: `/pages/checkout
     <template v-else>
       <view class="media"><PetArtwork :type="product.image_key" size="lg" /><text class="counter">1/5</text><view class="health">🛡️ 健康保证<small>专业检测 放心选购</small></view><view class="video">▣ 视频</view></view>
       <view class="info-panel">
-        <view class="title-row"><text class="name">{{ product.name }}</text><text class="favorite" :class="{ on: favorite }" @click="favorite = !favorite">☆ {{ favorite ? '已收藏' : '收藏' }}</text></view>
+        <view class="title-row"><text class="name">{{ product.name }}</text><text class="favorite" :class="{ on: favorite }" @click="toggleFavorite">☆ {{ favorite ? '已收藏' : '收藏' }}</text></view>
         <view class="tags"><text v-for="tag in product.tags" :key="tag">{{ tag }}</text></view>
         <view class="price-row"><text class="price">¥{{ money(product.price) }} <small>起</small></text><text>已售 {{ product.sales }}</text></view>
         <view class="guarantees"><view>🛡️<b>健康保证</b><small>专属检测</small></view><view>🚚<b>安全运输</b><small>活体包装</small></view><view>🌱<b>7天保障</b><small>规则内售后</small></view></view>
@@ -44,7 +61,7 @@ const buyNow = () => { if (product.value) uni.navigateTo({ url: `/pages/checkout
         </view>
       </view>
       <view class="action-bar">
-        <view class="small-action">🎧<text>客服</text></view><view class="small-action" @click="favorite = !favorite">☆<text>收藏</text></view><view class="small-action">💬<text>咨询</text></view>
+        <view class="small-action">🎧<text>客服</text></view><view class="small-action" @click="toggleFavorite">☆<text>收藏</text></view><view class="small-action">💬<text>咨询</text></view>
         <button class="add" @click="addCart">加入购物车</button><button class="buy" @click="buyNow">立即购买</button>
       </view>
     </template>

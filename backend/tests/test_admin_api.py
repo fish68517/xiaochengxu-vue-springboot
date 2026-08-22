@@ -1,5 +1,3 @@
-from datetime import datetime, timedelta
-
 from fastapi.testclient import TestClient
 
 from app.main import app
@@ -7,31 +5,41 @@ from app.main import app
 
 def admin_headers(client: TestClient) -> dict[str, str]:
     response = client.post(
-        "/api/v1/admin/auth/login",
-        json={"username": "admin", "password": "admin123"},
+        "/api/v1/admin/auth/login", json={"username": "admin", "password": "admin123"}
     )
     assert response.status_code == 200
     return {"Authorization": f"Bearer {response.json()['token']}"}
 
 
-def test_admin_requires_login() -> None:
+def user_headers(client: TestClient) -> dict[str, str]:
+    response = client.post("/api/v1/auth/login", json={"username": "user", "password": "user123"})
+    return {"Authorization": f"Bearer {response.json()['token']}"}
+
+
+def test_admin_requires_database_role() -> None:
     with TestClient(app) as client:
-        response = client.get("/api/v1/admin/dashboard")
-        assert response.status_code == 401
+        assert client.get("/api/v1/admin/dashboard").status_code == 401
+        assert (
+            client.get("/api/v1/admin/dashboard", headers=user_headers(client)).status_code == 403
+        )
 
 
-def test_admin_product_activity_order_and_audit_closed_loop() -> None:
+def test_admin_product_user_payment_order_and_audit_closed_loop() -> None:
     with TestClient(app) as client:
         headers = admin_headers(client)
-
+        categories = client.get("/api/v1/admin/categories", headers=headers).json()
+        category_id = categories[0]["id"]
         product_payload = {
-            "name": "后台联调测试用品",
+            "name": "后台 CRUD 测试商品",
             "category": "用品",
-            "subtitle": "验证商品完整 CRUD",
+            "category_id": category_id,
+            "subtitle": "验证数据库闭环",
             "price": "12.80",
             "original_price": "15.80",
             "stock": 20,
             "image_key": "food",
+            "cover_url": None,
+            "detail_images": [],
             "badge": "联调",
             "tags": ["CRUD", "MySQL"],
             "species": None,
@@ -39,78 +47,78 @@ def test_admin_product_activity_order_and_audit_closed_loop() -> None:
             "health": None,
             "size": "测试规格",
             "gender": None,
-            "care_advice": "测试数据",
+            "care_advice": "自动化测试",
             "is_active": True,
         }
         created = client.post("/api/v1/admin/products", headers=headers, json=product_payload)
         assert created.status_code == 200
         product_id = created.json()["id"]
-
         product_payload["stock"] = 21
-        updated = client.put(
-            f"/api/v1/admin/products/{product_id}",
-            headers=headers,
-            json=product_payload,
+        assert (
+            client.put(
+                f"/api/v1/admin/products/{product_id}", headers=headers, json=product_payload
+            ).json()["stock"]
+            == 21
         )
-        assert updated.json()["stock"] == 21
+        assert (
+            client.delete(f"/api/v1/admin/products/{product_id}", headers=headers).json()[
+                "is_active"
+            ]
+            is False
+        )
 
-        deleted = client.delete(f"/api/v1/admin/products/{product_id}", headers=headers)
-        assert deleted.status_code == 200
-        assert deleted.json()["is_active"] is False
+        users = client.get("/api/v1/admin/users", headers=headers)
+        assert users.status_code == 200
+        assert {user["username"] for user in users.json()} >= {"user", "other"}
 
-        now = datetime.now()
-        activity = client.post(
-            "/api/v1/admin/lottery/activities",
-            headers=headers,
-            json={
-                "title": "管理后台测试活动",
-                "subtitle": "验证活动创建与发布",
-                "registration_start_at": (now - timedelta(minutes=1)).isoformat(),
-                "registration_end_at": (now + timedelta(days=2)).isoformat(),
-                "draw_at": (now + timedelta(days=3)).isoformat(),
-                "prizes": [{"level": "一等奖", "name": "优惠券", "quantity": 1}],
-                "rules": ["免费报名", "到点开奖"],
-            },
-        )
-        assert activity.status_code == 200
-        activity_id = activity.json()["id"]
-        published = client.post(
-            f"/api/v1/admin/lottery/activities/{activity_id}/publish",
-            headers=headers,
-        )
-        assert published.json()["status"] == "REGISTERING"
+        regular_headers = user_headers(client)
+        product = client.get("/api/v1/products").json()[0]
+        cart = client.post(
+            "/api/v1/cart/items",
+            headers=regular_headers,
+            json={"product_id": product["id"], "quantity": 1},
+        ).json()
+        address = client.get("/api/v1/addresses", headers=regular_headers).json()[0]
+        selection = {
+            "cart_item_ids": [cart["id"]],
+            "address_id": address["id"],
+            "user_coupon_id": None,
+        }
+        order = client.post("/api/v1/orders", headers=regular_headers, json=selection).json()
+        payment = client.post(
+            f"/api/v1/orders/{order['id']}/payment-request", headers=regular_headers
+        ).json()
 
-        order = client.post(
-            "/api/v1/orders",
-            json={
-                "product_id": 1,
-                "quantity": 1,
-                "use_coupon": False,
-                "address_name": "联调用户",
-                "address_phone": "13800001234",
-                "address_detail": "本地测试地址",
-            },
+        listed_payments = client.get("/api/v1/admin/payments", headers=headers)
+        assert listed_payments.status_code == 200
+        assert any(item["id"] == payment["id"] for item in listed_payments.json())
+        confirmed = client.put(f"/api/v1/admin/payments/{payment['id']}/confirm", headers=headers)
+        assert confirmed.json()["status"] == "SUCCESS"
+        assert (
+            client.put(f"/api/v1/admin/payments/{payment['id']}/confirm", headers=headers).json()[
+                "status"
+            ]
+            == "SUCCESS"
         )
-        order_id = order.json()["id"]
-        paid = client.post(f"/api/v1/payments/local/{order_id}")
-        assert paid.json()["status"] == "PAID"
+
         shipped = client.put(
-            f"/api/v1/admin/orders/{order_id}/shipment",
+            f"/api/v1/admin/orders/{order['id']}/shipment",
             headers=headers,
             json={"shipping_company": "顺丰速运", "tracking_no": "SF1234567890"},
         )
         assert shipped.json()["status"] == "SHIPPED"
+        assert (
+            client.get(f"/api/v1/orders/{order['id']}", headers=regular_headers).json()[
+                "tracking_no"
+            ]
+            == "SF1234567890"
+        )
 
         dashboard = client.get("/api/v1/admin/dashboard", headers=headers)
         assert dashboard.status_code == 200
-        assert dashboard.json()["product_count"] >= 7
-        assert dashboard.json()["order_count"] >= 1
-
-        audits = client.get("/api/v1/admin/audit-logs", headers=headers)
-        assert {item["action"] for item in audits.json()} >= {
-            "CREATE",
-            "UPDATE",
-            "DELETE",
-            "PUBLISH",
-            "SHIP",
+        assert dashboard.json()["paid_order_count"] >= 1
+        actions = {
+            item["action"]
+            for item in client.get("/api/v1/admin/audit-logs", headers=headers).json()
         }
+        assert {"CREATE", "UPDATE", "DELETE", "CONFIRM", "SHIP"} <= actions

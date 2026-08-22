@@ -11,7 +11,11 @@ const result = ref<LotteryResult | null>(null)
 const loading = ref(true)
 const error = ref('')
 onLoad(async (options) => {
-  try { result.value = await getLotteryResult(Number(options?.id || 2)) }
+  try {
+    const id = Number(options?.id)
+    if (!id) throw new Error('缺少活动 ID')
+    result.value = await getLotteryResult(id)
+  }
   catch (err) { error.value = err instanceof Error ? err.message : '结果加载失败' }
   finally { loading.value = false }
 })
@@ -27,7 +31,7 @@ onLoad(async (options) => {
       <view class="page-body">
         <view class="mine app-card"><view class="mine-copy"><b>✿ 我的参与结果</b><view><text class="face">☹</text><view><strong>{{ result.my_result.won ? '恭喜中奖' : '未中奖' }}</strong><text>{{ result.my_result.message }}</text></view></view><text class="points">🪙 已获得参与积分 <b>{{ result.my_result.points }}</b> 分</text></view><view class="cup">🏆<button>查看中奖名单 ›</button></view></view>
         <view class="announce app-card"><view><b>📣 开奖结果公布</b><text>开奖时间：{{ formatDate(result.draw_at) }}</text></view><text>参与人数：<b>{{ result.participant_count }}</b> 人</text></view>
-        <view class="winners app-card"><view class="section-title"><text>🏆 中奖名单（部分展示）</text><text class="section-title__link">查看全部 ›</text></view><view v-for="winner in result.winners" :key="winner.nickname" class="winner"><text class="avatar">🐾</text><text>{{ winner.nickname }}</text><b :class="winner.level">{{ winner.level }}</b><text>{{ winner.prize }}</text></view></view>
+        <view class="winners app-card"><view class="section-title"><text>🏆 中奖名单</text></view><view v-if="!result.winners.length" class="empty-block">暂无中奖记录</view><view v-for="winner in result.winners" :key="`${winner.nickname}-${winner.prize}`" class="winner"><text class="avatar">🐾</text><text>{{ winner.nickname }}</text><b :class="winner.level">{{ winner.level }}</b><text>{{ winner.prize }}</text></view></view>
         <view class="prize-setting app-card"><view class="section-title"><text>🎁 奖项设置</text></view><view class="prize-grid"><view v-for="prize in result.prizes" :key="prize.level"><text class="level">{{ prize.level }}</text><PetArtwork :type="prize.icon" size="sm" /><b>{{ prize.name }}</b><small>共 {{ prize.quantity }} 份</small></view></view></view>
         <view class="claim app-card"><view><b>🎁 领奖方式</b><text>中奖用户请在活动有效期内联系管理员或客服，确认身份信息后领取对应奖品。</text><button class="primary-button">联系管理员领奖</button></view><text class="claim-pets">🐢🐰</text></view>
         <view class="history app-card">📜　查看往期中奖名单 <text>›</text></view>

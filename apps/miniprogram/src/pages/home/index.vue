@@ -26,7 +26,7 @@ onMounted(async () => {
 })
 
 const openMall = (category = '爬宠') => uni.navigateTo({ url: `/pages/mall/index?category=${encodeURIComponent(category)}` })
-const openActivity = () => uni.navigateTo({ url: '/pages/lottery/detail?id=1' })
+const openActivity = () => activity.value && uni.navigateTo({ url: `/pages/lottery/detail?id=${activity.value.id}` })
 </script>
 
 <template>

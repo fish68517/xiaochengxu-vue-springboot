@@ -10,6 +10,7 @@ __pycache__/
 backend/data/*.db
 backend/data/*.db-*
 .runtime/
+backups/
 # Local development
 .env
 .env.*.local

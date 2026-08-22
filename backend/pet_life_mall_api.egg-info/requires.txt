@@ -4,6 +4,8 @@ sqlalchemy==2.0.43
 alembic==1.16.5
 pydantic-settings==2.10.1
 pymysql==1.1.2
+PyJWT==2.10.1
+pwdlib[argon2]==0.2.1
 
 [dev]
 httpx==0.28.1

@@ -6,7 +6,7 @@ const cart = useCartStore()
 const tabs = [
   { key: 'home', label: '首页', icon: '⌂', url: '/pages/home/index' },
   { key: 'mall', label: '商城', icon: '▣', url: '/pages/mall/index' },
-  { key: 'lottery', label: '活动', icon: '♧', url: '/pages/lottery/detail?id=1' },
+  { key: 'lottery', label: '活动', icon: '♧', url: '/pages/lottery/detail' },
   { key: 'cart', label: '购物车', icon: '🛒', url: '/pages/cart/index' },
   { key: 'profile', label: '我的', icon: '♙', url: '/pages/profile/index' },
 ] as const

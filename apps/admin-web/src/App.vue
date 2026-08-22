@@ -13,8 +13,9 @@ import {
 import { api, errorMessage, TOKEN_KEY } from './api'
 
 type Product = {
-  id: number; name: string; category: string; subtitle: string; price: string; original_price: string | null
+  id: number; category_id: number | null; name: string; category: string; subtitle: string; price: string; original_price: string | null
   sales: number; stock: number; image_key: string; badge: string | null; tags: string[]; is_active: boolean
+  cover_url: string | null; detail_images: string[]
   species: string | null; age: string | null; health: string | null; size: string | null
   gender: string | null; care_advice: string | null
 }
@@ -34,6 +35,9 @@ type Dashboard = {
   paid_order_count: number; paid_amount: string; recent_orders: Order[]
 }
 type Audit = { id: number; operator: string; action: string; resource_type: string; resource_id: string; detail: string; created_at: string }
+type Category = { id: number; name: string; sort_order: number; enabled: boolean }
+type User = { id: number; username: string; nickname: string; role: string; enabled: boolean; created_at: string }
+type Payment = { id: number; payment_no: string; order_id: number; order_no: string; username: string; amount: string; provider: string; status: string; created_at: string; confirmed_at: string | null }
 
 const loggedIn = ref(Boolean(localStorage.getItem(TOKEN_KEY)))
 const loginLoading = ref(false)
@@ -45,6 +49,9 @@ const products = ref<Product[]>([])
 const activities = ref<Activity[]>([])
 const orders = ref<Order[]>([])
 const audits = ref<Audit[]>([])
+const categories = ref<Category[]>([])
+const users = ref<User[]>([])
+const payments = ref<Payment[]>([])
 const productDialog = ref(false)
 const activityDialog = ref(false)
 const shipmentDialog = ref(false)
@@ -54,7 +61,7 @@ const shippingOrderId = ref<number | null>(null)
 const productForm = reactive({
   name: '', category: '用品', subtitle: '', price: 19.9, original_price: null as number | null,
   stock: 10, image_key: 'food', badge: '', tagsText: '', species: '', age: '', health: '',
-  size: '', gender: '', care_advice: '', is_active: true,
+  size: '', gender: '', care_advice: '', cover_url: '', detailImagesText: '', is_active: true,
 })
 const activityForm = reactive({
   title: '', subtitle: '', registration_start_at: '', registration_end_at: '', draw_at: '',
@@ -62,7 +69,7 @@ const activityForm = reactive({
 const shipmentForm = reactive({ shipping_company: '顺丰速运', tracking_no: '' })
 
 const pageTitle = computed(() => ({
-  dashboard: '数据概览', products: '商品管理', activities: '抽奖活动', orders: '订单管理', audits: '操作审计',
+  dashboard: '数据概览', categories: '分类管理', products: '商品管理', users: '用户管理', activities: '抽奖活动', orders: '订单管理', payments: '付款管理', audits: '操作审计',
 }[activePage.value] ?? '管理后台'))
 
 const statusText: Record<string, string> = {
@@ -99,9 +106,12 @@ async function loadPage(page = activePage.value) {
   loading.value = true
   try {
     if (page === 'dashboard') dashboard.value = (await api.get('/dashboard')).data
-    if (page === 'products') products.value = (await api.get('/products')).data
+    if (page === 'categories') categories.value = (await api.get('/categories')).data
+    if (page === 'products') [products.value, categories.value] = await Promise.all([api.get('/products').then((item) => item.data), api.get('/categories').then((item) => item.data)])
+    if (page === 'users') users.value = (await api.get('/users')).data
     if (page === 'activities') activities.value = (await api.get('/lottery/activities')).data
     if (page === 'orders') orders.value = (await api.get('/orders')).data
+    if (page === 'payments') payments.value = (await api.get('/payments')).data
     if (page === 'audits') audits.value = (await api.get('/audit-logs')).data
   } catch (error) {
     if ((error as { response?: { status?: number } }).response?.status === 401) logout()
@@ -119,10 +129,11 @@ function openProduct(product?: Product) {
     badge: product.badge ?? '', species: product.species ?? '', age: product.age ?? '',
     health: product.health ?? '', size: product.size ?? '', gender: product.gender ?? '',
     care_advice: product.care_advice ?? '',
+    cover_url: product.cover_url ?? '', detailImagesText: product.detail_images.join(','),
   } : {
     name: '', category: '用品', subtitle: '', price: 19.9, original_price: null, stock: 10,
     image_key: 'food', badge: '', tagsText: '', species: '', age: '', health: '', size: '',
-    gender: '', care_advice: '', is_active: true,
+    gender: '', care_advice: '', cover_url: '', detailImagesText: '', is_active: true,
   })
   productDialog.value = true
 }
@@ -130,6 +141,9 @@ function openProduct(product?: Product) {
 async function saveProduct() {
   const payload = {
     ...productForm,
+    category_id: categories.value.find((item) => item.name === productForm.category)?.id ?? null,
+    cover_url: productForm.cover_url || null,
+    detail_images: productForm.detailImagesText.split(',').map((item) => item.trim()).filter(Boolean),
     badge: productForm.badge || null,
     species: productForm.species || null,
     age: productForm.age || null,
@@ -140,6 +154,7 @@ async function saveProduct() {
     tags: productForm.tagsText.split(',').map((item) => item.trim()).filter(Boolean),
   }
   delete (payload as Record<string, unknown>).tagsText
+  delete (payload as Record<string, unknown>).detailImagesText
   try {
     if (editingProductId.value) await api.put(`/products/${editingProductId.value}`, payload)
     else await api.post('/products', payload)
@@ -228,6 +243,33 @@ async function saveShipment() {
   } catch (error) { ElMessage.error(errorMessage(error)) }
 }
 
+async function addCategory() {
+  try {
+    const { value } = await ElMessageBox.prompt('请输入新的商品分类名称', '新增分类', { inputPattern: /^.{1,30}$/, inputErrorMessage: '分类名称不能为空' })
+    await api.post('/categories', { name: value.trim(), sort_order: categories.value.length + 1, enabled: true })
+    ElMessage.success('分类已写入 MySQL'); await loadPage('categories')
+  } catch (error) { if (error !== 'cancel') ElMessage.error(errorMessage(error)) }
+}
+
+async function toggleCategory(category: Category) {
+  try { await api.put(`/categories/${category.id}`, { ...category, enabled: !category.enabled }); await loadPage('categories') }
+  catch (error) { ElMessage.error(errorMessage(error)) }
+}
+
+async function toggleUser(user: User) {
+  try { await api.put(`/users/${user.id}/enabled`, { enabled: !user.enabled }); await loadPage('users') }
+  catch (error) { ElMessage.error(errorMessage(error)) }
+}
+
+async function updatePayment(payment: Payment, action: 'confirm' | 'fail') {
+  try {
+    await ElMessageBox.confirm(action === 'confirm' ? `确认收到订单 ${payment.order_no} 的款项？` : `确认将付款单 ${payment.payment_no} 标记为失败？`, '付款处理', { type: 'warning' })
+    await api.put(`/payments/${payment.id}/${action}`)
+    ElMessage.success(action === 'confirm' ? '付款已确认，订单已更新' : '付款已标记失败')
+    await loadPage('payments')
+  } catch (error) { if (error !== 'cancel') ElMessage.error(errorMessage(error)) }
+}
+
 onMounted(() => { if (loggedIn.value) loadPage('dashboard') })
 </script>
 
@@ -249,8 +291,9 @@ onMounted(() => { if (loggedIn.value) loadPage('dashboard') })
       <div class="sidebar-brand"><div class="brand-mark">宠</div><span>萌宠商城管理端</span></div>
       <nav class="nav">
         <button v-for="item in [
-          ['dashboard','数据概览',DataAnalysis], ['products','商品管理',Goods], ['activities','抽奖活动',Present],
-          ['orders','订单管理',Box], ['audits','操作审计',Document]
+          ['dashboard','数据概览',DataAnalysis], ['categories','分类管理',Goods], ['products','商品管理',Goods],
+          ['users','用户管理',Document], ['activities','抽奖活动',Present], ['orders','订单管理',Box],
+          ['payments','付款管理',Coin], ['audits','操作审计',Document]
         ]" :key="item[0] as string" class="nav-item" :class="{ active: activePage === item[0] }" @click="loadPage(item[0] as string)">
           <el-icon><component :is="item[2]" /></el-icon><span>{{ item[1] }}</span>
         </button>
@@ -277,6 +320,16 @@ onMounted(() => { if (loggedIn.value) loadPage('dashboard') })
           <el-table :data="products" stripe><el-table-column prop="id" label="ID" width="70" /><el-table-column label="商品" min-width="220"><template #default="scope"><div class="table-name">{{ scope.row.name }}</div><div class="muted">{{ scope.row.subtitle }}</div></template></el-table-column><el-table-column prop="category" label="分类" width="90" /><el-table-column prop="price" label="售价" width="100" /><el-table-column prop="stock" label="库存" width="90" /><el-table-column label="状态" width="90"><template #default="scope"><el-tag :type="scope.row.is_active ? 'success' : 'info'">{{ scope.row.is_active ? '在售' : '下架' }}</el-tag></template></el-table-column><el-table-column label="操作" width="250" fixed="right"><template #default="scope"><el-button link type="primary" @click="openProduct(scope.row)">编辑</el-button><el-button link :type="scope.row.is_active ? 'warning' : 'success'" @click="toggleProduct(scope.row)">{{ scope.row.is_active ? '下架' : '上架' }}</el-button><el-button v-if="scope.row.is_active" link type="danger" @click="deleteProduct(scope.row)">删除</el-button></template></el-table-column></el-table>
         </el-card>
 
+        <el-card v-if="activePage === 'categories'" class="section-card">
+          <div class="page-actions"><div><h3>商品分类</h3><p class="page-subtitle">小程序分类栏实时读取同一张 MySQL 表</p></div><el-button type="primary" @click="addCategory">新增分类</el-button></div>
+          <el-table :data="categories" stripe><el-table-column prop="id" label="ID" width="80" /><el-table-column prop="name" label="分类名称" /><el-table-column prop="sort_order" label="排序" width="100" /><el-table-column label="状态" width="100"><template #default="scope"><el-tag :type="scope.row.enabled ? 'success' : 'info'">{{ scope.row.enabled ? '启用' : '停用' }}</el-tag></template></el-table-column><el-table-column label="操作" width="120"><template #default="scope"><el-button link :type="scope.row.enabled ? 'warning' : 'success'" @click="toggleCategory(scope.row)">{{ scope.row.enabled ? '停用' : '启用' }}</el-button></template></el-table-column></el-table>
+        </el-card>
+
+        <el-card v-if="activePage === 'users'" class="section-card">
+          <div class="page-actions"><div><h3>用户列表</h3><p class="page-subtitle">账号、角色和启停状态均来自数据库</p></div><el-button @click="loadPage('users')">刷新</el-button></div>
+          <el-table :data="users" stripe><el-table-column prop="id" label="ID" width="80" /><el-table-column prop="username" label="账号" /><el-table-column prop="nickname" label="昵称" /><el-table-column prop="role" label="角色" width="100" /><el-table-column label="状态" width="100"><template #default="scope"><el-tag :type="scope.row.enabled ? 'success' : 'danger'">{{ scope.row.enabled ? '正常' : '禁用' }}</el-tag></template></el-table-column><el-table-column label="注册时间" width="180"><template #default="scope">{{ formatTime(scope.row.created_at) }}</template></el-table-column><el-table-column label="操作" width="120"><template #default="scope"><el-button v-if="scope.row.role !== 'ADMIN'" link :type="scope.row.enabled ? 'danger' : 'success'" @click="toggleUser(scope.row)">{{ scope.row.enabled ? '禁用' : '启用' }}</el-button></template></el-table-column></el-table>
+        </el-card>
+
         <el-card v-if="activePage === 'activities'" class="section-card">
           <div class="page-actions"><div><h3>活动列表</h3><p class="page-subtitle">支持创建草稿、发布、查看报名名单及本地开奖</p></div><el-button type="primary" :icon="Present" @click="openActivity">新建活动</el-button></div>
           <el-table :data="activities" stripe><el-table-column prop="id" label="ID" width="70" /><el-table-column label="活动" min-width="230"><template #default="scope"><div class="table-name">{{ scope.row.title }}</div><div class="muted">{{ scope.row.subtitle }}</div></template></el-table-column><el-table-column label="状态" width="100"><template #default="scope"><el-tag :type="statusType(scope.row.status)">{{ statusText[scope.row.status] || scope.row.status }}</el-tag></template></el-table-column><el-table-column prop="participant_count" label="报名人数" width="100" /><el-table-column label="开奖时间" width="190"><template #default="scope">{{ formatTime(scope.row.draw_at) }}</template></el-table-column><el-table-column label="操作" width="270" fixed="right"><template #default="scope"><el-button link type="primary" @click="showParticipants(scope.row)">名单</el-button><el-button v-if="['DRAFT','PUBLISHED'].includes(scope.row.status)" link type="success" @click="publishActivity(scope.row)">发布</el-button><el-button v-if="scope.row.status !== 'DRAWN'" link type="warning" @click="drawActivity(scope.row)">开奖</el-button></template></el-table-column></el-table>
@@ -285,6 +338,11 @@ onMounted(() => { if (loggedIn.value) loadPage('dashboard') })
         <el-card v-if="activePage === 'orders'" class="section-card">
           <div class="page-actions"><div><h3>订单列表</h3><p class="page-subtitle">已支付订单可录入快递公司与运单号</p></div><el-button :icon="Box" @click="loadPage('orders')">刷新</el-button></div>
           <el-table :data="orders" stripe><el-table-column prop="order_no" label="订单号" min-width="220" /><el-table-column prop="product_name" label="商品" min-width="170" /><el-table-column prop="address_name" label="收货人" width="100" /><el-table-column prop="total_amount" label="金额" width="90" /><el-table-column label="状态" width="100"><template #default="scope"><el-tag :type="statusType(scope.row.status)">{{ statusText[scope.row.status] || scope.row.status }}</el-tag></template></el-table-column><el-table-column label="创建时间" width="180"><template #default="scope">{{ formatTime(scope.row.created_at) }}</template></el-table-column><el-table-column label="操作" width="110" fixed="right"><template #default="scope"><el-button v-if="['PAID','SHIPPED'].includes(scope.row.status)" link type="primary" @click="openShipment(scope.row)">{{ scope.row.status === 'SHIPPED' ? '改运单' : '发货' }}</el-button></template></el-table-column></el-table>
+        </el-card>
+
+        <el-card v-if="activePage === 'payments'" class="section-card">
+          <div class="page-actions"><div><h3>本地付款申请</h3><p class="page-subtitle">小程序只能申请付款，管理员在此人工确认</p></div><el-button :icon="Coin" @click="loadPage('payments')">刷新</el-button></div>
+          <el-table :data="payments" stripe><el-table-column prop="payment_no" label="付款单号" min-width="220" /><el-table-column prop="order_no" label="订单号" min-width="220" /><el-table-column prop="username" label="用户" width="100" /><el-table-column prop="amount" label="金额" width="100" /><el-table-column prop="provider" label="方式" width="90" /><el-table-column label="状态" width="100"><template #default="scope"><el-tag :type="scope.row.status === 'SUCCESS' ? 'success' : scope.row.status === 'PENDING' ? 'warning' : 'info'">{{ scope.row.status }}</el-tag></template></el-table-column><el-table-column label="申请时间" width="180"><template #default="scope">{{ formatTime(scope.row.created_at) }}</template></el-table-column><el-table-column label="操作" width="160" fixed="right"><template #default="scope"><template v-if="scope.row.status === 'PENDING'"><el-button link type="success" @click="updatePayment(scope.row,'confirm')">确认收款</el-button><el-button link type="danger" @click="updatePayment(scope.row,'fail')">标记失败</el-button></template></template></el-table-column></el-table>
         </el-card>
 
         <el-card v-if="activePage === 'audits'" class="section-card">
@@ -297,8 +355,8 @@ onMounted(() => { if (loggedIn.value) loadPage('dashboard') })
 
   <el-dialog v-model="productDialog" :title="editingProductId ? '编辑商品' : '新增商品'" width="720px">
     <el-form label-position="top"><div class="form-grid">
-      <el-form-item label="商品名称"><el-input v-model="productForm.name" /></el-form-item><el-form-item label="分类"><el-select v-model="productForm.category" style="width:100%"><el-option v-for="item in ['爬宠','用品','套餐']" :key="item" :label="item" :value="item" /></el-select></el-form-item>
-      <el-form-item class="wide" label="副标题"><el-input v-model="productForm.subtitle" /></el-form-item><el-form-item label="售价"><el-input-number v-model="productForm.price" :min="0.01" :precision="2" style="width:100%" /></el-form-item><el-form-item label="原价"><el-input-number v-model="productForm.original_price" :min="0.01" :precision="2" style="width:100%" /></el-form-item><el-form-item label="库存"><el-input-number v-model="productForm.stock" :min="0" style="width:100%" /></el-form-item><el-form-item label="图片标识"><el-input v-model="productForm.image_key" /></el-form-item><el-form-item label="角标"><el-input v-model="productForm.badge" /></el-form-item><el-form-item label="标签（逗号分隔）"><el-input v-model="productForm.tagsText" /></el-form-item><el-form-item class="wide" label="说明"><el-input v-model="productForm.care_advice" type="textarea" /></el-form-item><el-form-item label="上架状态"><el-switch v-model="productForm.is_active" /></el-form-item>
+      <el-form-item label="商品名称"><el-input v-model="productForm.name" /></el-form-item><el-form-item label="分类"><el-select v-model="productForm.category" style="width:100%"><el-option v-for="item in categories.filter((category) => category.enabled)" :key="item.id" :label="item.name" :value="item.name" /></el-select></el-form-item>
+      <el-form-item class="wide" label="副标题"><el-input v-model="productForm.subtitle" /></el-form-item><el-form-item label="售价"><el-input-number v-model="productForm.price" :min="0.01" :precision="2" style="width:100%" /></el-form-item><el-form-item label="原价"><el-input-number v-model="productForm.original_price" :min="0.01" :precision="2" style="width:100%" /></el-form-item><el-form-item label="库存"><el-input-number v-model="productForm.stock" :min="0" style="width:100%" /></el-form-item><el-form-item label="图片标识"><el-input v-model="productForm.image_key" /></el-form-item><el-form-item label="角标"><el-input v-model="productForm.badge" /></el-form-item><el-form-item label="标签（逗号分隔）"><el-input v-model="productForm.tagsText" /></el-form-item><el-form-item class="wide" label="封面 URL"><el-input v-model="productForm.cover_url" /></el-form-item><el-form-item class="wide" label="详情图片 URL（逗号分隔）"><el-input v-model="productForm.detailImagesText" /></el-form-item><el-form-item class="wide" label="说明"><el-input v-model="productForm.care_advice" type="textarea" /></el-form-item><el-form-item label="上架状态"><el-switch v-model="productForm.is_active" /></el-form-item>
     </div></el-form><template #footer><div class="dialog-footer"><el-button @click="productDialog=false">取消</el-button><el-button type="primary" @click="saveProduct">保存</el-button></div></template>
   </el-dialog>
 

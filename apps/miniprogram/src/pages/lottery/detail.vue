@@ -4,7 +4,7 @@ import { onLoad } from '@dcloudio/uni-app'
 import AppHeader from '@/components/AppHeader.vue'
 import AppTabBar from '@/components/AppTabBar.vue'
 import PetArtwork from '@/components/PetArtwork.vue'
-import { getActivity, joinActivity } from '@/api/lottery'
+import { getActivity, getCurrentActivity, joinActivity } from '@/api/lottery'
 import { formatDate } from '@/utils/format'
 import type { LotteryActivity } from '@/models'
 
@@ -17,7 +17,8 @@ let timer: ReturnType<typeof setInterval> | undefined
 
 onLoad(async (options) => {
   try {
-    activity.value = await getActivity(Number(options?.id || 1))
+    const id = Number(options?.id)
+    activity.value = id ? await getActivity(id) : await getCurrentActivity()
     timer = setInterval(() => { now.value = Date.now() }, 1000)
   } catch (err) { error.value = err instanceof Error ? err.message : '活动加载失败' }
   finally { loading.value = false }
@@ -40,7 +41,7 @@ async function join() {
   } catch (err) { uni.showToast({ title: err instanceof Error ? err.message : '报名失败', icon: 'none' }) }
   finally { joining.value = false }
 }
-const openHistory = () => uni.navigateTo({ url: '/pages/lottery/result?id=2' })
+const openHistory = () => activity.value && uni.navigateTo({ url: `/pages/lottery/result?id=${activity.value.id}` })
 </script>
 
 <template>
@@ -55,7 +56,7 @@ const openHistory = () => uni.navigateTo({ url: '/pages/lottery/result?id=2' })
         <view class="prizes app-card"><view class="section-title prize-title">✦ 奖品预览 ✦</view><view class="prize-grid"><view v-for="prize in activity.prizes" :key="prize.level"><text class="level">{{ prize.level }}</text><PetArtwork :type="prize.icon" size="sm" /><b>{{ prize.name }}</b><small>共 {{ prize.quantity }} 份</small></view></view></view>
         <view class="join-card app-card"><view class="participant"><text>已有 <b>{{ activity.participant_count }}</b> 人报名</text><text>查看参与人数 ›</text></view><view class="avatars"><text v-for="avatar in ['🐱','🐶','🐰','🐹','🐼','🦊','🐯','🐨','🐻']" :key="avatar">{{ avatar }}</text></view><button class="primary-button" :disabled="activity.joined || joining" @click="join">{{ joining ? '正在报名...' : activity.joined ? '✓ 已成功报名 · 等待开奖' : '立即报名参加' }}</button><small class="hint">🛡 报名成功后可在开奖后查看结果</small></view>
         <view class="rules app-card"><view class="section-title rule-title">🐾 活动规则 🐾</view><view v-for="(rule,index) in activity.rules" :key="rule" class="rule"><b>{{ index + 1 }}</b><text>{{ rule }}</text></view><view class="rule-pets">🐢 🐰</view></view>
-        <view class="history app-card" @click="openHistory"><text>🏆　查看往期中奖名单</text><button>去查看 ›</button></view>
+        <view class="history app-card" @click="openHistory"><text>🏆　查看本活动开奖结果</text><button>去查看 ›</button></view>
         <view class="customer app-card"><text>🎧　开奖后，中奖用户可联系管理员获取领奖方式</text><button>联系客服</button></view>
       </view>
     </template>

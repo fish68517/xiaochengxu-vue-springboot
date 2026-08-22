@@ -1,5 +1,6 @@
 腾讯云登录：
-   邮箱登录：dalu456@qq.com   密码： dalu456@
+   邮箱登录：dalu456@qq.com   密码： dalu456@  （密码更新后：lllll123.）
+
    联系人：
         卢奇17762400007
         421022199207060018   
@@ -16,3 +17,30 @@ https://orcaterm.cloud.tencent.com/terminal?type=lighthouse&instanceId=lhins-ots
 远程ssh 连接服务器
 端口：3389
 密码验证：用户名 Admin 密码：dalu456
+
+
+域名列表
+https://console.cloud.tencent.com/cns/detail/petlifemall.com/records
+
+
+
+腾讯云上海服务器           ✅
+公网 IP 124.222.131.30     ✅
+petlifemall.com 注册       ✅
+域名实名认证               ✅
+api DNS解析                ✅
+admin DNS解析              ✅
+
+ICP备案                    ← 下一步
+服务器项目部署
+MySQL
+FastAPI
+Nginx
+SSL HTTPS
+微信合法域名
+小程序体验版
+正式发布
+
+
+备案视频认证
+https://console.cloud.tencent.com/beian/manage/process/30178729350546596/website
