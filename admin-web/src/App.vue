@@ -7,7 +7,7 @@ import {
   deleteNotice, getBills, getBuildings, getDashboard, getFeeItems, getHouses,
   getMaintenance, getMe, getNotices, getOutbox, getPayments, getReceipts,
   getRenovations, getRepairs, getUsers, login as loginApi, parseImport,
-  updateReceiptStatus, updateRenovationStatus, uploadAsset,
+  updateReceiptStatus, updateRenovationStatus, updateUser, uploadAsset,
 } from './api'
 
 type MenuKey = 'dashboard' | 'repairs' | 'maintenance' | 'renovation' | 'notices' | 'company' | 'billing' | 'accounts' | 'settings'
@@ -108,6 +108,12 @@ async function confirmPay(id:number){await ElMessageBox.confirm('确认该笔线
 async function setReceipt(id:number,status:string){await updateReceiptStatus(id,status);await load();ElMessage.success('收据状态已更新')}
 async function saveFee(){await createFeeItem(feeForm);feeDialog.value=false;Object.assign(feeForm,{code:'',name:'',description:'',defaultAmountFen:0,enabled:true,sortOrder:0});await load()}
 async function saveUser(){await createUser(userForm);userDialog.value=false;Object.assign(userForm,{username:'',displayName:'',role:'OWNER',phone:'',buildingId:undefined,houseId:undefined,password:'',enabled:true});await load();ElMessage.success('数据库账号已创建')}
+async function toggleUser(item:any){
+  const enabled=!item.enabled
+  await updateUser(item.id,{username:item.username,displayName:item.displayName,role:item.role,phone:item.phone||'',buildingId:item.house?.buildingId,houseId:item.house?.id,password:null,enabled})
+  await load()
+  ElMessage.success(enabled?'账号已启用':'账号已停用')
+}
 async function saveBuilding(){await createBuilding(buildingForm);buildingDialog.value=false;Object.assign(buildingForm,{communityName:'',name:''});await load()}
 async function saveHouse(){await createHouse(houseForm);houseDialog.value=false;Object.assign(houseForm,{buildingId:undefined,roomNo:'',residentCode:'',ownerName:''});await load()}
 
@@ -152,7 +158,7 @@ onBeforeUnmount(()=>window.removeEventListener('admin-auth-expired',authExpired)
 
       <section v-else-if="active==='company'" class="page"><div class="panel"><div class="panel-title"><h2>数据库通知 Outbox</h2><button @click="load">刷新</button></div><el-table :data="outbox"><el-table-column prop="eventType" label="事件"/><el-table-column prop="recipient" label="接收方"/><el-table-column prop="status" label="状态"/><el-table-column prop="createdAt" label="创建时间"/></el-table></div></section>
 
-      <section v-else-if="active==='accounts'" class="page"><div class="panel"><div class="panel-title"><h2>数据库账号</h2><el-button type="primary" @click="userDialog=true">新增账号</el-button></div><el-table :data="users"><el-table-column prop="username" label="用户名"/><el-table-column prop="displayName" label="姓名"/><el-table-column prop="role" label="角色"/><el-table-column prop="phone" label="电话"/><el-table-column label="绑定房屋"><template #default="scope">{{ scope.row.house?.displayName||'-' }}</template></el-table-column><el-table-column label="状态"><template #default="scope"><el-tag :type="scope.row.enabled?'success':'info'">{{ scope.row.enabled?'启用':'停用' }}</el-tag></template></el-table-column></el-table></div></section>
+      <section v-else-if="active==='accounts'" class="page"><div class="panel"><div class="panel-title"><h2>数据库账号</h2><el-button type="primary" @click="userDialog=true">新增账号</el-button></div><el-table :data="users"><el-table-column prop="username" label="用户名"/><el-table-column prop="displayName" label="姓名"/><el-table-column prop="role" label="角色"/><el-table-column prop="phone" label="电话"/><el-table-column label="绑定房屋"><template #default="scope">{{ scope.row.house?.displayName||'-' }}</template></el-table-column><el-table-column label="状态"><template #default="scope"><el-tag :type="scope.row.enabled?'success':'warning'">{{ scope.row.enabled?'已启用':'待审核/停用' }}</el-tag></template></el-table-column><el-table-column label="操作" width="120"><template #default="scope"><el-button link :type="scope.row.enabled?'danger':'primary'" :disabled="scope.row.username===currentUser?.username" @click="toggleUser(scope.row)">{{ scope.row.enabled?'停用':'审核启用' }}</el-button></template></el-table-column></el-table></div></section>
 
       <section v-else class="page"><div class="grid-two"><div class="panel"><div class="panel-title"><h2>楼栋</h2><el-button type="primary" @click="buildingDialog=true">新增楼栋</el-button></div><el-table :data="buildings"><el-table-column prop="communityName" label="小区"/><el-table-column prop="name" label="楼栋"/></el-table></div><div class="panel"><div class="panel-title"><h2>房屋</h2><el-button type="primary" @click="houseDialog=true">新增房屋</el-button></div><el-table :data="houses"><el-table-column prop="buildingName" label="楼栋"/><el-table-column prop="roomNo" label="房号"/><el-table-column prop="residentCode" label="住户编码"/><el-table-column prop="ownerName" label="业主"/></el-table></div></div></section>
     </main>

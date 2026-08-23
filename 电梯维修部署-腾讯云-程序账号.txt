@@ -1,0 +1,44 @@
+创建电梯独立数据库账号,新的强密码，不要使用萌宠数据库密码。
+CREATE USER 'elevator_repair_app'@'127.0.0.1'
+IDENTIFIED BY 'Root456';
+小程序
+http://124.222.131.30:8082
+后台
+http://124.222.131.30:8083
+
+
+
+更新管理后台
+Remove-Item "C:\ElevatorRepair\admin-web\*" -Recurse -Force
+
+tar -xzf "C:\packages\ElevatorRepair\elevator-admin-update.tar-0823.gz" `
+    -C "C:\ElevatorRepair\admin-web"
+
+更新 H5
+Remove-Item "C:\ElevatorRepair\miniprogram-h5\*" -Recurse -Force
+
+tar -xzf "C:\packages\ElevatorRepair\elevator-h5-update.tar-0823.gz" `
+    -C "C:\ElevatorRepair\miniprogram-h5"
+
+更新 FastAPI 后端
+tar -xzf "C:\packages\ElevatorRepair\elevator-backend-update.tar-0823.gz" `
+    -C "C:\ElevatorRepair"
+
+更新依赖
+cd C:\ElevatorRepair\backend
+.\.venv\Scripts\python.exe -m pip install -r requirements.txt `
+    -i https://mirrors.cloud.tencent.com/pypi/simple `
+    --prefer-binary
+
+最后只重启电梯 FastAPI
+schtasks.exe /End /TN "ElevatorRepair-API"
+Start-Sleep -Seconds 5
+
+Invoke-RestMethod http://127.0.0.1:8100/api/health
+
+
+
+owner_101  Owner@123456
+owner_102 Owner@123456
+technician_01Tech@123456
+admin_01Admin@123456

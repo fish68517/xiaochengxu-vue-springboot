@@ -16,10 +16,10 @@ export const useSessionStore = defineStore('session', () => {
     finally { loading.value = false }
   }
 
-  async function login(username:string,password:string) {
+  async function login(username:string,password:string,loginType:'OWNER'|'TECHNICIAN') {
     loading.value = true
     try {
-      const result = await api.login(username,password)
+      const result = await api.login(username,password,loginType)
       uni.setStorageSync('access_token', result.token)
       session.value = result.user
       return result.user as Session

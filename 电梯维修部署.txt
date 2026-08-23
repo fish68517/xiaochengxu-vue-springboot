@@ -1,3 +1,0 @@
-创建电梯独立数据库账号,新的强密码，不要使用萌宠数据库密码。
-CREATE USER 'elevator_repair_app'@'127.0.0.1'
-IDENTIFIED BY 'Root456';

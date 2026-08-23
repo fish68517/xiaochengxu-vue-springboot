@@ -55,7 +55,8 @@ export function uploadFile(filePath:string, folder='common'):Promise<any> {
 }
 
 export const api = {
-  login: (username:string,password:string) => request<any>('/auth/login',{ method:'POST',data:{username,password},auth:false }),
+  login: (username:string,password:string,loginType:'OWNER'|'TECHNICIAN') => request<any>('/auth/login',{ method:'POST',data:{username,password,loginType},auth:false }),
+  register: (data:{username:string;password:string;displayName:string;phone:string;role:'OWNER'|'TECHNICIAN';residentCode?:string}) => request<any>('/auth/register',{method:'POST',data,auth:false}),
   me: () => request<any>('/auth/me'),
   logout: () => request<any>('/auth/logout',{method:'POST'}),
   bills: () => request<any[]>('/bills/my'),

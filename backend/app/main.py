@@ -9,6 +9,7 @@ from fastapi.staticfiles import StaticFiles
 from openpyxl import load_workbook
 from pydantic import BaseModel, Field
 from sqlalchemy import func, or_, select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session, selectinload
 
 from .adapters import notification_service, storage_service
@@ -153,6 +154,16 @@ def receipt_data(item: Receipt) -> dict:
 class LoginRequest(BaseModel):
     username: str = Field(min_length=2, max_length=64)
     password: str = Field(min_length=8, max_length=128)
+    loginType: str | None = Field(default=None, pattern="^(OWNER|TECHNICIAN)$")
+
+
+class RegisterRequest(BaseModel):
+    username: str = Field(min_length=3, max_length=64, pattern=r"^[A-Za-z0-9_.-]+$")
+    password: str = Field(min_length=8, max_length=128)
+    displayName: str = Field(min_length=1, max_length=64)
+    phone: str = Field(min_length=6, max_length=24)
+    role: str = Field(pattern="^(OWNER|TECHNICIAN)$")
+    residentCode: str | None = Field(default=None, max_length=64)
 
 
 @app.get("/api/health")
@@ -167,10 +178,68 @@ def health(db: Session = Depends(get_db)):
 
 @app.post("/api/auth/login")
 def login(payload: LoginRequest, db: Session = Depends(get_db)):
-    user = db.scalar(select(User).where(User.username == payload.username))
-    if not user or not user.enabled or not verify_password(payload.password, user.password_hash):
+    username = payload.username.strip()
+    user = db.scalar(select(User).where(User.username == username))
+    if not user or not verify_password(payload.password, user.password_hash):
         raise HTTPException(401, "用户名或密码错误")
+    if not user.enabled:
+        raise HTTPException(403, "账号尚未启用，请联系管理员")
+    if payload.loginType and user.role != payload.loginType:
+        raise HTTPException(403, "账号类型与所选登录类型不一致")
     return response({"token": create_access_token(user), "user": session_data(db, user)}, "登录成功")
+
+
+@app.post("/api/auth/register")
+def register(payload: RegisterRequest, db: Session = Depends(get_db)):
+    username = payload.username.strip()
+    display_name = payload.displayName.strip()
+    phone = payload.phone.strip()
+    if not display_name or not phone:
+        raise HTTPException(400, "姓名和联系电话不能为空")
+    if db.scalar(select(User.id).where(User.username == username)):
+        raise HTTPException(409, "用户名已存在")
+
+    item = User(
+        username=username,
+        display_name=display_name,
+        phone=phone,
+        role=payload.role,
+        password_hash=hash_password(payload.password),
+    )
+    requires_approval = payload.role == "TECHNICIAN"
+    if payload.role == "OWNER":
+        resident_code = (payload.residentCode or "").strip()
+        if not resident_code:
+            raise HTTPException(400, "业主注册必须填写住户编码")
+        house = db.scalar(select(House).where(House.resident_code == resident_code))
+        if not house:
+            raise HTTPException(404, "住户编码不存在，请联系管理员核对")
+        if db.scalar(select(User.id).where(User.role == "OWNER", User.house_id == house.id, User.enabled.is_(True))):
+            raise HTTPException(409, "该房屋已绑定业主账号，请联系管理员处理")
+        item.house_id = house.id
+        item.building_id = house.building_id
+        item.enabled = True
+    else:
+        item.enabled = False
+
+    try:
+        db.add(item)
+        db.flush()
+        notification_service.send(db, "USER_REGISTERED", "role:ADMIN", {
+            "userId": item.id, "username": item.username, "role": item.role,
+            "requiresApproval": requires_approval,
+        })
+        db.commit()
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(409, "用户名或绑定信息已存在") from None
+    return response({
+        "id": item.id,
+        "username": item.username,
+        "role": item.role,
+        "enabled": item.enabled,
+        "requiresApproval": requires_approval,
+    }, "注册成功，等待管理员审核" if requires_approval else "注册成功")
 
 
 @app.get("/api/auth/me")
