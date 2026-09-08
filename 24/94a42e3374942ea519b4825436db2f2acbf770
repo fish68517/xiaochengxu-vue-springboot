@@ -1,0 +1,47 @@
+code/package-lock.json
+  s_c6f0a82ffef8e9::t_50130445bbdc0a 1-1782
+code/script/run-component.ps1
+  s_c6f0a82ffef8e9::t_51dbdad379faae 1-60
+code/script/start-lan-demo.ps1
+  s_c6f0a82ffef8e9::t_b925405f4f5e19 1-26
+code/script/start-local.ps1
+  s_c6f0a82ffef8e9::t_56b2aa1ef553f3 1-233
+code/script/stop-local.ps1
+  s_c6f0a82ffef8e9::t_07ca2fe46737f2 1-46
+code/uniCloud-tcb/cloudfunctions/game-service/lib/commercial-finance.cjs
+  s_c6f0a82ffef8e9::t_cd4e5b27da9efd 1-98
+code/uniCloud-tcb/cloudfunctions/game-service/lib/domain.cjs
+  s_c6f0a82ffef8e9::t_9ab9a41772d4f8 1-761
+code/uniCloud-tcb/cloudfunctions/game-service/lib/payment-config.cjs
+  s_c6f0a82ffef8e9::t_e7935a6765301c 1-25
+code/uniCloud-tcb/cloudfunctions/game-service/test/account-security.test.cjs
+  s_c6f0a82ffef8e9::t_1e2d095720be36 1-70
+"doc/uniCloud 部署依赖.md"
+  s_ca2d23ef2ebcfe::t_e8d825a1e17389 1-49
+.gitignore
+  s_c6f0a82ffef8e9::t_7d1963642c3dac 1-38
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.2",
+  "base_commit_sha": "2494a42e3374942ea519b4825436db2f2acbf770",
+  "prompts": {},
+  "sessions": {
+    "s_c6f0a82ffef8e9": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a0525b-3152-7f70-8eab-bf6495370f2f",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "yuhongwen <Hongwen_Yu.sgmwh@saic-gm.com>"
+    },
+    "s_ca2d23ef2ebcfe": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a0795e-7e2b-7882-8f87-9ad5749c0519",
+        "model": "gpt-5.6-terra"
+      },
+      "human_author": "yuhongwen <Hongwen_Yu.sgmwh@saic-gm.com>"
+    }
+  }
+}
