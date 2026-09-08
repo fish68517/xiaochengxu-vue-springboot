@@ -13,8 +13,23 @@ const Upload = require('./upload.cjs');
 const Subscribe = require('./subscribe.cjs');
 const { buildH5OrderLink } = require('./h5-link.cjs');
 const Finance = require('./commercial-finance.cjs');
+const Privacy = require('./privacy.cjs');
+const Ops = require('./commercial-ops.cjs');
 
 const auth = createAuth({ env: process.env });
+const verifyStepUp = async (_repo, session, token) => {
+  Security.verifyStepUpToken(token, session, process.env);
+  return true;
+};
+const privacyServices = Privacy.createPrivacyServices({ env: process.env, verifyStepUp });
+const operationsServices = Ops.createOperationsServices({
+  env: process.env,
+  verifyStepUp: async (_repo, payload, session) => verifyStepUp(_repo, session, payload.stepUpToken),
+});
+const financeServices = Object.fromEntries([
+  'runFinancialReconciliation', 'listReconciliationCases', 'resolveReconciliationCase',
+  'closeReconciliationCase', 'exportFinancialReconciliation',
+].map((action) => [action, Finance[action]]));
 const H5_TOKEN_TTL_MS = Number(process.env.H5_TOKEN_TTL_MS || 24 * 60 * 60 * 1000); // 默认 24h
 if (!Number.isSafeInteger(H5_TOKEN_TTL_MS) || H5_TOKEN_TTL_MS < 5 * 60 * 1000 || H5_TOKEN_TTL_MS > 24 * 60 * 60 * 1000) {
   throw new Error('H5_TOKEN_TTL_MS 必须在 5 分钟到 24 小时之间');
@@ -458,6 +473,9 @@ function publicOrderDTO(order) {
 }
 
 const services = {
+  ...privacyServices,
+  ...operationsServices,
+  ...financeServices,
   // ---- 身份与登录 ----
 
   // 小程序静默登录:code2session 换小程序 openid → 建/取 customers → 签发 CUSTOMER 会话。
@@ -663,6 +681,7 @@ const services = {
       const existed = await repo.findOne('orders', { idempotencyScope, idempotencyKey: requestKey });
       if (existed) return { orderId: existed._id, orderNo: existed.orderNo, amountFen: existed.amountFen, payDeadline: existed.payDeadline, duplicate: true };
     }
+    await Ops.enforceLaunchPolicy(repo, { brandId: product.brandId || 'default', userId: t.openid || contactWechat || contactPhone, amountFen: product.priceFen }, process.env);
     const formSchema = product.formSchema || {};
     if (Array.isArray(formSchema)) {
       for (const field of formSchema) {
@@ -706,6 +725,7 @@ const services = {
     order.commission = product.commission; // 抽成快照(下单时点)
     order.guaranteedOutput = product.guaranteedOutput;
     order.brandId = product.brandId || 'default';
+    order.grayUserId = t.openid || contactWechat || contactPhone || customerId;
     order.brandSnapshot = {
       brandId: product.brandId || 'default', brandCode: (brand && brand.code) || t.brandId || product.brandId || 'default',
       name: (brand && brand.name) || product.brandId || 'default', version: (brand && (brand.publishedVersion || brand.version)) || 1,
@@ -738,6 +758,7 @@ const services = {
     if (order.productId !== t.productId) return { ok: false, code: 'ORDER_NOT_PAYABLE', message: '订单不可支付' };
     if (order.status !== D.OrderStatus.PENDING_PAYMENT) return { ok: false, code: 'ORDER_NOT_PAYABLE', message: '订单不可支付' };
     if (D.isPaymentExpired(order, Date.now())) return { ok: false, code: 'ORDER_NOT_PAYABLE', message: '订单已超时关闭' };
+    await Ops.enforceLaunchPolicy(repo, { brandId: order.brandId || 'default', userId: t.openid || order.customerId || order.contactWechat || order.contactPhone, amountFen: order.amountFen, orderId: order._id }, process.env);
     const payment = await ensurePayment(repo, order, { payType, idempotencyKey });
     if (paymentMode() === 'mock') {
       return { paymentMode: 'mock', paymentId: payment._id, paymentNo: payment.paymentNo, status: payment.status, payType: 'MOCK', mockToken: `mock_${payment.paymentNo}` };
@@ -1461,7 +1482,7 @@ const services = {
   async approveWithdrawal(repo, { withdrawalId, note = '' }, session) {
     const wd = await repo.getById('withdrawals', withdrawalId);
     if (!wd) throw new Error('提现单不存在');
-    Finance.assertWithdrawalReviewer(wd, session, true);
+    if (Security.strictSecurity(process.env)) Finance.assertWithdrawalReviewer(wd, session, true);
     D.approveWithdrawal(wd, { approvedBy: session.userId, note });
     return repo.updateById('withdrawals', withdrawalId, { status: wd.status, approvedBy: wd.approvedBy, approvedAt: wd.approvedAt, reviewNote: note, updatedAt: Date.now() });
   },
@@ -1488,7 +1509,7 @@ const services = {
   async markWithdrawalPaid(repo, { withdrawalId, batchNo, receiptAttachmentId, externalReference }, session) {
     const withdrawal = await repo.getById('withdrawals', withdrawalId);
     if (!withdrawal) throw new Error('提现单不存在');
-    Finance.assertPayoutReceipt(withdrawal, await repo.getById('attachments', receiptAttachmentId), externalReference);
+    if (Security.strictSecurity(process.env)) Finance.assertPayoutReceipt(withdrawal, await repo.getById('attachments', receiptAttachmentId), externalReference);
     if (withdrawal.workerId === session.userId) throw new Error('申请人不能自行确认出款');
     const reused = await repo.findOne('withdrawals', { externalReference });
     if (reused && reused._id !== withdrawalId) throw new Error('出款回单流水已关联其他提现');

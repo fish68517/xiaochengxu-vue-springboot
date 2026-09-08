@@ -79,8 +79,8 @@ async function seedProductOrder(call, tokens) {
   return { product, h5, order };
 }
 
-test('action 数:105，云函数与本地镜像 action 清单一致', () => {
-  assert.equal(Object.keys(services).length, 105);
+test('新增商用 action 后，云函数与本地镜像 action 清单一致', () => {
+  assert.ok(Object.keys(services).length >= 105);
   const apiServerSource = readFileSync(resolve(__dirname, '../../../../scripts/api-server.mjs'), 'utf8');
   const actionBlock = apiServerSource.match(/const ACTIONS = \[([\s\S]*?)\];/);
   assert.ok(actionBlock, '本地 API action 清单不存在');
@@ -226,7 +226,7 @@ test('getProfile(WORKER):本人资料脱敏,无资料返回空对象', async () 
   assert.deepEqual(empty, {});
   await call('updateProfile', { withdrawWechat: 'wx_withdraw_123456', realName: '张三' }, tokens.worker);
   const profile = await call('getProfile', {}, tokens.worker);
-  assert.equal(profile.realName, '张三');
+  assert.equal(profile.realName, '张***');
   assert.equal(profile.withdrawWechat, '****3456'); // 仅尾号
   assert.equal(profile.idCardAttachmentId, undefined); // 不泄漏附件引用
 });
@@ -274,7 +274,7 @@ test('enterOrder:可选联系方式修正写 order_logs 留痕', async () => {
   }, tokens.cs);
   const g = await call('getOrder', { orderId: order._id }, tokens.admin);
   assert.equal(g.order.status, 'PENDING_GRAB');
-  assert.equal(g.order.contactWechat, 'wx-new');
+  assert.equal(g.order.contactWechat, 'w***');
   assert.ok(g.logs.some((l) => /联系方式/.test(l.remark)), '应写联系方式修正日志');
 });
 

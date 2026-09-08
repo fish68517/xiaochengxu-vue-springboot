@@ -21,7 +21,10 @@
     "mustChangePwd": { "bsonType": "bool", "description": "首次登录强制改密" },
     "loginFailCount": { "bsonType": "int", "description": "登录失败次数" },
     "lockedUntil": { "bsonType": "number", "description": "登录锁定截止时间戳" },
-    "status": { "bsonType": "string", "enum": ["ACTIVE", "DISABLED"] },
+    "status": { "bsonType": "string", "enum": ["ACTIVE", "DISABLED", "CLOSED"] },
+    "securityVersion": { "bsonType": "int", "description": "会话撤销版本" },
+    "passwordChangedAt": { "bsonType": "number" },
+    "closedAt": { "bsonType": "number" },
     "createdAt": { "bsonType": "number" },
     "updatedAt": { "bsonType": "number" }
   }

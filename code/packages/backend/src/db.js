@@ -33,6 +33,20 @@ export const COLLECTIONS = [
   'audit_logs',
   'h5_token_revocations',
   'system_nonces',
+  'account_security',
+  'auth_sessions',
+  'login_events',
+  'security_rate_limits',
+  'mfa_recovery_codes',
+  'privacy_consents',
+  'data_rights_requests',
+  'privacy_audit_logs',
+  'payment_events',
+  'reconciliation_cases',
+  'reconciliation_runs',
+  'financial_exports',
+  'operational_events',
+  'operational_alerts',
 ];
 
 // 集合 -> 主键前缀（newId 生成 _id 用）。
@@ -65,6 +79,20 @@ const ID_PREFIX = {
   audit_logs: 'auditLog',
   h5_token_revocations: 'h5TokenRevocation',
   system_nonces: 'systemNonce',
+  account_security: 'accountSecurity',
+  auth_sessions: 'authSession',
+  login_events: 'loginEvent',
+  security_rate_limits: 'securityRateLimit',
+  mfa_recovery_codes: 'mfaRecoveryCode',
+  privacy_consents: 'privacyConsent',
+  data_rights_requests: 'dataRightsRequest',
+  privacy_audit_logs: 'privacyAuditLog',
+  payment_events: 'paymentEvent',
+  reconciliation_cases: 'reconciliationCase',
+  reconciliation_runs: 'reconciliationRun',
+  financial_exports: 'financialExport',
+  operational_events: 'operationalEvent',
+  operational_alerts: 'operationalAlert',
 };
 
 // 深拷贝：内存事务回滚与快照用（数据均为 JSON 可序列化对象）。

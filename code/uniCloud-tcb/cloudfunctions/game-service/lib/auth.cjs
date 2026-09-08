@@ -16,6 +16,7 @@ const PUBLIC_ACTIONS = new Set([
   'getProduct', 'getBrandConfig', 'payNotify', 'oauthExchange',
   'getPaymentStatus',
   'queryOrderByNo', // 公开读:按订单号+联系方式脱敏查询(客户自助查单)
+  'getLegalDocuments',
 ]);
 
 // H5 页面无会话:靠 H5 下单 token 自证(服务层验签 + exp + productId 绑定)。
@@ -24,7 +25,7 @@ const H5_TOKEN_ACTIONS = new Set(['getH5Product', 'createOrderFromH5', 'getPayme
 // 定时/系统回调入口:必须使用带时间窗、nonce、payload 摘要的 HMAC 内部签名。
 const SYSTEM_ACTIONS = new Set([
   'transferNotify', 'timeoutCloseUnpaidOrders', 'timeoutMarkPool', 'timeoutRejectAssignments',
-  'runOperationalMonitor',
+  'runOperationalMonitor', 'compensatePayments', 'runFinancialReconciliation',
 ]);
 
 // 系统间调用白名单:内部云函数使用 INTERNAL_SECRET 生成短时 HMAC 签名；不再传输裸 secret。
@@ -40,6 +41,22 @@ const ROLE_MATRIX = {
   listRecordsPage: ['ADMIN', 'SUPER_ADMIN', 'BRAND_ADMIN'],
   getLaunchPolicy: ['ADMIN', 'SUPER_ADMIN'],
   updateLaunchPolicy: ['ADMIN', 'SUPER_ADMIN'],
+  recordLegalConsent: ['CUSTOMER', 'WORKER', 'CS', 'CUSTOMER_SERVICE', 'ADMIN'],
+  withdrawLegalConsent: ['CUSTOMER', 'WORKER', 'CS', 'CUSTOMER_SERVICE', 'ADMIN'],
+  listMyDataRequests: ['CUSTOMER', 'WORKER', 'CS', 'CUSTOMER_SERVICE', 'ADMIN'],
+  requestDataRight: ['CUSTOMER', 'WORKER', 'CS', 'CUSTOMER_SERVICE', 'ADMIN'],
+  cancelDataRequest: ['CUSTOMER', 'WORKER', 'CS', 'CUSTOMER_SERVICE', 'ADMIN'],
+  getMyDataCopy: ['CUSTOMER', 'WORKER', 'CS', 'CUSTOMER_SERVICE', 'ADMIN'],
+  listDataRequests: ['ADMIN', 'SUPER_ADMIN', 'BRAND_ADMIN'],
+  reviewDataRequest: ['ADMIN', 'SUPER_ADMIN', 'BRAND_ADMIN'],
+  executeDataRequest: ['ADMIN', 'SUPER_ADMIN', 'BRAND_ADMIN'],
+  viewSensitiveProfile: ['ADMIN', 'SUPER_ADMIN', 'BRAND_ADMIN'],
+  getPrivateAttachmentUrl: ['CUSTOMER', 'WORKER', 'CS', 'CUSTOMER_SERVICE', 'ADMIN', 'SUPER_ADMIN', 'BRAND_ADMIN'],
+  runFinancialReconciliation: ['SYSTEM', 'ADMIN', 'SUPER_ADMIN', 'FINANCE_REVIEWER'],
+  listReconciliationCases: ['ADMIN', 'SUPER_ADMIN', 'FINANCE_REVIEWER'],
+  resolveReconciliationCase: ['ADMIN', 'SUPER_ADMIN', 'FINANCE_REVIEWER'],
+  closeReconciliationCase: ['ADMIN', 'SUPER_ADMIN', 'FINANCE_REVIEWER'],
+  exportFinancialReconciliation: ['ADMIN', 'SUPER_ADMIN', 'FINANCE_REVIEWER'],
   h5Token: ['CUSTOMER'],                          // 主链路:小程序端申请,绑定小程序 openid
   revokeH5Token: ['CS', 'ADMIN', 'BRAND_ADMIN', 'SUPER_ADMIN'],
   sendCustomerServiceLink: ['CS', 'ADMIN'],       // 兜底渠道:客服发链接(token 无 openid)
@@ -212,7 +229,7 @@ function createAuth({ env = process.env, now = () => Date.now() } = {}) {
         _id: verified.nonce, action, timestamp: verified.timestamp,
         expiresAt: verified.expiresAt, createdAt: now(),
       });
-      return { mode: 'system', session: null, internal: verified };
+      return { mode: 'system', session: { userId: 'internal-system', role: 'SYSTEM', roles: ['SYSTEM'], brandScopes: ['*'], internalNonce: verified.nonce }, internal: verified };
     }
     const payload = verify(ctx.token);
     const role = normalizeRole(payload.role);

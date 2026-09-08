@@ -1,0 +1,10 @@
+{
+  "bsonType": "object",
+  "required": ["_id", "count", "expiresAt"],
+  "permission": { "read": false, "create": false, "update": false, "delete": false },
+  "properties": {
+    "_id": { "bsonType": "string" }, "count": { "bsonType": "int" }, "failures": { "bsonType": "int" },
+    "lockLevel": { "bsonType": "int" }, "lockedUntil": { "bsonType": "number" },
+    "createdAt": { "bsonType": "number" }, "expiresAt": { "bsonType": "number" }
+  }
+}

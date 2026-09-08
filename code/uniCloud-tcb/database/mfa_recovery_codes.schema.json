@@ -1,0 +1,9 @@
+{
+  "bsonType": "object",
+  "required": ["_id", "userId", "usedAt", "createdAt"],
+  "permission": { "read": false, "create": false, "update": false, "delete": false },
+  "properties": {
+    "_id": { "bsonType": "string" }, "userId": { "bsonType": "string" },
+    "usedAt": { "bsonType": "number" }, "createdAt": { "bsonType": "number" }
+  }
+}

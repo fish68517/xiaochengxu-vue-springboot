@@ -5,8 +5,8 @@ function assertWithdrawalReviewer(withdrawal, session, finalReview = false) {
   if (finalReview && (!withdrawal.reviewedBy || withdrawal.reviewedBy === session.userId)) throw new Error('初审与复核必须由不同人员完成');
 }
 function assertPayoutReceipt(withdrawal, receipt, externalReference) {
-  if (!receipt || receipt.storageVisibility !== 'private' || receipt.scanStatus !== 'CLEAN') throw new Error('出款必须登记已通过扫描的私有凭证');
-  if (receipt.brandId !== withdrawal.brandId || receipt.purpose !== 'PAYOUT_RECEIPT') throw new Error('出款凭证品牌或用途不符');
+  if (!receipt || !['private', 'PRIVATE'].includes(receipt.storageVisibility || receipt.visibility) || receipt.scanStatus !== 'CLEAN') throw new Error('出款必须登记已通过扫描的私有凭证');
+  if (receipt.brandId !== withdrawal.brandId || !['PAYOUT_RECEIPT', 'payout_receipt'].includes(receipt.purpose || receipt.bizType)) throw new Error('出款凭证品牌或用途不符');
   if (!externalReference || !/^[\w\-:/]{6,128}$/.test(externalReference)) throw new Error('请填写有效的银行或渠道回单流水号');
 }
 function assertRefundBudget(payment, refunds, current) {

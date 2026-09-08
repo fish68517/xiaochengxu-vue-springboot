@@ -1,0 +1,11 @@
+{
+  "bsonType": "object",
+  "required": ["_id", "brandId", "active", "updatedAt"],
+  "permission": { "read": false, "create": false, "update": false, "delete": false },
+  "properties": {
+    "_id": { "bsonType": "string" }, "brandId": { "bsonType": "string" }, "active": { "bsonType": "bool" },
+    "failed": { "bsonType": "int" }, "p95": { "bsonType": "number" }, "count": { "bsonType": "int" },
+    "cursor": { "bsonType": "string" }, "backlog": { "bsonType": "bool" }, "delivered": { "bsonType": "bool" },
+    "deliveryError": { "bsonType": "string" }, "deliveredAt": { "bsonType": "number" }, "updatedAt": { "bsonType": "number" }
+  }
+}

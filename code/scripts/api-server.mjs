@@ -7,6 +7,7 @@ import { pathToFileURL } from 'node:url';
 import { createMemoryDb } from '../packages/backend/src/db.js';
 import * as services from '../packages/backend/src/services.js';
 import { verifyInternalRequest } from '../packages/backend/src/internal-auth.js';
+import Privacy from '../uniCloud-tcb/cloudfunctions/game-service/lib/privacy.cjs';
 
 const PORT = Number(process.env.PORT) || 4176;
 const HOST = process.env.HOST || '127.0.0.1';
@@ -14,6 +15,7 @@ const HOST = process.env.HOST || '127.0.0.1';
 // 全量 action 名（与 services.js 导出对齐），据此构建 action -> 处理函数映射。
 const ACTIONS = [
   'miniLogin', 'oauthExchange', 'authLogin', 'workerLogin', 'changePassword', 'getAccessProfile',
+  'getSecurityStatus', 'setupMfa', 'enableMfa', 'verifySecurityChallenge', 'revokeSessions', 'listLoginHistory', 'setAccountStatus', 'refreshSession',
   'listUsers', 'createStaff', 'createWorker', 'updateStaff', 'updateWorker', 'listUserBrandRoles', 'saveUserBrandRoles', 'listAuditLogs', 'freezeWallet', 'listWorkers',
   'listProducts', 'getProduct', 'saveProduct', 'updateProductStatus',
   'listDicts', 'saveDict', 'getConfigs', 'updateConfigs',
@@ -28,6 +30,11 @@ const ACTIONS = [
   'getWallet', 'walletTransactions', 'listCommissionRules', 'saveCommissionRule', 'reconcileWalletLedger',
   'applyWithdrawal', 'listWithdrawals', 'startWithdrawalReview', 'approveWithdrawal', 'startWithdrawalPayment', 'failWithdrawalPayment', 'migrateWithdrawalStatuses',
   'updateProfile', 'getProfile', 'uploadFile', 'adjustWallet', 'markWithdrawalPaid', 'rejectWithdrawal',
+  'getLegalDocuments', 'recordLegalConsent', 'withdrawLegalConsent', 'listMyDataRequests', 'requestDataRight', 'cancelDataRequest',
+  'listDataRequests', 'reviewDataRequest', 'executeDataRequest', 'getMyDataCopy', 'viewSensitiveProfile', 'getPrivateAttachmentUrl',
+  'runFinancialReconciliation', 'listReconciliationCases', 'resolveReconciliationCase', 'closeReconciliationCase', 'exportFinancialReconciliation',
+  'compensatePayments',
+  'listRecordsPage', 'listOperationalEvents', 'getOperationalHealth', 'runOperationalMonitor', 'getLaunchPolicy', 'updateLaunchPolicy',
   'reportOrders', 'reportWorkers', 'reportWithdrawals', 'reportProfit',
   'notify', 'sendCustomerServiceLink', 'timeoutCloseUnpaidOrders', 'timeoutMarkPool', 'timeoutRejectAssignments', 'dashboard',
 ];
@@ -51,9 +58,10 @@ const PUBLIC = new Set([
   'listProducts', 'getProduct', 'getBrandConfig', 'queryOrderByNo',
   'getH5Product', 'createOrderFromH5', 'getPaymentStatus',
   'payNotify',
+  'getLegalDocuments',
 ]);
 
-const SYSTEM = new Set(['transferNotify', 'timeoutCloseUnpaidOrders', 'timeoutMarkPool', 'timeoutRejectAssignments']);
+const SYSTEM = new Set(['transferNotify', 'timeoutCloseUnpaidOrders', 'timeoutMarkPool', 'timeoutRejectAssignments', 'runOperationalMonitor', 'runFinancialReconciliation', 'compensatePayments']);
 
 // admin 端 kebab 资源路径（以 apps/admin/src/api.js 的 PATH 表为准，权威）。
 const ADMIN_PATHS = {
@@ -101,7 +109,7 @@ function json(res, status, data) {
     'content-type': 'application/json; charset=utf-8',
     'access-control-allow-origin': '*',
     'access-control-allow-methods': 'GET,POST,OPTIONS',
-    'access-control-allow-headers': 'content-type,authorization,x-idempotency-key,idempotency-key,x-internal-timestamp,x-internal-nonce,x-internal-signature',
+    'access-control-allow-headers': 'content-type,authorization,x-device-id,x-request-id,x-idempotency-key,idempotency-key,x-internal-timestamp,x-internal-nonce,x-internal-signature',
   });
   res.end(JSON.stringify(data));
 }
@@ -125,7 +133,7 @@ function readBody(req) {
   });
 }
 
-// 最小 multipart 解析：提取 bizType 表单字段与 file 文件名/大小（本地替身不落真实文件内容）。
+// 最小 multipart 解析：附件内容以 Base64 交给统一扫描、私有存储流程，不写入本地磁盘。
 function parseMultipart(buffer, contentType) {
   const m = contentType.match(/boundary=(?:"([^"]+)"|([^;]+))/);
   const boundary = m ? (m[1] || m[2]).trim() : '';
@@ -141,7 +149,9 @@ function parseMultipart(buffer, contentType) {
     if (!nameM) continue;
     const filenameM = header.match(/filename="([^"]+)"/);
     if (filenameM) {
-      out[nameM[1]] = { fileName: filenameM[1], size: Buffer.byteLength(body, 'latin1') };
+      const bytes = Buffer.from(body, 'latin1');
+      const contentTypeMatch = header.match(/Content-Type:\s*([^\r\n]+)/i);
+      out[nameM[1]] = { fileName: filenameM[1], size: bytes.length, mimeType: contentTypeMatch?.[1]?.trim() || '', content: bytes.toString('base64') };
     } else {
       out[nameM[1]] = body;
     }
@@ -150,6 +160,10 @@ function parseMultipart(buffer, contentType) {
     bizType: out.bizType || '',
     fileName: (out.file && out.file.fileName) || '',
     size: (out.file && out.file.size) || 0,
+    mimeType: (out.file && out.file.mimeType) || '',
+    content: (out.file && out.file.content) || '',
+    bizId: out.bizId || '',
+    brandId: out.brandId || '',
   };
 }
 
@@ -200,6 +214,7 @@ function coerce(value) {
 export async function startApiServer({ port = 0, seed = false, host = '127.0.0.1' } = {}) {
   const db = createMemoryDb();
   if (seed) seedDb(db);
+  Privacy.protectLocalDatabase(db, process.env);
 
   const server = createServer(async (req, res) => {
     const url = new URL(req.url, `http://127.0.0.1:${port}`);
@@ -207,7 +222,7 @@ export async function startApiServer({ port = 0, seed = false, host = '127.0.0.1
     const method = req.method;
     try {
       if (method === 'OPTIONS') {
-        res.writeHead(204, { 'access-control-allow-origin': '*', 'access-control-allow-methods': 'GET,POST,OPTIONS', 'access-control-allow-headers': 'content-type,authorization,x-idempotency-key,idempotency-key,x-internal-timestamp,x-internal-nonce,x-internal-signature' });
+        res.writeHead(204, { 'access-control-allow-origin': '*', 'access-control-allow-methods': 'GET,POST,OPTIONS', 'access-control-allow-headers': 'content-type,authorization,x-device-id,x-request-id,x-idempotency-key,idempotency-key,x-internal-timestamp,x-internal-nonce,x-internal-signature' });
         res.end();
         return;
       }
@@ -228,11 +243,17 @@ export async function startApiServer({ port = 0, seed = false, host = '127.0.0.1
         try { session = verifySystemSession(req, action, payload, db); }
         catch (error) { return json(res, 401, { ok: false, code: 'UNAUTHORIZED', message: error.message || '非法系统任务调用' }); }
       }
-      const result = services.dispatch(db, action, payload, session);
+      const context = {
+        sourceIp: req.socket.remoteAddress || '',
+        deviceId: String(req.headers['x-device-id'] || '').slice(0, 128),
+        requestId: String(req.headers['x-request-id'] || payload.requestId || '').slice(0, 80),
+      };
+      const result = await services.dispatch(db, action, payload, session, context);
       if (result && result.ok === false) {
         return json(res, HTTP_STATUS[result.code] || 400, result);
       }
-      return json(res, 200, result);
+      Privacy.protectLocalDatabase(db, process.env);
+      return json(res, 200, Privacy.redactPrivacy(result));
     } catch (error) {
       // 非业务异常（JSON 解析失败等）兜底 500。
       return json(res, 500, { ok: false, code: 'INTERNAL', message: String(error.message || error) });

@@ -12,8 +12,11 @@ function clientFor(order, secretRef = '') {
   return { client: Pay.createClient({ env: config.env }), snapshot: config.snapshot };
 }
 async function decodeNotification(payload) {
-  if (globalThis.__PAY_CLIENT__ && !['staging', 'production'].includes(process.env.APP_ENV)) return { event: await globalThis.__PAY_CLIENT__.handleNotify(payload), client: globalThis.__PAY_CLIENT__, snapshot: {} };
-  if (!process.env.WECHAT_PAY_CONFIG_MAP && !['staging', 'production'].includes(process.env.APP_ENV)) { const client = Pay.createClient(); return { event: await client.handleNotify(payload), client, snapshot: {} }; }
+  if (globalThis.__PAY_CLIENT__ && !['staging', 'production'].includes(process.env.APP_ENV)) {
+    if (!globalThis.__PAY_CLIENT__.isConfigured?.()) throw new Error('微信支付未配置');
+    return { event: await globalThis.__PAY_CLIENT__.handleNotify(payload), client: globalThis.__PAY_CLIENT__, snapshot: {} };
+  }
+  if (!process.env.WECHAT_PAY_CONFIG_MAP && !['staging', 'production'].includes(process.env.APP_ENV)) { const client = Pay.createClient(); if (!client.isConfigured()) throw new Error('微信支付未配置'); return { event: await client.handleNotify(payload), client, snapshot: {} }; }
   const brands = JSON.parse(process.env.WECHAT_PAY_CONFIG_MAP || '{}')[process.env.APP_ENV] || {};
   // 不信任URL传入品牌，依次使用获准品牌配置验签/解密；匹配成功后还要校验订单快照。
   for (const brandCode of Object.keys(brands).slice(0, 50)) {
@@ -49,13 +52,21 @@ async function applyEvent(repo, { event, client, snapshot }, completePayment) {
   const order = await repo.findOne('orders', { orderNo: event.outTradeNo });
   if (!order) throw new Error('支付通知关联订单不存在');
   if (snapshot.brandCode && snapshot.brandCode !== (order.brandSnapshot?.brandCode || order.brandId)) throw new Error('支付通知品牌不一致');
-  const payment = order.paymentId ? await repo.getById('payments', order.paymentId) : null;
+  let payment = order.paymentId ? await repo.getById('payments', order.paymentId) : null;
+  if (!payment && !['staging', 'production'].includes(process.env.APP_ENV)) {
+    payment = await repo.insert('payments', {
+      _id: `payment-${createHash('sha256').update(order._id).digest('hex').slice(0, 24)}`,
+      brandId: order.brandId || 'default', orderId: order._id, paymentNo: `P${order.orderNo}`,
+      amountFen: order.amountFen, currency: 'CNY', status: 'PENDING', createdAt: Date.now(), updatedAt: Date.now(),
+    });
+    await repo.updateById('orders', order._id, { paymentId: payment._id, paymentStatus: payment.status, updatedAt: Date.now() });
+  }
   if (!payment) throw new Error('支付通知关联支付单不存在');
   if (event.mchid && payment.configSnapshot?.mchid && event.mchid !== payment.configSnapshot.mchid) throw new Error('支付通知商户不一致');
   if (event.appid && payment.configSnapshot?.appId && event.appid !== payment.configSnapshot.appId) throw new Error('支付通知AppID不一致');
   if (event.eventType === 'TRANSACTION.SUCCESS') {
     if (event.amount?.currency && event.amount.currency !== 'CNY') throw new Error('支付币种不一致');
-    if (Number(event.amount?.total) !== payment.amountFen || payment.amountFen !== order.amountFen || payment.brandId !== order.brandId) throw new Error('支付金额或品牌与订单不一致');
+    if (Number(event.amount?.total) !== payment.amountFen || payment.amountFen !== order.amountFen || payment.brandId !== order.brandId) throw new Error('支付金额不一致或品牌与订单不一致');
     if (order.status === 'CLOSED') {
       await repo.updateById('payments', payment._id, { status: 'SUCCESS', providerTransactionId: event.transactionId, paidAt: Date.now(), updatedAt: Date.now() });
       return reconcilePaidButClosed(repo, { order, transactionId: event.transactionId, pay: client });
@@ -106,8 +117,13 @@ async function approveRefund(repo, { refundId }, session) {
     if (response.status === 'SUCCESS') await applyRefundResult(repo, refund, { refundId: response.refundId, refundStatus: 'SUCCESS', amount: { refund: refund.amountFen, currency: 'CNY' } });
     else if (refund.type !== 'full') { const clone = JSON.parse(JSON.stringify(order)); D.approveRefund(clone, { approvedBy: session.userId }); await repo.updateById('orders', order._id, clone); }
   } catch (error) {
-    // 网络失败可能已受理，保留PROCESSING和同一退款号，后续查询，禁止重发新退款单。
-    await repo.updateById('refunds', refundId, { queryRequired: true, lastErrorCode: 'REFUND_PROVIDER_UNCERTAIN', updatedAt: Date.now() });
+    const remote = ['staging', 'production'].includes(process.env.APP_ENV);
+    await repo.updateById('refunds', refundId, {
+      status: remote ? 'PROCESSING' : 'PENDING_APPROVAL',
+      queryRequired: remote,
+      lastErrorCode: remote ? 'REFUND_PROVIDER_UNCERTAIN' : 'REFUND_PROVIDER_FAILED',
+      updatedAt: Date.now(),
+    });
     throw error;
   }
   return repo.getById('refunds', refundId);

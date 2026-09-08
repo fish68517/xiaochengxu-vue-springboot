@@ -2,6 +2,8 @@
 const { createUniCloudRepository } = require('./lib/repository.cjs');
 const services = require('./lib/services.cjs');
 const { createAuth } = require('./lib/auth.cjs');
+const Privacy = require('./lib/privacy.cjs');
+const Ops = require('./lib/commercial-ops.cjs');
 
 const auth = createAuth({ env: process.env });
 
@@ -103,7 +105,7 @@ exports.main = async (event = {}) => {
   if (event && event.httpMethod) {
     const path = (event.path || '').split('?')[0];
     if (path === '/pay-notify' || path.endsWith('/pay-notify')) {
-      const repo = createUniCloudRepository(uniCloud.database());
+      const repo = Privacy.protectRepository(createUniCloudRepository(uniCloud.database()), process.env);
       let result;
       try {
         result = await services.payNotify(repo, { headers: event.headers || {}, body: event.body || '' });
@@ -134,8 +136,14 @@ exports.main = async (event = {}) => {
     if (!action) throw new BizError('MISSING_ACTION', '缺少 action');
     if (!services[action]) throw new BizError('UNKNOWN_ACTION', `未知 action: ${action}`);
     const db = uniCloud.database();
-    const repo = createUniCloudRepository(db);
+    const repo = Privacy.protectRepository(createUniCloudRepository(db), process.env);
     // action 路由前统一鉴权:公开/白名单/H5 token/系统入口放行,受保护 action 校验会话 token + 角色矩阵。
+    const headers = event.headers || {};
+    const trustedContext = {
+      sourceIp: event.sourceIp || event.clientIP || '',
+      deviceId: String(headers['x-device-id'] || headers['X-Device-Id'] || '').slice(0, 128),
+      requestId: Ops.requestId(event.requestId || headers['x-request-id'] || headers['X-Request-Id']),
+    };
     const ctx = { token: extractToken(event, payload), internalAuth: extractInternalAuth(event), payload };
     let session; let authMode; let internal;
     try {
@@ -146,7 +154,15 @@ exports.main = async (event = {}) => {
     }
     const brandId = await enforceResourceBrand(repo, payload, session);
     const resource = ROUTE_AUDIT_ACTIONS.has(action) ? await auditResource(repo, payload) : null;
-    const result = await services[action](repo, payload, session);
+    const startedAt = Date.now();
+    let result;
+    try {
+      result = await services[action](repo, payload, session, trustedContext);
+      await Ops.recordOperation(repo, { action, requestId: trustedContext.requestId, durationMs: Date.now() - startedAt, ok: true, sourceIp: trustedContext.sourceIp, brandId: brandId || payload.brandId || 'default' });
+    } catch (error) {
+      await Ops.recordOperation(repo, { action, requestId: trustedContext.requestId, durationMs: Date.now() - startedAt, ok: false, code: error.code || 'DOMAIN_ERROR', sourceIp: trustedContext.sourceIp, brandId: brandId || payload.brandId || 'default' });
+      throw error;
+    }
     if (resource) {
       await repo.insert('audit_logs', {
         _id: `audit-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
@@ -166,7 +182,7 @@ exports.main = async (event = {}) => {
         requestId: (internal && internal.nonce) || '', ipMeta: { sourceIp: event.sourceIp || event.clientIP || '' }, createdAt: Date.now(),
       });
     }
-    return result;
+    return Privacy.redactPrivacy(result);
   } catch (err) {
     return toEnvelope(err);
   }

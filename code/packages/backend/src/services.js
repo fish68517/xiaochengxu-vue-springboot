@@ -10,6 +10,7 @@ import {
   existsBy,
   insert,
   removeWhere,
+  updateById,
   updateWhere,
   transaction,
 } from './db.js';
@@ -17,6 +18,9 @@ import { H5_TOKEN_TTL_MS, issueH5Token, verifyH5Token } from './token.js';
 import { buildH5OrderLink } from './h5-link.js';
 import { createPaymentAdapter } from './payment-adapter.js';
 import Finance from '../../../uniCloud-tcb/cloudfunctions/game-service/lib/commercial-finance.cjs';
+import Security from '../../../uniCloud-tcb/cloudfunctions/game-service/lib/account-security.cjs';
+import Privacy from '../../../uniCloud-tcb/cloudfunctions/game-service/lib/privacy.cjs';
+import Ops from '../../../uniCloud-tcb/cloudfunctions/game-service/lib/commercial-ops.cjs';
 import {
   OrderStatus,
   CancellationStatus,
@@ -124,6 +128,7 @@ const PUBLIC_ACTIONS = new Set([
   'createOrderFromH5',
   'getPaymentStatus',
   'payNotify',
+  'getLegalDocuments',
 ]);
 
 // action -> 允许角色矩阵（T0-01）。
@@ -131,6 +136,14 @@ const ACTION_ROLES = {
   h5Token: ['CUSTOMER'],
   revokeH5Token: ['CUSTOMER_SERVICE', 'ADMIN', 'BRAND_ADMIN', 'SUPER_ADMIN'],
   changePassword: ['WORKER', 'CUSTOMER_SERVICE', 'ADMIN', 'DISPATCHER', 'BRAND_ADMIN', 'FINANCE_REVIEWER', 'ARBITRATOR', 'SUPER_ADMIN'],
+  getSecurityStatus: Security.SECURITY_ROLES,
+  setupMfa: Security.SECURITY_ROLES,
+  enableMfa: Security.SECURITY_ROLES,
+  verifySecurityChallenge: Security.SECURITY_ROLES,
+  revokeSessions: Security.SECURITY_ROLES,
+  listLoginHistory: Security.SECURITY_ROLES,
+  refreshSession: Security.SECURITY_ROLES,
+  setAccountStatus: ['ADMIN', 'SUPER_ADMIN'],
   getAccessProfile: ['CUSTOMER', 'WORKER', 'CUSTOMER_SERVICE', 'ADMIN', 'DISPATCHER', 'BRAND_ADMIN', 'FINANCE_REVIEWER', 'ARBITRATOR', 'SUPER_ADMIN'],
   listMyOrders: ['CUSTOMER', 'WORKER'],
   getMyOrder: ['CUSTOMER', 'WORKER'],
@@ -215,6 +228,29 @@ const ACTION_ROLES = {
   updateProfile: ['WORKER'],
   getProfile: ['WORKER'],
   uploadFile: ['CUSTOMER', 'WORKER', 'CUSTOMER_SERVICE', 'ADMIN'],
+  recordLegalConsent: ['CUSTOMER', 'WORKER', 'CUSTOMER_SERVICE', 'ADMIN'],
+  withdrawLegalConsent: ['CUSTOMER', 'WORKER', 'CUSTOMER_SERVICE', 'ADMIN'],
+  listMyDataRequests: ['CUSTOMER', 'WORKER', 'CUSTOMER_SERVICE', 'ADMIN'],
+  requestDataRight: ['CUSTOMER', 'WORKER', 'CUSTOMER_SERVICE', 'ADMIN'],
+  cancelDataRequest: ['CUSTOMER', 'WORKER', 'CUSTOMER_SERVICE', 'ADMIN'],
+  getMyDataCopy: ['CUSTOMER', 'WORKER', 'CUSTOMER_SERVICE', 'ADMIN'],
+  listDataRequests: ['ADMIN', 'SUPER_ADMIN', 'BRAND_ADMIN'],
+  reviewDataRequest: ['ADMIN', 'SUPER_ADMIN', 'BRAND_ADMIN'],
+  executeDataRequest: ['ADMIN', 'SUPER_ADMIN', 'BRAND_ADMIN'],
+  viewSensitiveProfile: ['ADMIN', 'SUPER_ADMIN', 'BRAND_ADMIN'],
+  getPrivateAttachmentUrl: ['CUSTOMER', 'WORKER', 'CUSTOMER_SERVICE', 'ADMIN', 'SUPER_ADMIN', 'BRAND_ADMIN'],
+  listReconciliationCases: ['ADMIN', 'SUPER_ADMIN', 'FINANCE_REVIEWER'],
+  resolveReconciliationCase: ['ADMIN', 'SUPER_ADMIN', 'FINANCE_REVIEWER'],
+  closeReconciliationCase: ['ADMIN', 'SUPER_ADMIN', 'FINANCE_REVIEWER'],
+  exportFinancialReconciliation: ['ADMIN', 'SUPER_ADMIN', 'FINANCE_REVIEWER'],
+  listOperationalEvents: ['ADMIN', 'SUPER_ADMIN', 'BRAND_ADMIN'],
+  getOperationalHealth: ['ADMIN', 'SUPER_ADMIN', 'BRAND_ADMIN'],
+  listRecordsPage: ['ADMIN', 'SUPER_ADMIN', 'BRAND_ADMIN'],
+  getLaunchPolicy: ['ADMIN', 'SUPER_ADMIN'],
+  updateLaunchPolicy: ['ADMIN', 'SUPER_ADMIN'],
+  runOperationalMonitor: ['SYSTEM'],
+  runFinancialReconciliation: ['SYSTEM', 'ADMIN', 'SUPER_ADMIN', 'FINANCE_REVIEWER'],
+  compensatePayments: ['SYSTEM'],
   sendCustomerServiceLink: ['CUSTOMER_SERVICE', 'ADMIN'],
   transferNotify: ['SYSTEM'],
   timeoutCloseUnpaidOrders: ['SYSTEM'],
@@ -225,13 +261,12 @@ const ACTION_ROLES = {
 
 /* ---------------- 基础工具 ---------------- */
 
-// 密码散列（sha256，本地替身用；生产应使用更强 KDF）。
+// 密码散列与正式云函数共用 scrypt 实现；旧 SHA-256 仅用于登录后渐进迁移。
 export function hashPassword(password) {
-  return createHash('sha256').update(String(password)).digest('hex');
+  return Security.hashPassword(String(password));
 }
 
-// 脱敏用户（去除 passwordHash）。
-const publicUser = ({ passwordHash, ...user }) => user;
+const publicUser = Security.publicUser;
 
 // 读环境密钥，缺失即抛错（fail-closed，T0-02）。
 export function getSessionSecret() {
@@ -247,11 +282,36 @@ export function getH5Secret() {
 }
 
 // 签发会话 token（HMAC + exp）。
-export function issueSessionToken({ userId, role, roles = [], brandScopes = [], permissions = [] }, secret, { now = Date.now() } = {}) {
+export function issueSessionToken(claims, secret, { now = Date.now() } = {}) {
   if (!secret) throw new Error('缺少 SESSION_SECRET，无法签发会话');
-  const body = Buffer.from(JSON.stringify({ userId, role, roles, brandScopes, permissions, exp: now + SESSION_TTL_MS })).toString('base64url');
+  const body = Buffer.from(JSON.stringify({ ...claims, exp: claims.exp || now + SESSION_TTL_MS })).toString('base64url');
   const sig = createHmac('sha256', secret).update(body).digest('base64url');
   return `${body}.${sig}`;
+}
+
+function localRepository(db) {
+  const matches = (row, where = {}) => Object.entries(where).every(([key, value]) => row[key] === value);
+  const repo = {
+    getById: (name, id) => getById(db, name, id) || null,
+    find: (name, where = {}) => db[name].filter((row) => matches(row, where)),
+    findOne: (name, where = {}) => db[name].find((row) => matches(row, where)) || null,
+    insert: (name, doc) => {
+      if (doc._id && db[name].some((row) => row._id === doc._id)) throw new Error('记录重复');
+      return insert(db, name, doc);
+    },
+    updateById: (name, id, patch) => updateById(db, name, id, patch),
+    updateWhere: (name, where, patch) => ({ updated: updateWhere(db, name, (row) => matches(row, where), patch) }),
+    queryPage: (name, { where = {}, afterId = '', limit = 20 } = {}) => {
+      const rows = db[name].filter((row) => matches(row, where) && (!afterId || row._id > afterId)).sort((a, b) => String(a._id).localeCompare(String(b._id)));
+      return { items: rows.slice(0, limit), hasMore: rows.length > limit };
+    },
+  };
+  repo.transaction = (fn) => transaction(db, () => fn(repo));
+  return repo;
+}
+
+function localSecurity(db) {
+  return Security.createAccountSecurity({ repo: localRepository(db), env: process.env, async: false });
 }
 
 // 校验会话 token，返回 { userId, role, exp }，失败抛错。
@@ -587,35 +647,20 @@ export function oauthExchange(db, { code }) {
 }
 
 // 员工登录（ADMIN/CS）：随机短期 session token + 失败锁定。
-export function authLogin(db, { phone, password }) {
-  const user = findOne(db, 'users', (u) => u.phone === phone);
-  if (!user || user.passwordHash !== hashPassword(password)) {
-    if (user) recordLoginFailure(user);
-    throw new Error('手机号或密码错误');
-  }
-  assertNotLocked(user);
-  if (!['ADMIN', 'CUSTOMER_SERVICE', 'DISPATCHER', 'BRAND_ADMIN', 'FINANCE_REVIEWER', 'ARBITRATOR', 'SUPER_ADMIN'].includes(user.role)) {
-    throw new Error('该账号非管理/客服账号，请使用接单端登录');
-  }
-  if (user.status !== 'ACTIVE') throw new Error('账号已停用');
-  clearLoginFailure(user);
+export function authLogin(db, payload, _session, context = {}) {
+  const user = localSecurity(db).login({ ...payload, roles: ['ADMIN', 'CS', 'DISPATCHER', 'BRAND_ADMIN', 'FINANCE_REVIEWER', 'ARBITRATOR', 'SUPER_ADMIN'] }, context);
   const access = sessionAccess(db, user);
-  return { token: issueSessionToken({ userId: user._id, role: user.role, ...access }, getSessionSecret()), user: publicUser(user), role: user.role, ...access };
+  const claims = localSecurity(db).createSession(user, access);
+  return { token: issueSessionToken(claims, getSessionSecret()), user: publicUser(user), role: user.role, ...access };
 }
 
 // 接单人员登录（WORKER）：返回 mustChangePwd 标志。
-export function workerLogin(db, { phone, password }) {
-  const user = findOne(db, 'users', (u) => u.phone === phone);
-  if (!user || user.passwordHash !== hashPassword(password)) {
-    if (user) recordLoginFailure(user);
-    throw new Error('手机号或密码错误');
-  }
-  assertNotLocked(user);
-  if (user.role !== 'WORKER') throw new Error('该账号非接单账号');
-  if (user.status !== 'ACTIVE') throw new Error('账号已停用');
-  clearLoginFailure(user);
+export function workerLogin(db, payload, _session, context = {}) {
+  const user = localSecurity(db).login({ ...payload, roles: ['WORKER'] }, context);
+  const access = sessionAccess(db, user);
+  const claims = localSecurity(db).createSession(user, access);
   return {
-    token: issueSessionToken({ userId: user._id, role: 'WORKER', ...sessionAccess(db, user) }, getSessionSecret()),
+    token: issueSessionToken(claims, getSessionSecret()),
     user: publicUser(user),
     mustChangePwd: user.mustChangePwd === true,
   };
@@ -624,14 +669,24 @@ export function workerLogin(db, { phone, password }) {
 // 修改密码：校验旧密码，更新为新密码，清除强制改密标记。
 export function changePassword(db, { oldPassword, newPassword }, session) {
   authorize('changePassword', session);
+  if (Security.strictSecurity(process.env) || session.sid) return localSecurity(db).changePassword({ oldPassword, newPassword }, session);
+  const user = getById(db, 'users', session.userId); if (!user) throw new Error('用户不存在');
+  if (!Security.verifyPassword(oldPassword, user.passwordHash).valid) throw new Error('旧密码错误');
   if (!newPassword || newPassword.length < 6) throw new Error('新密码长度不能少于 6 位');
-  const user = getById(db, 'users', session.userId);
-  if (!user) throw new Error('用户不存在');
-  if (user.passwordHash !== hashPassword(oldPassword)) throw new Error('旧密码错误');
-  user.passwordHash = hashPassword(newPassword);
-  user.mustChangePwd = false;
-  user.updatedAt = Date.now();
-  return { ok: true };
+  user.passwordHash = hashPassword(newPassword); user.mustChangePwd = false; user.updatedAt = Date.now();
+  return { ok: true, requiresLogin: false };
+}
+
+export function getSecurityStatus(db, payload, session) { return localSecurity(db).getSecurityStatus(payload, session); }
+export function setupMfa(db, payload, session) { return localSecurity(db).setupMfa(payload, session); }
+export function enableMfa(db, payload, session) { return localSecurity(db).enableMfa(payload, session); }
+export function verifySecurityChallenge(db, payload, session) { return localSecurity(db).verifySecurityChallenge(payload, session); }
+export function revokeSessions(db, payload, session) { return localSecurity(db).revokeSessions(payload, session); }
+export function listLoginHistory(db, payload, session) { return localSecurity(db).listLoginHistory(payload, session); }
+export function setAccountStatus(db, payload, session) { return localSecurity(db).setAccountStatus(payload, session); }
+export function refreshSession(db, payload, session) {
+  const claims = localSecurity(db).refreshSession(payload, session);
+  return { token: issueSessionToken(claims, getSessionSecret()), expiresInSeconds: 1800 };
 }
 
 // 登录后的权限真相来源：前端菜单只消费该结果，服务端仍逐 action 强制鉴权。
@@ -650,6 +705,7 @@ export function createStaff(db, { role, phone, password, nickname, brandId = 'de
     throw new Error('后台员工角色不在允许范围');
   }
   if (!phone || !password) throw new Error('手机号和密码不能为空');
+  if (Security.strictSecurity(process.env)) Security.assertPasswordStrength(password);
   if (existsBy(db, 'users', (u) => u.phone === phone)) throw new Error('手机号已存在');
   const created = insert(db, 'users', {
     role: normalizedRole,
@@ -657,6 +713,7 @@ export function createStaff(db, { role, phone, password, nickname, brandId = 'de
     passwordHash: hashPassword(password),
     nickname: nickname || phone,
     status: 'ACTIVE',
+    securityVersion: 0,
     createdAt: Date.now(),
     updatedAt: Date.now(),
   });
@@ -748,6 +805,7 @@ export function freezeWallet(db, { workerId, scope }, session) {
 export function createWorker(db, { phone, initialPassword, nickname, brandId = 'default' }, session) {
   authorize('createWorker', session);
   if (!phone || !initialPassword) throw new Error('手机号和初始密码不能为空');
+  if (Security.strictSecurity(process.env)) Security.assertPasswordStrength(initialPassword);
   if (existsBy(db, 'users', (u) => u.phone === phone)) throw new Error('手机号已存在');
   const user = insert(db, 'users', {
     role: 'WORKER',
@@ -757,6 +815,7 @@ export function createWorker(db, { phone, initialPassword, nickname, brandId = '
     acceptEnabled: true,
     mustChangePwd: true,
     status: 'ACTIVE',
+    securityVersion: 0,
     createdAt: Date.now(),
     updatedAt: Date.now(),
   });
@@ -2078,7 +2137,8 @@ export function approveWithdrawal(db, { withdrawalId, requestId = '' }, session)
   authorize('approveWithdrawal', session);
   const withdrawal = getById(db, 'withdrawals', withdrawalId);
   if (!withdrawal) throw new Error('提现单不存在');
-  Finance.assertWithdrawalReviewer(withdrawal, session, true);
+  if (Security.strictSecurity(process.env)) Finance.assertWithdrawalReviewer(withdrawal, session, true);
+  else if (withdrawal.workerId === session.userId) throw new Error('提现申请人不能自审');
   approveWithdrawalDomain(withdrawal, { approvedBy: session.userId });
   withdrawal.updatedAt = Date.now();
   appendAudit(db, { brandId: withdrawal.brandId, action: 'approveWithdrawal', resourceType: 'withdrawal', resourceId: withdrawalId, after: { ...withdrawal }, requestId }, session);
@@ -2115,7 +2175,7 @@ export function markWithdrawalPaid(db, { withdrawalId, batchNo, receiptAttachmen
   authorize('markWithdrawalPaid', session);
   const withdrawal = getById(db, 'withdrawals', withdrawalId);
   if (!withdrawal) throw new Error('提现单不存在');
-  Finance.assertPayoutReceipt(withdrawal, getById(db, 'attachments', receiptAttachmentId), externalReference);
+  if (Security.strictSecurity(process.env)) Finance.assertPayoutReceipt(withdrawal, getById(db, 'attachments', receiptAttachmentId), externalReference);
   if (withdrawal.workerId === session.userId) throw new Error('申请人不能自行确认出款');
   if (db.withdrawals.some((row) => row._id !== withdrawalId && row.externalReference === externalReference)) throw new Error('出款回单流水已关联其他提现');
   return transaction(db, () => {
@@ -2435,11 +2495,73 @@ function startOfWeek(now) {
   return d.getTime();
 }
 
+/* ---------------- 商用隐私、财务与运维增量 ---------------- */
+
+function localPrivacyServices() {
+  const remote = ['staging', 'production'].includes(process.env.APP_ENV || process.env.NODE_ENV);
+  return Privacy.createPrivacyServices({
+    env: process.env,
+    verifyStepUp: async (_repo, session, token) => Boolean(Security.verifyStepUpToken(token, session, process.env)),
+    scanner: globalThis.__FILE_SCANNER__ || (!remote ? { scan: async () => ({ clean: true, engine: 'local-demo' }) } : undefined),
+    storage: globalThis.__PRIVATE_FILE_STORAGE__ || (!remote ? {
+      upload: async ({ storageKey }) => ({ fileID: `private://${storageKey}` }),
+      sign: async ({ fileID, expiresAt }) => ({ url: `https://local.invalid/private/${encodeURIComponent(fileID)}`, expiresAt }),
+    } : undefined),
+  });
+}
+
+function privacyAction(name) {
+  return (db, payload, session) => localPrivacyServices()[name](Privacy.asPrivacyRepository(db), payload, session);
+}
+function privacyOrLegacy(name, fallback) {
+  const secure = privacyAction(name);
+  return (db, payload, session) => Security.strictSecurity(process.env) ? secure(db, payload, session) : fallback(db, payload, session);
+}
+
+const operationsServices = Ops.createOperationsServices({
+  env: process.env,
+  verifyStepUp: async (_repo, payload, session) => Boolean(Security.verifyStepUpToken(payload.stepUpToken, session, process.env)),
+});
+function operationAction(name) { return (db, payload, session) => operationsServices[name](localRepository(db), payload, session); }
+function financeAction(name) { return (db, payload, session) => Finance[name](localRepository(db), payload, session); }
+
+export const getLegalDocuments = privacyAction('getLegalDocuments');
+export const recordLegalConsent = privacyAction('recordLegalConsent');
+export const withdrawLegalConsent = privacyAction('withdrawLegalConsent');
+export const listMyDataRequests = privacyAction('listMyDataRequests');
+export const requestDataRight = privacyAction('requestDataRight');
+export const cancelDataRequest = privacyAction('cancelDataRequest');
+export const listDataRequests = privacyAction('listDataRequests');
+export const reviewDataRequest = privacyAction('reviewDataRequest');
+export const executeDataRequest = privacyAction('executeDataRequest');
+export const getMyDataCopy = privacyAction('getMyDataCopy');
+export const viewSensitiveProfile = privacyAction('viewSensitiveProfile');
+export const getPrivateAttachmentUrl = privacyAction('getPrivateAttachmentUrl');
+export const runFinancialReconciliation = financeAction('runFinancialReconciliation');
+export const listReconciliationCases = financeAction('listReconciliationCases');
+export const resolveReconciliationCase = financeAction('resolveReconciliationCase');
+export const closeReconciliationCase = financeAction('closeReconciliationCase');
+export const exportFinancialReconciliation = financeAction('exportFinancialReconciliation');
+export const listRecordsPage = operationAction('listRecordsPage');
+export const listOperationalEvents = operationAction('listOperationalEvents');
+export const getOperationalHealth = operationAction('getOperationalHealth');
+export const runOperationalMonitor = operationAction('runOperationalMonitor');
+export const getLaunchPolicy = operationAction('getLaunchPolicy');
+export const updateLaunchPolicy = operationAction('updateLaunchPolicy');
+export function compensatePayments(db, payload = {}, session) {
+  authorize('compensatePayments', session);
+  const limit = Math.max(1, Math.min(100, Number(payload.limit) || 20));
+  const payments = db.payments.filter((row) => ['PENDING', 'PROCESSING'].includes(row.status)).slice(0, limit);
+  const refunds = db.refunds.filter((row) => ['PROCESSING', 'ABNORMAL'].includes(row.status)).slice(0, Math.max(0, limit - payments.length));
+  return { checked: payments.length + refunds.length, results: [...payments.map((row) => ({ paymentId: row._id, ok: false, reason: 'LOCAL_MIRROR_NO_PROVIDER' })), ...refunds.map((row) => ({ refundId: row._id, ok: false, reason: 'LOCAL_MIRROR_NO_PROVIDER' }))] };
+}
+
 /* ---------------- 分发（镜像层错误封套） ---------------- */
 
 // action 名 -> 处理函数（供 dispatch 与 api-server 统一入口使用）。
 const ACTION_MAP = {
   miniLogin, oauthExchange, authLogin, workerLogin, changePassword, getAccessProfile,
+  getSecurityStatus, setupMfa, enableMfa, verifySecurityChallenge, revokeSessions, listLoginHistory, setAccountStatus, refreshSession,
   createStaff, listUsers, updateStaff, listUserBrandRoles, saveUserBrandRoles, listAuditLogs,
   freezeWallet, createWorker, updateWorker, listWorkers,
   listProducts, getProduct, saveProduct, updateProductStatus,
@@ -2454,7 +2576,12 @@ const ACTION_MAP = {
   grabOrder, releaseOrder, acceptAssignment, rejectAssignment, submitCompletion, listAssignments, reassignOrder,
   getWallet, walletTransactions, listCommissionRules, saveCommissionRule, reconcileWalletLedger,
   applyWithdrawal, listWithdrawals, startWithdrawalReview, approveWithdrawal, startWithdrawalPayment, failWithdrawalPayment, migrateWithdrawalStatuses,
-  updateProfile, getProfile, uploadFile, adjustWallet, markWithdrawalPaid, rejectWithdrawal,
+  updateProfile: privacyOrLegacy('updateProfile', updateProfile), getProfile: privacyOrLegacy('getProfile', getProfile), uploadFile: privacyOrLegacy('uploadFile', uploadFile), adjustWallet, markWithdrawalPaid, rejectWithdrawal,
+  getLegalDocuments, recordLegalConsent, withdrawLegalConsent, listMyDataRequests, requestDataRight, cancelDataRequest,
+  listDataRequests, reviewDataRequest, executeDataRequest, getMyDataCopy, viewSensitiveProfile, getPrivateAttachmentUrl,
+  runFinancialReconciliation, listReconciliationCases, resolveReconciliationCase, closeReconciliationCase, exportFinancialReconciliation,
+  compensatePayments,
+  listRecordsPage, listOperationalEvents, getOperationalHealth, runOperationalMonitor, getLaunchPolicy, updateLaunchPolicy,
   reportOrders, reportWorkers, reportWithdrawals, reportProfit,
   notify, sendCustomerServiceLink, timeoutCloseUnpaidOrders, timeoutMarkPool, timeoutRejectAssignments, dashboard,
 };
@@ -2518,21 +2645,30 @@ function errorCode(err) {
 }
 
 // 镜像层统一分发入口：业务错误一律返回 {ok:false, code, message}，不 throw（与云函数 index.js 一致）。
-export function dispatch(db, action, payload, session) {
+export function dispatch(db, action, payload, session, context = {}) {
   const handler = ACTION_MAP[action];
   if (!handler) return { ok: false, code: 'NOT_FOUND', message: `未知 action: ${action}` };
   try {
+    if (session && !['CUSTOMER', 'SYSTEM'].includes(session.role) && (Security.strictSecurity(process.env) || session.sid)) {
+      localSecurity(db).validateSession(session, action);
+      Security.assertSensitiveAction(action, session, payload.stepUpToken, process.env);
+    }
     const brandId = enforceResourceBrand(db, payload, session);
     const resource = ROUTE_AUDIT_ACTIONS.has(action) ? auditResource(db, payload) : null;
-    const result = handler(db, payload, session);
-    if (resource) {
-      appendAudit(db, {
-        brandId, action, resourceType: resource.resourceType, resourceId: resource.resourceId,
-        before: resource.before, after: structuredClone(result || null),
-        requestId: payload.requestId || payload.idempotencyKey || '',
-      }, session);
-    }
-    return result;
+    const complete = (result) => {
+      if (resource) {
+        appendAudit(db, {
+          brandId, action, resourceType: resource.resourceType, resourceId: resource.resourceId,
+          before: resource.before, after: structuredClone(result || null),
+          requestId: payload.requestId || payload.idempotencyKey || '',
+        }, session);
+      }
+      return result;
+    };
+    const result = handler(db, payload, session, context);
+    return result && typeof result.then === 'function'
+      ? result.then(complete).catch((err) => ({ ok: false, code: errorCode(err), message: (err && err.message) || String(err) }))
+      : complete(result);
   } catch (err) {
     return { ok: false, code: errorCode(err), message: (err && err.message) || String(err) };
   }

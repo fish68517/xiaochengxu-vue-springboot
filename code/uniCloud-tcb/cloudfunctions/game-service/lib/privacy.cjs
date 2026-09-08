@@ -344,7 +344,7 @@ function createPrivacyServices({ env = process.env, now = Date.now, verifyStepUp
     return api.getProfile(repo, {}, session);
   };
   api.uploadFile = async (repo, payload, session) => {
-    const brandId = activeBrand(payload, session); const allowed = { id_card: ['WORKER'], complete_proof: ['WORKER'], dispute: ['CUSTOMER'] };
+    const brandId = activeBrand(payload, session); const allowed = { id_card: ['WORKER'], complete_proof: ['WORKER'], dispute: ['CUSTOMER'], payout_receipt: ['ADMIN', 'FINANCE_REVIEWER', 'SUPER_ADMIN'] };
     if (!allowed[payload.bizType] || !roles(session).some((role) => allowed[payload.bizType].includes(role))) fail('无权限上传此类附件', 'FORBIDDEN');
     if (payload.bizId && payload.bizType !== 'id_card') {
       const order = await repo.getById('orders', payload.bizId); const owner = order && (payload.bizType === 'dispute' ? [session.userId, session.openid].includes(order.customerId) : order.workerId === session.userId);
@@ -358,7 +358,7 @@ function createPrivacyServices({ env = process.env, now = Date.now, verifyStepUp
     const storageKey = `private/${brandId}/${payload.bizType}/${crypto.randomUUID()}.${file.ext}`;
     const uploaded = await storage.upload({ storageKey, bytes: file.bytes, mimeType: file.mimeType, private: true });
     if (!uploaded || !uploaded.fileID) fail('私有附件上传失败');
-    const doc = await repo.insert('attachments', { _id: uuid('att'), brandId, bizType: payload.bizType, bizId: payload.bizId || '', uploaderId: session.userId, storageKey, fileID: uploaded.fileID, fileName: file.fileName, size: file.bytes.length, mimeType: file.mimeType, contentHash: file.hash, visibility: 'PRIVATE', scanStatus: 'CLEAN', scannedAt: now(), uploadedAt: now() });
+    const doc = await repo.insert('attachments', { _id: uuid('att'), brandId, bizType: payload.bizType, purpose: payload.bizType === 'payout_receipt' ? 'PAYOUT_RECEIPT' : payload.bizType.toUpperCase(), bizId: payload.bizId || '', uploaderId: session.userId, storageKey, fileID: uploaded.fileID, fileName: file.fileName, size: file.bytes.length, mimeType: file.mimeType, contentHash: file.hash, visibility: 'PRIVATE', storageVisibility: 'private', scanStatus: 'CLEAN', scannedAt: now(), uploadedAt: now() });
     return { _id: doc._id, attachmentId: doc._id, bizType: doc.bizType, fileName: doc.fileName, size: doc.size, scanStatus: doc.scanStatus };
   };
   api.getPrivateAttachmentUrl = async (repo, payload, session) => {

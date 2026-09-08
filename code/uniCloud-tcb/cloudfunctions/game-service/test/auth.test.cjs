@@ -69,7 +69,8 @@ test('系统间调用:HMAC 放行白名单 action，错误签名/重放/非白�
   const internalAuth = signInternalRequest({ action: 'h5Token', payload, secret });
   const ok = await auth.require(repo, 'h5Token', { internalAuth, payload });
   assert.equal(ok.mode, 'system');
-  assert.equal(ok.session, null);
+  assert.equal(ok.session.role, 'SYSTEM');
+  assert.equal(ok.session.internalNonce, internalAuth.nonce);
   await assert.rejects(() => auth.require(repo, 'h5Token', { internalAuth, payload }), /重放/);
   const bad = signInternalRequest({ action: 'h5Token', payload, secret: 'wrong-secret-at-least-32-chars-x' });
   await assert.rejects(() => auth.require(repo, 'h5Token', { internalAuth: bad, payload }), /签名非法/);

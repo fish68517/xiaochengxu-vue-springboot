@@ -1,0 +1,14 @@
+{
+  "bsonType": "object",
+  "required": ["_id", "mfaEnabled"],
+  "permission": { "read": false, "create": false, "update": false, "delete": false },
+  "properties": {
+    "_id": { "bsonType": "string", "description": "用户ID" },
+    "mfaEnabled": { "bsonType": "bool" },
+    "mfaSecret": { "bsonType": "object" },
+    "pendingSecret": { "bsonType": ["object", "null"] },
+    "pendingExpiresAt": { "bsonType": "number" },
+    "lastTotpStep": { "bsonType": "number" },
+    "enabledAt": { "bsonType": "number" }
+  }
+}

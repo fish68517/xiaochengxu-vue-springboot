@@ -4,7 +4,7 @@ import { createRequire } from 'node:module';
 const require = createRequire(import.meta.url);
 const P = require('../../../uniCloud-tcb/cloudfunctions/game-service/lib/privacy.cjs');
 const { createMemoryRepository } = require('../../../uniCloud-tcb/cloudfunctions/game-service/lib/repository.cjs');
-const env = { APP_ENV: 'staging', PII_KEY_VERSION: 'v1', PII_KEYS_JSON: JSON.stringify({ v1: Buffer.alloc(32, 17).toString('base64'), v2: Buffer.alloc(32, 18).toString('base64') }), PII_BLIND_INDEX_KEY: Buffer.alloc(32, 19).toString('base64'), ACCOUNT_CLOSURE_COOLING_DAYS: '7', PRIVACY_LEGAL_DOCUMENTS_JSON: JSON.stringify([{ type: 'privacy', title: '隐私政策', version: '2026-09', url: 'https://legal.example.org/privacy', brandId: 'a' }]) };
+const env = { APP_ENV: 'staging', PII_KEY_VERSION: 'v1', PII_KEYS_JSON: JSON.stringify({ v1: Buffer.alloc(32, 17).toString('base64'), v2: Buffer.alloc(32, 18).toString('base64') }), PII_BLIND_INDEX_KEY: Buffer.alloc(32, 19).toString('base64'), ACCOUNT_CLOSURE_COOLING_DAYS: '7', PRIVACY_RETENTION_POLICY_JSON: JSON.stringify({ approved: true, version: '2026-09' }), PRIVACY_LEGAL_DOCUMENTS_JSON: JSON.stringify([{ type: 'privacy', title: '隐私政策', version: '2026-09', url: 'https://legal.example.org/privacy', brandId: 'a' }]) };
 const customer = { userId: 'c1', role: 'CUSTOMER', brandScopes: ['a'] };
 const admin = { userId: 'a1', role: 'ADMIN', brandScopes: ['a'] };
 function setup(options = {}) { const repo = createMemoryRepository(); return { repo, svc: P.createPrivacyServices({ env, verifyStepUp: async (_repo, _session, token) => token === 'verified', ...options }) }; }

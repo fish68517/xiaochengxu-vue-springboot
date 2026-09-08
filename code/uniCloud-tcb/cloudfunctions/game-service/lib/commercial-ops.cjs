@@ -95,10 +95,13 @@ function createOperationsServices({ env = process.env, verifyStepUp } = {}) {
     },
   };
 }
-async function enforceLaunchPolicy(repo, { brandId, userId, amountFen }, env = process.env) {
+async function enforceLaunchPolicy(repo, { brandId, userId, amountFen, orderId = '' }, env = process.env) {
   if (env.APP_ENV !== 'production') return;
   const policy = (await repo.findOne('configs', { cfgKey: 'COMMERCIAL_LAUNCH_POLICY' }))?.cfgValue;
   if (!policy?.approved || policy.paused || !policy.brands?.includes(brandId) || !policy.userIds?.includes(userId)) throw new Error('当前暂未开放灰度服务');
   if (!Number.isSafeInteger(amountFen) || amountFen <= 0 || amountFen > policy.maxPaymentFen) throw new Error('超过灰度单笔限额');
+  const start = new Date(); start.setHours(0, 0, 0, 0);
+  const todayFen = (await repo.find('orders', { brandId })).filter((row) => row._id !== orderId && row.grayUserId === userId && row.createdAt >= start.getTime() && !['CANCELLED', 'CLOSED', 'REFUNDED'].includes(row.status)).reduce((sum, row) => sum + (Number.isSafeInteger(row.amountFen) ? row.amountFen : 0), 0);
+  if (todayFen + amountFen > policy.maxDailyPaymentFen) throw new Error('超过灰度用户当日支付限额');
 }
 module.exports = { sanitize, requestId, deliverWebhook, recordOperation, createOperationsServices, enforceLaunchPolicy };
