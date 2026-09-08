@@ -1,0 +1,22 @@
+{
+  "name": "游戏服务客户小程序",
+  "appid": "__UNTOUCHED__",
+  "description": "客户浏览商品、跳转微信客服、查看订单",
+  "versionName": "0.1.0",
+  "versionCode": "100",
+  "transformPx": false,
+  "mp-weixin": {
+    "appid": "wxe40bb897376601cc",
+    "setting": {
+      "urlCheck": false
+    },
+    "usingComponents": true
+  },
+  "h5": {
+    "title": "游戏服务下单",
+    "router": {
+      "mode": "hash"
+    }
+  },
+  "vueVersion": "3"
+}

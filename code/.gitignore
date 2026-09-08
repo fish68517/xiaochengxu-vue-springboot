@@ -1,0 +1,15 @@
+node_modules/
+dist/
+unpackage/
+BuildArtifacts/
+ReleaseArtifacts/
+TestEvidence/
+backups/
+alerts/
+.env
+.env.*
+!.env.example
+*.log
+*.pem
+*.key
+.runtime/

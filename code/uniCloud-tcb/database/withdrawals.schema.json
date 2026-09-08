@@ -1,0 +1,33 @@
+{
+  "bsonType": "object",
+  "required": ["brandId", "workerId", "walletId", "amountFen", "status", "createdAt"],
+  "permission": {
+    "read": false,
+    "create": false,
+    "update": false,
+    "delete": false
+  },
+  "properties": {
+    "_id": { "bsonType": "string", "description": "主键（统一 _id 为业务主键）" },
+    "brandId": { "bsonType": "string", "description": "申请所在品牌" },
+    "workerId": { "bsonType": "string" },
+    "walletId": { "bsonType": "string" },
+    "amountFen": { "bsonType": "int", "description": "提现金额（分）" },
+    "status": { "bsonType": "string", "enum": ["SUBMITTED", "REVIEWING", "APPROVED", "PAYING", "PAY_FAILED", "PAID", "REJECTED", "PENDING_REVIEW"], "description": "七态提现流程；PENDING_REVIEW 仅兼容旧数据" },
+    "applyCountWeek": { "bsonType": "int", "description": "本周第几次申请" },
+    "reviewedBy": { "bsonType": "string", "description": "审核管理员（内部卷 approved_by）" },
+    "reviewStartedAt": { "bsonType": "number" },
+    "approvedBy": { "bsonType": "string" },
+    "paidBy": { "bsonType": "string", "description": "打款确认管理员" },
+    "rejectReason": { "bsonType": "string", "description": "驳回原因（内部卷 fail_reason）" },
+    "batchNo": { "bsonType": "string" },
+    "payStartedAt": { "bsonType": "number" },
+    "payFailReason": { "bsonType": "string" },
+    "payFailedAt": { "bsonType": "number" },
+    "paymentEvidence": { "bsonType": "array", "items": { "bsonType": "string" } },
+    "createdAt": { "bsonType": "number" },
+    "approvedAt": { "bsonType": "number" },
+    "paidAt": { "bsonType": "number" },
+    "rejectedAt": { "bsonType": "number" }
+  }
+}

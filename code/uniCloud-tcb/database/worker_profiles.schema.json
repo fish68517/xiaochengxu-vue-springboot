@@ -1,0 +1,22 @@
+{
+  "bsonType": "object",
+  "required": ["workerId", "createdAt"],
+  "permission": {
+    "read": false,
+    "create": false,
+    "update": false,
+    "delete": false
+  },
+  "properties": {
+    "_id": { "bsonType": "string", "description": "主键（统一 _id 为业务主键）" },
+    "workerId": { "bsonType": "string", "description": "关联 users._id（role=worker，唯一）" },
+    "realName": { "bsonType": "string", "description": "实名姓名（加密存储）" },
+    "withdrawWechat": { "bsonType": "string", "description": "收款微信号（加密存储）" },
+    "idCardAttachmentId": { "bsonType": "string", "description": "身份证截图附件 id（敏感附件，私有桶）" },
+    "realnameStatus": { "bsonType": "string", "enum": ["PENDING", "APPROVED", "REJECTED"], "description": "实名审核状态（前端契约定案枚举）" },
+    "phone": { "bsonType": "string", "description": "联系方式-手机号（加密存储，客服可见线下提醒）" },
+    "wechat": { "bsonType": "string", "description": "联系方式-微信号（加密存储，客服可见线下提醒）" },
+    "createdAt": { "bsonType": "number" },
+    "updatedAt": { "bsonType": "number" }
+  }
+}

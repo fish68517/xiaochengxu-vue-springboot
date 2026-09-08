@@ -1,0 +1,7 @@
+{
+  "name": "@game-service/backend",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "本地可运行后端服务层（uniCloud 云函数的实现前身，TDD）"
+}

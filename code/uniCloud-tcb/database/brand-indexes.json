@@ -1,0 +1,23 @@
+{
+  "description": "第一、二阶段多品牌与交易唯一/联合索引清单；部署前由云空间控制台或迁移工具按此创建。",
+  "indexes": [
+    { "collection": "brands", "name": "uniq_brand_code", "keys": { "code": 1 }, "unique": true },
+    { "collection": "brands", "name": "uniq_brand_appid", "keys": { "appId": 1 }, "unique": true },
+    { "collection": "products", "name": "idx_brand_status_sort", "keys": { "brandId": 1, "status": 1, "sort": 1 } },
+    { "collection": "orders", "name": "uniq_order_no", "keys": { "orderNo": 1 }, "unique": true },
+    { "collection": "orders", "name": "uniq_order_idempotency", "keys": { "idempotencyScope": 1, "idempotencyKey": 1 }, "unique": true, "sparse": true },
+    { "collection": "orders", "name": "idx_brand_status_created", "keys": { "brandId": 1, "status": 1, "createdAt": -1 } },
+    { "collection": "payments", "name": "uniq_payment_no", "keys": { "paymentNo": 1 }, "unique": true },
+    { "collection": "payments", "name": "uniq_payment_idempotency", "keys": { "brandId": 1, "idempotencyKey": 1 }, "unique": true },
+    { "collection": "payments", "name": "uniq_provider_transaction", "keys": { "providerTransactionId": 1 }, "unique": true, "sparse": true },
+    { "collection": "payments", "name": "idx_order_status", "keys": { "orderId": 1, "status": 1, "createdAt": -1 } },
+    { "collection": "assignments", "name": "idx_order_created", "keys": { "orderId": 1, "createdAt": 1 } },
+    { "collection": "commission_rules", "name": "uniq_brand_rule_version", "keys": { "brandId": 1, "version": 1 }, "unique": true },
+    { "collection": "wallet_transactions", "name": "idx_brand_order_type", "keys": { "brandId": 1, "orderId": 1, "type": 1 } },
+    { "collection": "user_brand_roles", "name": "uniq_user_brand", "keys": { "userId": 1, "brandId": 1 }, "unique": true },
+    { "collection": "brand_config_versions", "name": "uniq_brand_version", "keys": { "brandId": 1, "version": 1 }, "unique": true },
+    { "collection": "audit_logs", "name": "idx_brand_action_created", "keys": { "brandId": 1, "action": 1, "createdAt": -1 } },
+    { "collection": "h5_token_revocations", "name": "idx_h5_token_expiry", "keys": { "expiresAt": 1 } },
+    { "collection": "system_nonces", "name": "idx_system_nonce_expiry", "keys": { "expiresAt": 1 } }
+  ]
+}

@@ -1,0 +1,28 @@
+{
+  "bsonType": "object",
+  "required": ["role", "phone", "status", "createdAt"],
+  "permission": {
+    "read": false,
+    "create": false,
+    "update": false,
+    "delete": false
+  },
+  "properties": {
+    "_id": { "bsonType": "string", "description": "主键（统一 _id 为业务主键）" },
+    "role": { "bsonType": "string", "enum": ["ADMIN", "CUSTOMER_SERVICE", "WORKER", "CUSTOMER", "DISPATCHER", "BRAND_ADMIN", "FINANCE_REVIEWER", "ARBITRATOR", "SUPER_ADMIN"] },
+    "username": { "bsonType": "string", "description": "登录名（worker 为手机号）" },
+    "phone": { "bsonType": "string", "description": "手机号（员工，加密存储）" },
+    "passwordHash": { "bsonType": "string" },
+    "nickname": { "bsonType": "string" },
+    "openid": { "bsonType": "string" },
+    "unionid": { "bsonType": "string" },
+    "wechat": { "bsonType": "string", "description": "绑定微信（员工，加密存储）" },
+    "acceptEnabled": { "bsonType": "bool" },
+    "mustChangePwd": { "bsonType": "bool", "description": "首次登录强制改密" },
+    "loginFailCount": { "bsonType": "int", "description": "登录失败次数" },
+    "lockedUntil": { "bsonType": "number", "description": "登录锁定截止时间戳" },
+    "status": { "bsonType": "string", "enum": ["ACTIVE", "DISABLED"] },
+    "createdAt": { "bsonType": "number" },
+    "updatedAt": { "bsonType": "number" }
+  }
+}

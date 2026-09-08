@@ -1,0 +1,7 @@
+{
+  "name": "@game-service/domain",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "核心领域逻辑（纯函数，TDD）"
+}

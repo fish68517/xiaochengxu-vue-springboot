@@ -1,0 +1,153 @@
+# 外包交接说明（2026-08）
+
+> 用途：外包方承接「最后修补 + 测试后 Bug 修复」时的交接基线说明。本文汇总交接包构成、环境变量清单、构建与部署步骤、外包责任边界（甲方裁定）与剩余外部待办移交清单。
+> 配套文档：《外包验收检查单》（合同附件）、《实现-文档差异裁决表》（终局裁决）、V1.1（`F:\ZZPPWW\开发文档V1.1.md`）。
+> 验收原则（甲方已定）：**以检查单 + 本仓库实际运行（构建/启动）为准，不以乙方自述为准**。
+
+## 一、交接包构成
+
+### 1.1 代码仓库
+
+- 远程：`https://gitee.com/issac-cheng/pwrebuild.git`
+- 分支：`main` = 开发主干（实时提交）；`master` = 静态主干（里程碑快照）。
+- 基线：Phase 3 五波次交付 + 波次 5b 总联调收口（2026-08-29）。交付数字：20 集合 / 12 状态 / 云函数 75 action / 镜像 79 action / 196 测试全绿 / 四套构建 exit 0 / e2e-smoke 16 步通过。
+
+### 1.2 文档清单（docs/ 关键文件）
+
+| 文件 | 用途 |
+| --- | --- |
+| `docs/PHASE3-实施计划.md` | Phase 3 实施蓝图（已收口）：六阶段契约、数据库/状态机/action 蓝图、T0-01~T0-14 修复方案、波次执行记录 |
+| `docs/STATUS.md` | 项目最终状态：Phase 3 收口数字、P0 关闭清单、契约三方对齐抽查、剩余外部待办 |
+| `docs/API.md` | 接口清单：action 契约、鉴权模型、错误封套、幂等键、本地 HTTP 路由、部署配置、偏差说明 |
+| `docs/实现-文档差异裁决表.md` | 终局裁决：代码全面向 V1.1 收敛 + 6 项例外 + 支付口径终局 |
+| `docs/差距核查报告.md` | 差距核查终稿：裁决落实结论、T0 缺陷清单（状态列）、六阶段进度 |
+| `docs/可拓展性评估.md` | 品牌配置中心可拓展性评估终稿：落地状态注、成本验证、风险覆盖 |
+| `docs/外包验收检查单.md` | 验收检查单（A~F 组，合同附件）：C/D 组逐项标注、E 组上线 Checklist、F 组证据要求 |
+| `docs/外包交接说明.md` | 本文件 |
+| `docs/注释审查报告.md` | 注释审查（初稿；终稿待 Phase 6b 更新） |
+| `docs/DB.md` | 数据库 schema 映射 |
+| `docs/FEATURES.md` | 功能点清单 |
+| `docs/DECISIONS.md` | 有效决策集（MVP 决策基线） |
+| `docs/TODO.md` | 任务清单（T0/T1/T2/H） |
+| `docs/E2E-REPORT.md` / `docs/GO-LIVE.md` / `docs/GO-LIVE-WECHAT-DOMAIN.md` / `docs/PROGRESS.md` | 过程留档与上线/进度记录 |
+
+### 1.3 V1.1 位置
+
+- 《开发文档 V1.1（外包交付版）》：`F:\ZZPPWW\开发文档V1.1.md`（709 行）。
+- 定位：外包合同附件，12 状态 / 38 功能点 / SOP 六步 / H5 链接跳转下单 + 微信内 JSAPI 对商户 / 微信外 H5 支付（小程序零支付）/ 差额退款 + 追佣 / 人工打款 10 元 / 未开工取消一律审批 / 支付 30 分钟 / 无等级全局配置 / 品牌配置中心 §8。
+
+## 二、环境变量清单（grep 实查，2026-08）
+
+> 云函数侧 secret 一律 fail-closed：缺失即抛错拒绝，不降级、不 mock 兜底（`SESSION_SECRET`/`H5_TOKEN_SECRET`/`WECHAT_PAY_*`）。
+
+### 2.1 微信支付（`WECHAT_PAY_*`）
+
+| 环境变量 | 用途 | 出处（实查 file:line） |
+| --- | --- | --- |
+| `WECHAT_PAY_MCHID` | 微信支付商户号 | `uniCloud-tcb/cloudfunctions/game-service/lib/wechat-pay.cjs:7,71` |
+| `WECHAT_PAY_SERIAL_NO` | API 证书序列号 | `wechat-pay.cjs:7,72` |
+| `WECHAT_PAY_PRIVATE_KEY` | API 证书私钥（apiclient_key.pem，支持 `\n` 转义单行存储） | `wechat-pay.cjs:7,74` |
+| `WECHAT_PAY_APIV3_KEY` | APIv3 密钥 | `wechat-pay.cjs:7,75` |
+| `WECHAT_PAY_APPID` | 支付绑定 AppID | `wechat-pay.cjs:7,76` |
+| `WECHAT_PAY_NOTIFY_URL` | 支付回调地址（默认 `https://api.qmhyplayer.com/pay-notify`） | `wechat-pay.cjs:6,77` |
+
+### 2.2 微信账号（服务号 / 小程序）
+
+| 环境变量 | 用途 | 出处（实查 file:line） |
+| --- | --- | --- |
+| `WECHAT_OFFICIAL_APPID` | 认证服务号 AppID（网页授权 oauthExchange，snsapi_base） | `uniCloud-tcb/cloudfunctions/game-service/lib/oauth.cjs:26` |
+| `WECHAT_OFFICIAL_SECRET` | 认证服务号 Secret | `oauth.cjs:27` |
+| `WECHAT_MP_APPID` | 小程序 AppID（miniLogin code2Session） | `oauth.cjs:38`、`lib/subscribe.cjs:46`、`wechat-callback/index.js:45` |
+| `WECHAT_MP_SECRET` | 小程序 Secret | `oauth.cjs:39`、`lib/subscribe.cjs:46`、`wechat-callback/index.js:46` |
+| `WECHAT_MP_KF_TOKEN` | 微信客服回调 token（验签） | `uniCloud-tcb/cloudfunctions/wechat-callback/index.js:10` |
+| `WECHAT_MP_TEMPLATE_IDS` | 订阅消息模板 ID map（如 `{ ORDER_STATUS: 'TPL...' }`） | `lib/subscribe.cjs:52,61` |
+
+### 2.3 会话 / H5 下单密钥与域名（云函数 + 后端镜像）
+
+| 环境变量 | 用途 | 出处（实查 file:line） |
+| --- | --- | --- |
+| `SESSION_SECRET` | 会话 token 签名密钥（fail-closed） | `game-service/lib/auth.cjs:112`、`packages/backend/src/services.js:200` |
+| `H5_TOKEN_SECRET` | H5 下单 token 签名密钥（fail-closed） | `game-service/lib/services.cjs:20`、`packages/backend/src/token.js:11` |
+| `INTERNAL_SECRET` | 系统间调用密钥（wechat-callback 调 game-service h5Token 兜底发链接用，fail-closed：未配置则回调跳过发链接） | `game-service/lib/auth.cjs`（SYSTEM_CALLABLE）、`wechat-callback/index.js` |
+| `H5_TOKEN_TTL_MS` | H5 token 有效期（默认 24h） | `game-service/lib/services.cjs:15` |
+| `H5_ORDER_BASE_URL` | H5 下单页域名（默认 `https://h5.qmhyjoy.com`） | `game-service/lib/services.cjs:16`、`wechat-callback/index.js:41`、`packages/backend/src/services.js:63` |
+
+### 2.4 前端构建变量（`VITE_*`）
+
+| 环境变量 | 用途 | 出处（实查 file:line） |
+| --- | --- | --- |
+| `VITE_API_BASE` | 前端 API 基地址（本地联调注入 api-server；生产构建为空走 uniCloud 云函数） | `apps/client/src/api.js:4`、`apps/workbench/src/api.js:4`、`apps/admin/src/api.js:4` |
+| `VITE_H5_ORDER_BASE_URL` | H5 下单页域名（小程序「立即下单」经 web-view 打开） | `apps/client/src/api.js:6` |
+| `VITE_OAUTH_APPID` | 服务号网页授权 appid（snsapi_base，H5 微信内 JSAPI 对商户支付前置） | `apps/client/src/api.js:8` |
+
+### 2.5 本地联调 / 脚本 / 运维
+
+| 环境变量 | 用途 | 出处（实查 file:line） |
+| --- | --- | --- |
+| `PORT` | api-server 镜像端口（默认 4176） | `scripts/api-server.mjs:10` |
+| `BACKUP_DIR` | 数据库备份目录（默认 `./backups`） | `scripts/backup-db.mjs:32`、`scripts/restore-drill.mjs:11` |
+| `ALERT_LOG_DIR` | 告警日志目录（默认 `./alerts`） | `scripts/alert.mjs:9` |
+| `ALERT_WEBHOOK_URL` | 告警 webhook（支付/退款/转账失败通知管理员） | `scripts/alert.mjs:9` |
+| `HX_CLI` | HBuilderX CLI 路径（默认 `F:/HBuilderX/cli.exe`） | `scripts/deploy-unicloud.mjs:7`、`scripts/deploy-hosting.mjs:5`、`scripts/list-unicloud.mjs:2` |
+| `HX_PROJECT` | HBuilderX 项目名（默认 `client`） | `scripts/deploy-unicloud.mjs:8`、`scripts/list-unicloud.mjs:3` |
+| `UNICLOUD_PROVIDER` | 云厂商（默认 `aliyun`） | `scripts/deploy-unicloud.mjs:9`、`scripts/deploy-hosting.mjs:7` |
+| `UNICLOUD_SPACE` | uniCloud 服务空间（默认 `pwfinal`；云函数部署用，静态托管空间缺省也回退此值） | `scripts/deploy-unicloud.mjs:10`、`scripts/deploy-hosting.mjs:7` |
+| `HOSTING_CLIENT_SPACE` | 客户域静态托管空间（web-view H5 下单/浏览） | `scripts/deploy-hosting.mjs:12` |
+| `HOSTING_BACKEND_SPACE` | 后台域静态托管空间（客服/接单/管理） | `scripts/deploy-hosting.mjs:16` |
+| `HOSTING_CLIENT_URL` | 客户域 URL（发布后健康检查用，默认 `https://h5.qmhyjoy.com`） | `scripts/verify-hosting.mjs:4` |
+| `HOSTING_BACKEND_URL` | 后台域 URL（发布后健康检查用，默认 uniCloud 静态域名，按实际域名配置） | `scripts/verify-hosting.mjs:5` |
+
+## 三、构建与部署步骤
+
+> 顺序：domain 单一源构建 → 全量测试 → 四套前端构建 → 云函数 + schema 部署 → 前端托管 / 小程序上传 → 微信后台配置。
+
+1. **领域单一源构建与校验**
+   - `node scripts/build-domain.mjs`：将 `packages/domain/src/index.js` 打包为 CommonJS，输出 `uniCloud-tcb/cloudfunctions/game-service/lib/domain.cjs`（勿手改）。
+   - `node scripts/verify-domain-sync.mjs`：重新构建后比对 `domain.cjs` 与 `packages/domain` 的导出集合与抽样行为一致性。
+
+2. **全量测试**
+   - `npm test`（或 `node scripts/verify-all.mjs` 一键跑测试 + e2e-smoke 并落盘证据）。当前 196 例全绿。
+
+3. **四套前端构建（各 app 目录内执行）**
+   - client：`npm run build:h5`（→ `apps/client/dist/build/h5`）、`npm run build:mp-weixin`（→ `apps/client/dist/build/mp-weixin`）
+   - workbench：`npm run build:h5`（→ `apps/workbench/dist/build/h5`）
+   - admin：`npm run build:h5`（→ `apps/admin/dist/build/h5`）
+
+4. **云函数 + schema 部署**
+   - `node scripts/deploy-unicloud.mjs`：先构建 domain.cjs，再经 HBuilderX CLI 上传 `game-service`、`wechat-callback` 及全部 schema（`uniCloud-tcb/database/*.schema.json`）。
+   - 部署后需在 uniCloud 控制台手动完成 URL 化（CLI 不支持）：`game-service` 开 URL 化并配置 `/pay-notify`（微信支付回调）、`wechat-callback` 开 URL 化并配置微信消息推送。
+
+5. **前端托管（双域）/ 小程序上传**
+   - 客户域（web-view H5 下单/浏览，仅 client）：`node scripts/deploy-hosting.mjs client`（上传 apps/client H5，前缀 `/`，空间 `HOSTING_CLIENT_SPACE`）。
+   - 后台域（客服 + 接单 + 管理同域）：`node scripts/deploy-hosting.mjs backend`（上传 workbench → `/workbench/`、admin → `/admin/`，空间 `HOSTING_BACKEND_SPACE`）。
+   - 两个域名分别在 uniCloud 控制台绑定到对应空间；发布后跑 `node scripts/verify-hosting.mjs` 健康检查（env `HOSTING_CLIENT_URL`/`HOSTING_BACKEND_URL`）。
+   - 小程序：微信开发者工具导入 `apps/client/dist/build/mp-weixin`，上传审核发布（各品牌 AppID 分别上传同一产物）。
+
+6. **微信后台配置清单**
+   - 小程序：认证、备案、类目与资质审核；web-view 业务域名 + 校验文件；订阅消息模板选用（一次性「订单状态更新」）。
+   - 认证服务号：网页授权域名（JS 安全域名，snsapi_base 网页授权）。
+   - 微信支付商户号：关联服务号（JSAPI 对商户支付前置）；H5 支付（mweb）场景开通；回调地址配置（`WECHAT_PAY_NOTIFY_URL`，即 URL 化 `/pay-notify`）。
+   - 微信客服：消息推送 URL 配置（`WECHAT_MP_KF_TOKEN` 验签）。
+   - 商家转账到零钱（二期；一期为人工打款，预留接口）——如开通需「佣金报酬」场景报备。
+
+7. **初始数据配置（首次部署后）**
+   - 管理端「品牌配置」创建默认品牌并置 isDefault=true（保证未知 appId 回退到主品牌而非首个 ON 品牌，见《可拓展性评估》§4）；
+   - 初始管理员/客服账号、初始商品与字典、各品牌文案红线复核。
+
+## 四、外包责任边界（甲方裁定）
+
+1. **外包仅负责最后修补与测试后 Bug 修复**：范围以甲方提交的 Bug/修补清单为准，逐条可追溯、不夹带未授权改动（见《外包验收检查单》A 组）。
+2. **六阶段成果为基线**：Phase 1-3（领域单一源 / 品牌配置层 / V1.1 全收敛）已完成并通过总联调，是外包不得破坏的交付基线；改动不得回退领域单一源、品牌配置层、裁决表修复项（检查单 A-4）。
+3. **验收以《外包验收检查单》+ 实际运行为准**：本仓库 `npm test` + 三端构建 + 云函数部署演练全绿，无演示数据伪装，文档自述不作为验收证据（检查单 A-5 / F 组）。
+4. **注释标准条款写入合同附件**：注释必须中文；仅覆盖公共接口、非显然逻辑、关键业务函数；无废话/评价性注释。新代码必注释边界覆盖（见《注释审查报告》§1；检查单 A-3）。
+
+## 五、剩余外部待办移交清单
+
+| # | 待办 | 说明 | 责任方 |
+| --- | --- | --- | --- |
+| 1 | T0-14 真实环境证据包 | 真实云空间 `pwfinal` + 真实域名 + 微信测试账号真机留存：鉴权拒绝、商品/订单读写、1 分钱支付+退款、管理落库、错误显示、并发资金；证据入 `TestEvidence/` 并标注「真实环境」 | 甲方/我方（真实环境） |
+| 2 | 微信后台配置 | 认证服务号 + 网页授权域名、商户号关联服务号、web-view 业务域名 + 校验文件、H5 支付场景、订阅消息模板（见 §3 第 6 步） | 甲方（资质与后台） |
+| 3 | 真实域名验证 | H5 下单域名真实路由验证（有/无 token、过期 token、支付回跳与查单恢复）；H5 hash 路由 `/h5-order` 的 rewrite 配置（T0-12） | 甲方/我方（部署） |
+| 4 | 品牌素材 | 各品牌 Logo/文案/主题色/商品图/宣传图，且须过《文案红线清单》（V1.1 §9） | 甲方提供 |
+
+> 注：上表为 Phase 3 本机无法覆盖、需真实环境/真实资质的外部待办；外包方不承担其中需要真实微信资质与真实云空间环境的验收项（以外包合同附件约定为准）。

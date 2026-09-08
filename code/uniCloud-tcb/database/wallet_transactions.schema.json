@@ -1,0 +1,34 @@
+{
+  "bsonType": "object",
+  "required": ["brandId", "walletId", "type", "amountFen", "balanceAfterFen", "createdAt"],
+  "permission": {
+    "read": false,
+    "create": false,
+    "update": false,
+    "delete": false
+  },
+  "properties": {
+    "_id": { "bsonType": "string", "description": "主键（统一 _id 为业务主键）" },
+    "brandId": { "bsonType": "string", "description": "产生该流水的品牌" },
+    "walletId": { "bsonType": "string" },
+    "type": {
+      "bsonType": "string",
+      "enum": ["ORDER_EARNINGS", "WITHDRAWAL_FREEZE", "WITHDRAWAL_UNFREEZE", "WITHDRAWAL_PAID", "COMMISSION_REVERSAL", "REFUND_CLAWBACK", "ADJUST", "ADJUSTMENT", "WALLET_FREEZE", "WALLET_UNFREEZE"],
+      "description": "入账/提现/追佣/调账"
+    },
+    "amountFen": { "bsonType": "int", "description": "正负变化（分）" },
+    "balanceAfterFen": { "bsonType": "int", "description": "变动后可用余额（分）" },
+    "refId": { "bsonType": "string", "description": "关联单号（订单/提现单/调账单）" },
+    "accountId": { "bsonType": "string" },
+    "orderId": { "bsonType": "string" },
+    "refundId": { "bsonType": "string" },
+    "withdrawalId": { "bsonType": "string" },
+    "direction": { "bsonType": "string", "enum": ["CREDIT", "DEBIT", "NEUTRAL"] },
+    "ruleVersion": { "bsonType": "int" },
+    "referenceId": { "bsonType": "string" },
+    "status": { "bsonType": "string", "enum": ["POSTED", "REVERSED", "PENDING"] },
+    "remark": { "bsonType": "string" },
+    "operatorId": { "bsonType": "string", "description": "操作管理员（调账等）" },
+    "createdAt": { "bsonType": "number" }
+  }
+}

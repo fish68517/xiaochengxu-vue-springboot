@@ -1,0 +1,19 @@
+{
+  "bsonType": "object",
+  "required": ["matchKey", "matchType", "status", "createdAt"],
+  "permission": {
+    "read": false,
+    "create": false,
+    "update": false,
+    "delete": false
+  },
+  "properties": {
+    "_id": { "bsonType": "string", "description": "主键（统一 _id 为业务主键）" },
+    "matchKey": { "bsonType": "string", "description": "匹配值（手机号或微信号）" },
+    "matchType": { "bsonType": "string", "enum": ["phone", "wechat"] },
+    "note": { "bsonType": "string" },
+    "status": { "bsonType": "string", "enum": ["ON", "OFF"] },
+    "createdAt": { "bsonType": "number" },
+    "updatedAt": { "bsonType": "number" }
+  }
+}

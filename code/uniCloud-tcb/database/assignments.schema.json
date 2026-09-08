@@ -1,0 +1,17 @@
+{
+  "bsonType": "object",
+  "required": ["brandId", "orderId", "type", "workerId", "operatorId", "createdAt"],
+  "permission": { "read": false, "create": false, "update": false, "delete": false },
+  "properties": {
+    "_id": { "bsonType": "string" },
+    "brandId": { "bsonType": "string" },
+    "orderId": { "bsonType": "string" },
+    "type": { "bsonType": "string", "enum": ["CLAIM", "ASSIGN", "REASSIGN", "ACCEPT", "REJECT", "RELEASE"] },
+    "workerId": { "bsonType": "string" },
+    "previousWorkerId": { "bsonType": "string" },
+    "operatorId": { "bsonType": "string" },
+    "reason": { "bsonType": "string" },
+    "requestId": { "bsonType": "string" },
+    "createdAt": { "bsonType": "number" }
+  }
+}

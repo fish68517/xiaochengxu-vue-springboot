@@ -1,0 +1,20 @@
+{
+  "bsonType": "object",
+  "required": ["type", "code", "name", "status", "createdAt"],
+  "permission": {
+    "read": false,
+    "create": false,
+    "update": false,
+    "delete": false
+  },
+  "properties": {
+    "_id": { "bsonType": "string", "description": "主键（统一 _id 为业务主键）" },
+    "type": { "bsonType": "string", "enum": ["game", "region", "service_type"] },
+    "code": { "bsonType": "string" },
+    "name": { "bsonType": "string" },
+    "sort": { "bsonType": "int" },
+    "status": { "bsonType": "string", "enum": ["ON", "OFF"] },
+    "createdAt": { "bsonType": "number" },
+    "updatedAt": { "bsonType": "number" }
+  }
+}

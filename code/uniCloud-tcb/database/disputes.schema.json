@@ -1,0 +1,30 @@
+{
+  "bsonType": "object",
+  "required": ["brandId", "orderId", "customerId", "content", "status", "createdAt"],
+  "permission": {
+    "read": false,
+    "create": false,
+    "update": false,
+    "delete": false
+  },
+  "properties": {
+    "_id": { "bsonType": "string", "description": "主键（统一 _id 为业务主键）" },
+    "brandId": { "bsonType": "string", "description": "品牌强制归属" },
+    "orderId": { "bsonType": "string", "description": "关联订单（唯一，一单一异议）" },
+    "customerId": { "bsonType": "string" },
+    "content": { "bsonType": "string", "description": "异议描述（≤500 字）" },
+    "attachmentIds": { "bsonType": "array", "items": { "bsonType": "string" }, "description": "异议截图附件（≤3 张）" },
+    "status": { "bsonType": "string", "enum": ["OPEN", "EVIDENCE_COLLECTION", "UNDER_REVIEW", "DECIDED", "CLOSED", "PENDING", "RESOLVED"], "description": "五阶段仲裁流程；PENDING/RESOLVED 仅兼容旧数据" },
+    "evidence": { "bsonType": "array", "description": "双方追加内容、附件与提交人快照" },
+    "timeline": { "bsonType": "array", "description": "受理、举证、审理、裁决、结案时间线" },
+    "arbitratorId": { "bsonType": "string" },
+    "result": { "bsonType": "string", "enum": ["maintain", "partial", "full"] },
+    "resultNote": { "bsonType": "string", "description": "仲裁备注（已处理时必填）" },
+    "handledBy": { "bsonType": "string" },
+    "handledAt": { "bsonType": "number" },
+    "decidedAt": { "bsonType": "number" },
+    "closedAt": { "bsonType": "number" },
+    "createdAt": { "bsonType": "number" },
+    "updatedAt": { "bsonType": "number" }
+  }
+}

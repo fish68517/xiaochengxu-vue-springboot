@@ -1,0 +1,16 @@
+{
+  "name": "游戏服务工作台",
+  "appid": "__UNTOUCHED__",
+  "description": "客服/接单人员 Web 工作台",
+  "versionName": "0.1.0",
+  "versionCode": "100",
+  "transformPx": false,
+  "h5": {
+    "title": "游戏服务工作台",
+    "router": {
+      "mode": "hash",
+      "base": "/workbench/"
+    }
+  },
+  "vueVersion": "3"
+}

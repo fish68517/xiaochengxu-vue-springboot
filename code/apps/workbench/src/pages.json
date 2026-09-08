@@ -1,0 +1,94 @@
+{
+  "pages": [
+    {
+      "path": "pages/login/index",
+      "style": {
+        "navigationBarTitleText": "工作台登录"
+      }
+    },
+    {
+      "path": "pages/cs/workbench",
+      "style": {
+        "navigationBarTitleText": "客服工作台"
+      }
+    },
+    {
+      "path": "pages/cs/orders",
+      "style": {
+        "navigationBarTitleText": "订单列表"
+      }
+    },
+    {
+      "path": "pages/cs/order-detail",
+      "style": {
+        "navigationBarTitleText": "订单详情"
+      }
+    },
+    {
+      "path": "pages/cs/pool",
+      "style": {
+        "navigationBarTitleText": "抢单池"
+      }
+    },
+    {
+      "path": "pages/cs/approvals",
+      "style": {
+        "navigationBarTitleText": "审批中心"
+      }
+    },
+    {
+      "path": "pages/worker/hall",
+      "style": {
+        "navigationBarTitleText": "订单池"
+      }
+    },
+    {
+      "path": "pages/worker/orders",
+      "style": {
+        "navigationBarTitleText": "我的订单"
+      }
+    },
+    {
+      "path": "pages/worker/wallet",
+      "style": {
+        "navigationBarTitleText": "我的钱包"
+      }
+    },
+    {
+      "path": "pages/worker/profile",
+      "style": {
+        "navigationBarTitleText": "个人资料"
+      }
+    },
+    {
+      "path": "pages/hall/index",
+      "style": {
+        "navigationBarTitleText": "抢单大厅"
+      }
+    },
+    {
+      "path": "pages/orders/index",
+      "style": {
+        "navigationBarTitleText": "我的订单"
+      }
+    },
+    {
+      "path": "pages/wallet/index",
+      "style": {
+        "navigationBarTitleText": "我的钱包"
+      }
+    },
+    {
+      "path": "pages/cs-orders/index",
+      "style": {
+        "navigationBarTitleText": "客服订单台"
+      }
+    }
+  ],
+  "globalStyle": {
+    "navigationStyle": "custom",
+    "navigationBarBackgroundColor": "#0a0e17",
+    "navigationBarTextStyle": "white",
+    "backgroundColor": "#0a0e17"
+  }
+}

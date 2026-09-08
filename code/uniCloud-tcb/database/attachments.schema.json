@@ -1,0 +1,23 @@
+{
+  "bsonType": "object",
+  "required": ["brandId", "bizType", "bizId", "storageKey", "uploaderId", "uploadedAt"],
+  "permission": {
+    "read": false,
+    "create": false,
+    "update": false,
+    "delete": false
+  },
+  "properties": {
+    "_id": { "bsonType": "string", "description": "主键（统一 _id 为业务主键）" },
+    "brandId": { "bsonType": "string", "description": "附件业务品牌" },
+    "bizType": { "bsonType": "string", "enum": ["complete_proof", "id_card", "dispute"] },
+    "bizId": { "bsonType": "string", "description": "业务对象 id（订单/异议等）" },
+    "url": { "bsonType": "string", "description": "访问 URL（私有桶走服务端签名 URL，可不持久化）" },
+    "storageKey": { "bsonType": "string", "description": "对象存储 key（唯一）" },
+    "fileName": { "bsonType": "string" },
+    "size": { "bsonType": "int" },
+    "uploaderId": { "bsonType": "string" },
+    "watermarkText": { "bsonType": "string", "description": "凭证水印：接单人员姓名+上传时间" },
+    "uploadedAt": { "bsonType": "number" }
+  }
+}

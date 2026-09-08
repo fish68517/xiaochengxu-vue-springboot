@@ -1,0 +1,166 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1260 920" font-family="'Segoe UI', 'Microsoft YaHei', sans-serif">
+  <defs>
+    <linearGradient id="cardBg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#1d2733"/>
+      <stop offset="1" stop-color="#121a24"/>
+    </linearGradient>
+    <linearGradient id="goldGrad" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#e8b64c"/>
+      <stop offset="1" stop-color="#c98f2b"/>
+    </linearGradient>
+    <linearGradient id="silverGrad" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#f2f4f6"/>
+      <stop offset="1" stop-color="#c3cbd3"/>
+    </linearGradient>
+    <linearGradient id="metalGrad" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#aab4bf"/>
+      <stop offset="1" stop-color="#6d7882"/>
+    </linearGradient>
+    <pattern id="grunge" width="80" height="80" patternUnits="userSpaceOnUse">
+      <path d="M8 12l56 5M18 40l48 -4M6 62l62 3" stroke="#ffffff" stroke-opacity="0.03" stroke-width="2"/>
+      <path d="M30 6l-6 70M64 2l4 74" stroke="#ffffff" stroke-opacity="0.02" stroke-width="2"/>
+    </pattern>
+  </defs>
+
+  <!-- base -->
+  <rect x="0" y="0" width="1260" height="920" fill="#0c1116"/>
+
+  <!-- ================= CARD BLUEPRINT ================= -->
+  <g id="card">
+    <!-- frame -->
+    <rect x="40" y="40" width="600" height="600" rx="26" fill="url(#cardBg)" stroke="#3a4756" stroke-width="3"/>
+    <rect x="40" y="40" width="600" height="600" rx="26" fill="url(#grunge)"/>
+    <!-- corner rivets -->
+    <circle cx="58" cy="58" r="4" fill="#3a4756"/>
+    <circle cx="622" cy="58" r="4" fill="#3a4756"/>
+    <circle cx="58" cy="622" r="4" fill="#3a4756"/>
+    <circle cx="622" cy="622" r="4" fill="#3a4756"/>
+
+    <!-- zone 1 header -->
+    <g>
+      <rect x="64" y="76" width="552" height="84" fill="#2f6fd6" fill-opacity="0.16" stroke="#5aa0ff" stroke-width="1.5" stroke-dasharray="6 4"/>
+      <text x="70" y="94" font-size="15" fill="#9cc4ff" font-weight="700">ZONE 1 · 品牌锁区 / HEADER</text>
+      <text x="70" y="114" font-size="11" fill="#7d8ea0">slot01 线稿吉祥物 LOGO   ·   slot02 中文品牌名 + 英文副标</text>
+      <!-- logo placeholder -->
+      <circle cx="140" cy="128" r="26" fill="none" stroke="#9cc4ff" stroke-opacity="0.6" stroke-width="1.5" stroke-dasharray="3 3"/>
+      <text x="140" y="133" font-size="12" fill="#9cc4ff" text-anchor="middle">LOGO</text>
+    </g>
+
+    <!-- zone 2 headline -->
+    <g>
+      <rect x="64" y="172" width="552" height="108" fill="#e8b64c" fill-opacity="0.14" stroke="#f2c14e" stroke-width="1.5" stroke-dasharray="6 4"/>
+      <text x="70" y="190" font-size="15" fill="#f2c14e" font-weight="700">ZONE 2 · 主标题区 / HEADLINE</text>
+      <text x="70" y="210" font-size="11" fill="#8b9668">slot03 大号做旧显示字体 · 前段金橙(→) 后段银白(→) 双色分层</text>
+      <text x="80" y="248" font-size="34" fill="url(#goldGrad)" font-weight="900" letter-spacing="2">监狱</text>
+      <text x="196" y="248" font-size="34" fill="url(#silverGrad)" font-weight="900" letter-spacing="2">清图单</text>
+    </g>
+
+    <!-- zone 3 hero -->
+    <g>
+      <!-- left emblem -->
+      <rect x="88" y="292" width="216" height="228" fill="#9aa7b6" fill-opacity="0.14" stroke="#c3cbd3" stroke-width="1.5" stroke-dasharray="6 4"/>
+      <text x="94" y="310" font-size="15" fill="#d6dde5" font-weight="700">ZONE 3a · 左徽章槽 / EMBLEM</text>
+      <text x="94" y="330" font-size="11" fill="#8b97a3">slot04 圆形金属印章 + 几何三角翼标志</text>
+      <circle cx="196" cy="408" r="62" fill="url(#metalGrad)" fill-opacity="0.35" stroke="#c3cbd3" stroke-width="2"/>
+      <circle cx="196" cy="408" r="48" fill="none" stroke="#dfe6ec" stroke-opacity="0.7" stroke-width="1.5"/>
+      <text x="196" y="412" font-size="26" fill="#eef3f7" text-anchor="middle" font-weight="900">▲</text>
+      <text x="196" y="446" font-size="9" fill="#dfe6ec" text-anchor="middle">DELTA FORCE · HAWK OPS</text>
+
+      <!-- right character -->
+      <rect x="340" y="288" width="276" height="232" fill="#2f8f86" fill-opacity="0.13" stroke="#37b3a5" stroke-width="1.5" stroke-dasharray="6 4"/>
+      <text x="346" y="306" font-size="15" fill="#4fd0c0" font-weight="700">ZONE 3b · 右角色槽 / CHARACTER</text>
+      <text x="346" y="326" font-size="11" fill="#7f978f">slot05 半写实人物半身像 · 可做手势 · 蓝青跳色</text>
+      <!-- abstract silhouette -->
+      <circle cx="478" cy="390" r="34" fill="#37b3a5" fill-opacity="0.22" stroke="#4fd0c0" stroke-width="1.5"/>
+      <path d="M440 470 L478 410 L516 470 Z" fill="#37b3a5" fill-opacity="0.18" stroke="#4fd0c0" stroke-width="1.5"/>
+      <text x="478" y="512" font-size="11" fill="#4fd0c0" text-anchor="middle">半身像 · 持械 · 嘘手势</text>
+    </g>
+
+    <!-- zone 4 slogan -->
+    <g>
+      <rect x="88" y="472" width="468" height="56" fill="#ffffff" fill-opacity="0.09" stroke="#ffffff" stroke-width="1.5" stroke-dasharray="6 4"/>
+      <text x="94" y="490" font-size="13" fill="#e8edf2" font-weight="700">ZONE 4 · 口号区 / SLOGAN</text>
+      <text x="94" y="510" font-size="11" fill="#9aa4ad">slot06 白色加粗无衬线单行标语（叠于主角区下层）</text>
+      <text x="420" y="514" font-size="20" fill="#f2f5f8" font-weight="700" text-anchor="end">不清图不算保底</text>
+    </g>
+
+    <!-- zone 5 footer ribbon -->
+    <g>
+      <rect x="88" y="548" width="324" height="60" fill="url(#goldGrad)" fill-opacity="0.85" stroke="#c98f2b" stroke-width="1.5"/>
+      <text x="100" y="566" font-size="13" fill="#4a3a12" font-weight="700">ZONE 5 · 底部横幅 / FOOTER</text>
+      <text x="100" y="592" font-size="20" fill="#24304a" font-weight="900" letter-spacing="1">XING QIU CLUB</text>
+    </g>
+
+    <!-- percent guides -->
+    <g stroke="#39434f" stroke-width="1" opacity="0.6">
+      <line x1="40" y1="280" x2="640" y2="280"/>
+      <line x1="40" y1="520" x2="640" y2="520"/>
+      <line x1="304" y1="292" x2="304" y2="520"/>
+      <line x1="340" y1="288" x2="340" y2="520"/>
+    </g>
+  </g>
+
+  <!-- ================= RIGHT PANEL ================= -->
+  <g id="panel" transform="translate(680, 40)">
+    <text x="0" y="0" font-size="22" fill="#e8edf2" font-weight="800">蓝色本 · 结构模板参考</text>
+    <text x="0" y="26" font-size="12" fill="#7d8ea0">Blueprint  ·  蓝本：监狱·清图单  ·  供美术团队按槽位替换资产</text>
+
+    <!-- asset slot index -->
+    <g transform="translate(0, 60)">
+      <text x="0" y="0" font-size="15" fill="#d6dde5" font-weight="700">资产槽位清单 (可替换件)</text>
+      <!-- table -->
+      <g font-size="12" fill="#c7d0da">
+        <rect x="0" y="14" width="540" height="26" fill="#1b2530"/>
+        <text x="10" y="32" fill="#8fb4e8" font-weight="700">#</text>
+        <text x="44" y="32" fill="#8fb4e8" font-weight="700">槽位</text>
+        <text x="180" y="32" fill="#8fb4e8" font-weight="700">位置 (归一化)</text>
+        <text x="360" y="32" fill="#8fb4e8" font-weight="700">形状 / 内容</text>
+      </g>
+      <g font-size="11" fill="#aab6c2">
+        <rect x="0" y="40" width="540" height="26" fill="none"/><line x1="0" y1="66" x2="540" y2="66" stroke="#2a3642"/>
+        <text x="10" y="58" fill="#7fb0e8">01</text><text x="44" y="58">LOGO</text><text x="180" y="58">x8–30 · y8–20</text><text x="360" y="58">线稿剪影图标</text>
+        <rect x="0" y="66" width="540" height="26" fill="#17202b"/><line x1="0" y1="92" x2="540" y2="92" stroke="#2a3642"/>
+        <text x="10" y="84" fill="#7fb0e8">02</text><text x="44" y="84">品牌名</text><text x="180" y="84">x32–88 · y8–20</text><text x="360" y="84">中文粗体 + 英文副标</text>
+        <rect x="0" y="92" width="540" height="26" fill="none"/><line x1="0" y1="118" x2="540" y2="118" stroke="#2a3642"/>
+        <text x="10" y="110" fill="#e8b64c">03</text><text x="44" y="110">主标题</text><text x="180" y="110">x4–96 · y22–40</text><text x="360" y="110">大号做旧显示字 · 双色</text>
+        <rect x="0" y="118" width="540" height="26" fill="#17202b"/><line x1="0" y1="144" x2="540" y2="144" stroke="#2a3642"/>
+        <text x="10" y="136" fill="#c3cbd3">04</text><text x="44" y="136">徽章</text><text x="180" y="136">x8–44 · y44–76</text><text x="360" y="136">圆形金属印章 + 几何标志</text>
+        <rect x="0" y="144" width="540" height="26" fill="none"/><line x1="0" y1="170" x2="540" y2="170" stroke="#2a3642"/>
+        <text x="10" y="162" fill="#4fd0c0">05</text><text x="44" y="162">角色</text><text x="180" y="162">x52–95 · y40–78</text><text x="360" y="162">半写实人物半身像 · 手势</text>
+        <rect x="0" y="170" width="540" height="26" fill="#17202b"/><line x1="0" y1="196" x2="540" y2="196" stroke="#2a3642"/>
+        <text x="10" y="188" fill="#e8edf2">06</text><text x="44" y="188">口号</text><text x="180" y="188">x8–92 · y72–86</text><text x="360" y="188">白色加粗单行标语</text>
+        <rect x="0" y="196" width="540" height="26" fill="none"/><line x1="0" y1="222" x2="540" y2="222" stroke="#2a3642"/>
+        <text x="10" y="214" fill="#e8b64c">07</text><text x="44" y="214">横幅</text><text x="180" y="214">x8–62 · y86–96</text><text x="360" y="214">金色丝带 + 深藏青英文</text>
+      </g>
+    </g>
+
+    <!-- palette -->
+    <g transform="translate(0, 320)">
+      <text x="0" y="0" font-size="15" fill="#d6dde5" font-weight="700">视觉令牌 · 调色板</text>
+      <g font-size="11" fill="#aab6c2">
+        <!-- base -->
+        <rect x="0" y="14" width="34" height="22" fill="#1d2733" stroke="#3a4756"/><text x="44" y="30">base 深枪灰蓝底 · 做旧金属</text>
+        <rect x="0" y="44" width="34" height="22" fill="url(#goldGrad)"/><text x="44" y="60">accent1 金橙 · 主标题前段 / 横幅</text>
+        <rect x="0" y="74" width="34" height="22" fill="#eef2f5"/><text x="44" y="90">accent2 银白 · 主标题后段 / 口号</text>
+        <rect x="0" y="104" width="34" height="22" fill="#37b3a5"/><text x="44" y="120">pop 蓝青 · 角色跳色</text>
+        <rect x="0" y="134" width="34" height="22" fill="#c3cbd3"/><text x="44" y="150">metal 金属浮雕 · 徽章</text>
+      </g>
+    </g>
+
+    <!-- style tokens -->
+    <g transform="translate(0, 500)">
+      <text x="0" y="0" font-size="15" fill="#d6dde5" font-weight="700">风格令牌 (固定层 · 复用不换)</text>
+      <g font-size="11" fill="#aab6c2">
+        <text x="0" y="22">· 版式：方形卡片 · 圆角 · 深色金属包边 · 左右分栏（徽章|角色）</text>
+        <text x="0" y="40">· 质感：grunge 做旧 · 磨损划痕 · 金属浮雕 · 噪点</text>
+        <text x="0" y="58">· 字体：粗犷无衬线做旧显示字 · 字距紧 · CJK+Latin 混排</text>
+        <text x="0" y="76">· 处理：高对比 · 几何棱角线 · 徽章感 · 边缘侵蚀</text>
+        <text x="0" y="94">· 关系：@徽章(冷·静态几何) ⊘ @角色(暖·动态人物) 一对置核心</text>
+      </g>
+    </g>
+  </g>
+
+  <!-- footer note -->
+  <text x="40" y="700" font-size="12" fill="#5b6875">结构模板 · 固定骨架 + 可换资产槽位 · 仅供美术团队排版参考（坐标基于 1:1 卡面归一化）</text>
+  <text x="40" y="718" font-size="11" fill="#48535f">替换时仅更新 slot01–07 内容，Zone 边界 / 配色 / 质感 / 字体保持不变。</text>
+</svg>

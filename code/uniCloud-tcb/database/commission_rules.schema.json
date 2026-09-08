@@ -1,0 +1,16 @@
+{
+  "bsonType": "object",
+  "required": ["brandId", "version", "status", "rule", "effectiveAt", "createdAt", "updatedAt"],
+  "permission": { "read": false, "create": false, "update": false, "delete": false },
+  "properties": {
+    "_id": { "bsonType": "string" },
+    "brandId": { "bsonType": "string" },
+    "version": { "bsonType": "int" },
+    "status": { "bsonType": "string", "enum": ["DRAFT", "ACTIVE", "INACTIVE", "DEMO_ONLY"] },
+    "rule": { "bsonType": "object" },
+    "effectiveAt": { "bsonType": "number" },
+    "createdBy": { "bsonType": "string" },
+    "createdAt": { "bsonType": "number" },
+    "updatedAt": { "bsonType": "number" }
+  }
+}

@@ -1,0 +1,32 @@
+{
+  "bsonType": "object",
+  "required": ["brandId", "title", "priceFen", "status", "commission", "createdAt"],
+  "permission": {
+    "read": false,
+    "create": false,
+    "update": false,
+    "delete": false
+  },
+  "properties": {
+    "_id": { "bsonType": "string", "description": "主键（统一 _id 为业务主键）" },
+    "title": { "bsonType": "string" },
+    "subtitle": { "bsonType": "string" },
+    "brandId": { "bsonType": "string", "description": "所属品牌（必填）" },
+    "game": { "bsonType": "string", "description": "游戏（字典）" },
+    "serviceType": { "bsonType": "string", "description": "服务类型（字典）" },
+    "tierName": { "bsonType": "string", "description": "档位名" },
+    "guaranteedOutput": { "bsonType": "int", "description": "保底产出量（游戏内货币数值）" },
+    "outputUnit": { "bsonType": "string", "description": "产出量单位（如「金币/万」）" },
+    "priceFen": { "bsonType": "int" },
+    "images": { "bsonType": "array", "items": { "bsonType": "string" } },
+    "assetIds": { "bsonType": "array", "items": { "bsonType": "string" }, "description": "品牌资产/附件引用" },
+    "status": { "bsonType": "string", "enum": ["ON", "OFF"] },
+    "sort": { "bsonType": "int" },
+    "formSchema": { "bsonType": "object" },
+    "commission": { "bsonType": "object", "description": "{ type: 'fixed', valueFen } 或 { type: 'percent', valuePercent }" },
+    "commissionRuleId": { "bsonType": "string" },
+    "version": { "bsonType": "int", "description": "商品配置版本，每次保存递增" },
+    "createdAt": { "bsonType": "number" },
+    "updatedAt": { "bsonType": "number" }
+  }
+}

@@ -1,0 +1,41 @@
+{
+  "name": "game-service-platform",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "游戏服务多端软件（小程序 + H5 + Web 工作台 + uni-admin）",
+  "scripts": {
+    "test": "node --test \"packages/**/test/*.test.js\" \"uniCloud-tcb/**/test/*.test.js\" \"uniCloud-tcb/**/test/*.test.cjs\"",
+    "test:domain": "node --test \"packages/domain/test/*.test.js\"",
+    "lint": "eslint . --max-warnings 500",
+    "check:js": "eslint . --quiet",
+    "typecheck": "npm run check:js",
+    "verify:domain": "node scripts/verify-domain-sync.mjs",
+    "build:domain": "node scripts/build-domain.mjs",
+    "build:client:h5": "npm --prefix apps/client run build:h5",
+    "build:client:mp": "npm --prefix apps/client run build:mp-weixin",
+    "build:workbench": "npm --prefix apps/workbench run build:h5",
+    "build:admin": "npm --prefix apps/admin run build:h5",
+    "build:all": "npm run build:client:h5 && npm run build:client:mp && npm run build:workbench && npm run build:admin",
+    "build:brand": "node scripts/build-brand.mjs",
+    "verify:brand-matrix": "node scripts/brand-matrix-smoke.mjs",
+    "build:brand-matrix": "node scripts/brand-matrix-smoke.mjs --build --platform h5",
+    "release:preflight": "node scripts/release-preflight.mjs",
+    "backup:local": "node scripts/backup-db.mjs --seed",
+    "restore:drill": "node scripts/restore-drill.mjs",
+    "rollback:bundle": "node scripts/create-rollback-bundle.mjs",
+    "migrate:phase2": "node scripts/migrate-phase2-models.mjs",
+    "e2e:api": "node scripts/e2e-smoke.mjs",
+    "e2e:ui": "node scripts/e2e-ui-smoke.mjs",
+    "verify:all": "node scripts/verify-all.mjs"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.39.2",
+    "esbuild": "^0.28.2",
+    "eslint": "^9.39.2",
+    "eslint-plugin-vue": "^10.6.2",
+    "globals": "^16.5.0",
+    "playwright": "^1.62.1",
+    "vue-eslint-parser": "^10.2.0"
+  }
+}

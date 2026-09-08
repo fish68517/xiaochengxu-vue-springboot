@@ -1,0 +1,250 @@
+# 技术交接文档
+
+## 1. 代码库结构
+
+```text
+F:\PW重构 — 仓库根(game-service-platform,package.json 定义 name)
+package.json — 根脚本(test=node --test 运行 packages/**/test 与 uniCloud-tcb/**/test)
+scripts/ — 构建/校验/部署/运维脚本
+  scripts/api-server.mjs — 本地 HTTP API 服务器(镜像 game-service action 路由)
+  scripts/build-domain.mjs — esbuild 打包 packages/domain → domain.cjs
+  scripts/verify-domain-sync.mjs — 校验 domain.cjs 与 packages/domain 导出集合一致
+  scripts/verify-all.mjs — 全量校验
+  scripts/e2e-smoke.mjs — 后端端到端冒烟
+  scripts/e2e-ui-smoke.mjs — 前端 UI 冒烟
+  scripts/deploy-unicloud.mjs — 部署 uniCloud 云函数
+  scripts/deploy-hosting.mjs — 双域静态托管部署(client/backend 两目标)
+  scripts/verify-hosting.mjs — 校验托管部署
+  scripts/backup-db.mjs — 数据库备份
+  scripts/restore-drill.mjs — 恢复演练
+  scripts/list-unicloud.mjs — 列出 uniCloud 资源
+  scripts/alert.mjs — 告警
+  scripts/verify-wechat-pay-sign.mjs — 微信支付签名校验
+  scripts/capture-screenshots.mjs — 截图
+  scripts/demo-second-brand.mjs — 第二品牌演示
+packages/domain — 领域规则单一源
+  packages/domain/src/index.js — 领域导出入口
+  packages/domain/src/order-machine.js — 订单状态机纯函数
+  packages/domain/src/wallet.js — 钱包纯函数
+  packages/domain/src/commission.js — 佣金计算纯函数
+  packages/domain/src/brand.js — 品牌解析纯函数
+  packages/domain/test/ — 领域测试
+packages/backend — 本地镜像(开发/测试)
+  packages/backend/src/services.js — 镜像全量 action(同名同语义)
+  packages/backend/src/db.js — 内存 20 集合
+  packages/backend/src/token.js — H5 下单 token 签发/验签
+  packages/backend/src/wechat-signature.js — 微信回调验签
+  packages/backend/test/ — 镜像测试
+apps/client — 客户小程序 + H5
+  apps/client/src/api.js — action 映射(小程序=云函数,H5=HTTP)
+  apps/client/src/pages.json — 页面清单
+  apps/client/src/pages/ — 页面(index/category/mine/product/order/h5-order)
+  apps/client/src/brand.js — 品牌配置渲染
+  apps/client/src/subscribe.js — 订阅消息授权
+  apps/client/src/client-utils.js — 客户端工具
+apps/workbench — 客服后台 + 接单服务人员端
+  apps/workbench/src/api.js — action 映射
+  apps/workbench/src/pages.json — 页面清单
+  apps/workbench/src/common.js — 公共工具
+  apps/workbench/src/pages/cs/ — 客服页面(workbench/orders/order-detail/pool/approvals)
+  apps/workbench/src/pages/worker/ — 接单页面(hall/orders/wallet/profile)
+  apps/workbench/src/pages/hall|orders|wallet|cs-orders/ — 旧版页面目录
+apps/admin — 管理后台
+  apps/admin/src/api.js — action 映射 + kebab 资源路由(PATH 表)
+  apps/admin/src/pages.json — 页面清单
+  apps/admin/src/pages/ — 页面(login/dashboard/accounts/products/reviews/brands/dicts/configs/vips/wallets/reports)
+  apps/admin/src/utils/redline.js — 文案红线校验
+  apps/admin/src/utils/csv.js — CSV 导出
+uniCloud-tcb — uniCloud 云资源
+  uniCloud-tcb/database/*.schema.json — 20 集合 schema
+  uniCloud-tcb/cloudfunctions/game-service/index.js — 云函数入口(action 路由+错误封套)
+  uniCloud-tcb/cloudfunctions/game-service/lib/ — services.cjs/auth.cjs/repository.cjs/wechat-pay.cjs/oauth.cjs/reconcile.cjs/upload.cjs/subscribe.cjs/domain.cjs
+  uniCloud-tcb/cloudfunctions/game-service/test/ — 云函数测试
+  uniCloud-tcb/cloudfunctions/wechat-callback/index.js — 微信客服消息回调入口
+  uniCloud-tcb/cloudfunctions/wechat-callback/lib/ — wechat-signature.cjs/handle-message.cjs/wechat-api.cjs
+  uniCloud-tcb/cloudfunctions/wechat-callback/test/ — 回调测试
+docs/ — 文档(外包交接说明.md/API.md/DB.md/实现-文档差异裁决表.md 等)
+```
+
+## 2. 依赖关系
+
+**领域单一源**
+
+- `packages/domain/src/*.js`(index.js / order-machine.js / wallet.js / commission.js / brand.js)
+- → esbuild(`scripts/build-domain.mjs`)打包为 CommonJS
+- → `uniCloud-tcb/cloudfunctions/game-service/lib/domain.cjs`(构建产物,文件头注明勿手改)
+- → `scripts/verify-domain-sync.mjs`(重新构建后对比导出集合与抽样行为)
+
+**云函数 game-service**
+
+- `uniCloud-tcb/cloudfunctions/game-service/index.js`(action 路由 + BizError/toEnvelope 错误封套 + URL 化 /pay-notify)
+- 调用 `lib/services.cjs`(全量 action 契约层)、`lib/auth.cjs`(鉴权/白名单/角色矩阵/会话)、`lib/repository.cjs`(仓储抽象+事务)、`lib/wechat-pay.cjs`(微信支付 API v3)、`lib/oauth.cjs`(小程序登录/网页授权)、`lib/reconcile.cjs`(对账补偿)、`lib/upload.cjs`(对象存储上传)、`lib/subscribe.cjs`(订阅消息下发)、`lib/domain.cjs`(领域构建产物)
+
+**本地镜像**
+
+- `packages/backend/src/services.js`(镜像全量 action)、`packages/backend/src/db.js`(内存 20 集合)、`packages/backend/src/token.js`(H5 token)、`packages/backend/src/wechat-signature.js`(验签)
+- → `scripts/api-server.mjs`(HTTP 路由,开发/测试用)
+
+**前端三端**
+
+- `apps/client/src/api.js`、`apps/workbench/src/api.js`、`apps/admin/src/api.js`
+- → HTTP(`scripts/api-server.mjs`,`VITE_API_BASE`)或 `uniCloud.callFunction('game-service')`
+- 页面依赖本端 api.js 与 `brand.js`(client)、`common.js`(workbench)、`utils/redline.js`+`utils/csv.js`(admin)
+
+**独立云函数 wechat-callback**
+
+- `uniCloud-tcb/cloudfunctions/wechat-callback/index.js`(微信客服消息验签 + 自动下发 H5 链接)
+- 调用 `lib/wechat-signature.cjs`(token/timestamp/nonce SHA1 验签)、`lib/handle-message.cjs`(parseBody + extractEnterTempSession)、`lib/wechat-api.cjs`(access_token + 客服消息下发)
+- 内部调用使用 `timestamp + nonce + payloadDigest + HMAC-SHA256` 签名，`game-service` 通过 `system_nonces` 持久化防重放；禁止透传 `INTERNAL_SECRET` 原文（未配置密钥时 fail-closed）。
+
+**数据库(28 集合,`uniCloud-tcb/database/*.schema.json`)**
+
+| 集合 | 用途 |
+| --- | --- |
+| users | 员工账号(客服/管理员/接单人员):手机号/角色/密码哈希/登录锁定/强制改密 |
+| customers | 客户(小程序 openid 唯一):下单联系方式/VIP 标记 |
+| vip_list | VIP 名单(手机号/微信号匹配值+状态) |
+| products | 档位商品:游戏/服务类型/档位/保底产出/价格/抽成配置/上下架/排序/品牌 |
+| dicts | 字典(游戏/区服/服务类型) |
+| configs | 全局配置(支付时限/抢单上限/周提现次数/起提金额等) |
+| orders | 订单(12 主状态/商品、品牌、佣金规则快照/支付单引用/验收子状态/退款子阶段/补单次数) |
+| payments | 独立支付单(Mock/Wechat、金额/品牌校验、渠道流水、幂等键) |
+| assignments | 抢单、指派、改派、接受、拒绝和释放历史 |
+| commission_rules | 品牌佣金规则及版本/生效状态 |
+| order_logs | 订单操作流水(状态流转+操作人+时间) |
+| order_messages | 订单维度站内留言(客服↔接单) |
+| worker_profiles | 接单人员实名资料(实名姓名/收款微信号/身份证附件/审核状态) |
+| wallets | 钱包(可用余额/提现冻结/已提现/冻结开关/乐观锁版本) |
+| wallet_transactions | 钱包流水(入账/提现冻结/打款/追佣/调账) |
+| withdrawals | 提现单(7 态/金额/周次数/审核、出款、失败重试信息) |
+| transfer_records | 人工打款凭证(batchNo) |
+| refunds | 退款单(类型/比例/金额/微信退款流水/追佣金额) |
+| disputes | 异议单(5 态/双方证据/审理人/裁决/时间线) |
+| attachments | 附件(对象存储 key/水印/加密标记) |
+| subscribe_quota | 订阅消息额度(一次授权一次下发) |
+| notifications | 站内通知/订阅留痕(INBOX/SUBSCRIBE_MSG) |
+| brands | 品牌配置(brandId/appId/主题 token/文案/横幅) |
+| brand_config_versions | 品牌配置版本与发布记录 |
+| user_brand_roles | 用户与品牌角色关系 |
+| audit_logs | 商用关键操作审计日志 |
+| h5_token_revocations | H5 订单链接令牌吊销记录 |
+| system_nonces | 内部任务签名 nonce 防重放记录 |
+
+**修改规则**
+
+1. 改领域规则 → 改 `packages/domain` → `node scripts/build-domain.mjs` 重建 `domain.cjs` → `npm test`
+2. 新增/改 action → 云函数 `services.cjs` + 镜像 `packages/backend/src/services.js` + `scripts/api-server.mjs` 路由 + 对应前端 `api.js` 映射
+3. 改集合字段 → `uniCloud-tcb/database/*.schema.json` + 镜像 `packages/backend/src/db.js`
+
+## 3. SOP 六步映射表
+
+| 步骤 | 业务动作 | 关联功能点 | 前端入口(文件) | 后端 action | 数据集合 |
+| --- | --- | --- | --- | --- | --- |
+| 1 | 客户在小程序浏览商品、经 web-view 打开 H5 下单并支付 | C-01 / C-02 / C-03 / C-04 | apps/client/src/pages/index/index.vue、product/detail.vue、order/webview-shell.vue、h5-order/index.vue | miniLogin、listProducts、getProduct、h5Token、getH5Product、createOrderFromH5、oauthExchange、getPaymentParams、payNotify | customers、products、orders、order_logs |
+| 2 | 通过小程序客服能力联系客户 | C-09 | apps/client/src/pages/index/index.vue、h5-order/index.vue | 无(game-service);uniCloud-tcb/cloudfunctions/wechat-callback(sessionFrom 带订单号) | — |
+| 3 | 客服完成订单录入 | K-05 | apps/workbench/src/pages/cs/order-detail.vue | getOrder、enterOrder | orders、order_logs |
+| 4 | 客服查看订单被谁抢单,居中斡旋(VIP 才有拉群环节) | K-06 / K-07 | apps/workbench/src/pages/cs/pool.vue | listPool、listWorkers、assignOrder | orders、users、order_logs |
+| 5 | 接单服务人员提交完成，客服验收或退回 | D-07 / K-10 | apps/workbench/src/pages/worker/orders.vue、cs/order-detail.vue | submitCompletion、verifyCompletion、rejectCompletion、uploadFile、getOrder | orders、attachments、order_logs |
+| 6 | 验收后结单 | K-10 | apps/workbench/src/pages/cs/order-detail.vue | closeOrder（confirmSettlement 为兼容入口且要求已验收） | orders、wallets、wallet_transactions、order_logs |
+
+## 4. 异常分支 E1~E9 映射表
+
+| 分支 | 触发 | action | 定时任务/回调 | 数据集合 |
+| --- | --- | --- | --- | --- |
+| E1 支付超时 | 待支付超 30 分钟未支付 | timeoutCloseUnpaidOrders | 定时任务(云函数定时触发器) | orders、order_logs |
+| E2 未开工取消 | 待受理/待抢单客户要求取消 | requestCancellation、approveRefund | 无定时任务;approveRefund 调微信退款 | refunds、orders、order_logs |
+| E3 无人抢单超时 | 入池超 30 分钟未抢 | timeoutMarkPool | 定时任务打 poolTimeout 标(不自动关单) | orders |
+| E4 接单服务人员退单 | 服务中接单人员申请退单 | releaseOrder | 无 | orders、order_logs |
+| E5 服务中取消 | 客户要求取消,按差额退款 | requestRefund、approveRefund(追佣 debitWallet) | 无定时任务;payNotify REFUND 回调 | refunds、orders、wallets、wallet_transactions、order_logs |
+| E6 未达标-补单 | 实际产出 < 保底,协商补单 | reworkOrder | 无 | orders(reworkCount)、order_logs |
+| E7 未达标-差额退款 | 协商失败,按差额退款 | requestRefund、approveRefund(追佣) | 无定时任务;payNotify REFUND 回调 | refunds、orders、wallets、wallet_transactions、order_logs |
+| E8 结单后异议 | 已结单 72h 内客户发起 | submitDispute、resolveDispute | 无 | disputes、orders、refunds、wallets、order_logs |
+| E9 退款失败 | 微信退款调用失败或返回非成功 | approveRefund(调微信退款;失败抛错整体不落库可重试;返回非 SUCCESS 置 refunds=PROCESSING) | payNotify REFUND.SUCCESS 回调(refunds→SUCCESS,订单→已退款);无退款重试定时任务 | refunds、orders |
+
+## 5. 功能点映射表
+
+### 5.1 客户小程序(C-01~C-09)
+
+| 功能点 | 名称(V1.1 原文) | action | 前端文件 | 数据集合 |
+| --- | --- | --- | --- | --- |
+| C-01 | 商品列表与详情 | listProducts、getProduct、getBrandConfig | apps/client/src/pages/index/index.vue、category/index.vue、product/detail.vue | products、brands |
+| C-02 | 下单 | h5Token、getH5Product、createOrderFromH5 | apps/client/src/pages/product/detail.vue、order/webview-shell.vue、h5-order/index.vue | orders、products |
+| C-03 | 微信支付 | oauthExchange、getPaymentParams、payNotify | apps/client/src/pages/h5-order/index.vue | orders |
+| C-04 | 支付成功页 | getMyOrder、queryOrderByNo | apps/client/src/pages/h5-order/index.vue | orders、customers |
+| C-05 | 我的订单(列表) | listMyOrders | apps/client/src/pages/order/list.vue | orders、customers |
+| C-06 | 订单详情 | getMyOrder | apps/client/src/pages/order/detail.vue | orders、order_messages |
+| C-07 | 异议提交 | submitDispute、uploadFile | apps/client/src/pages/order/detail.vue | disputes、orders、attachments、order_logs |
+| C-08 | 订阅消息授权与通知 | requestSubscribe、notify | apps/client/src/subscribe.js、apps/client/src/pages/h5-order/index.vue | subscribe_quota、notifications |
+| C-09 | 联系客服 | 无(game-service);uniCloud-tcb/cloudfunctions/wechat-callback | apps/client/src/pages/index/index.vue、order/detail.vue(open-type=contact) | — |
+
+### 5.2 客服后台(K-01~K-20)
+
+| 功能点 | 名称(V1.1 原文) | action | 前端文件 | 数据集合 |
+| --- | --- | --- | --- | --- |
+| K-01 | 登录 | authLogin | apps/workbench/src/pages/login/index.vue、apps/admin/src/pages/login/index.vue | users |
+| K-02 | 工作台待办 | dashboard | apps/workbench/src/pages/cs/workbench.vue、apps/admin/src/pages/dashboard/index.vue | orders、refunds、withdrawals、users |
+| K-03 | 订单列表与检索 | listOrders | apps/workbench/src/pages/cs/orders.vue | orders |
+| K-04 | 订单详情查看 | getOrder、listOrderLogs | apps/workbench/src/pages/cs/order-detail.vue | orders、order_logs、refunds、attachments、disputes |
+| K-05 | 订单录入与修改 | getOrder、enterOrder | apps/workbench/src/pages/cs/order-detail.vue | orders、order_logs |
+| K-06 | 抢单池查看 | listPool | apps/workbench/src/pages/cs/pool.vue | orders |
+| K-07 | 指派接单服务人员 | listWorkers、assignOrder | apps/workbench/src/pages/cs/pool.vue | orders、users、order_logs |
+| K-08 | 取消与退款(未开工) | requestCancellation、approveRefund | apps/workbench/src/pages/cs/order-detail.vue、apps/admin/src/pages/ledger/index.vue | refunds、orders、order_logs |
+| K-09 | 服务中退款(审批退) | requestRefund、approveRefund | apps/workbench/src/pages/cs/order-detail.vue、apps/admin/src/pages/ledger/index.vue | refunds、orders、payments、wallets、wallet_transactions、order_logs |
+| K-10 | 完成核对与结单 | getOrder、verifyCompletion、rejectCompletion、closeOrder | apps/workbench/src/pages/cs/order-detail.vue | orders、wallets、wallet_transactions、order_logs |
+| K-11 | 未达标处理(补单 / 差额退款) | reworkOrder、requestRefund、approveRefund | apps/workbench/src/pages/cs/order-detail.vue、cs/approvals.vue | orders、refunds、wallets、order_logs |
+| K-12 | 异议处理与仲裁 | getDispute、addDisputeEvidence、startDisputeReview、resolveDispute、closeDispute | apps/workbench/src/pages/cs/order-detail.vue、apps/admin/src/pages/disputes/index.vue | disputes、orders、refunds、wallets、order_logs |
+| K-13 | 接单服务人员管理 | listWorkers、createWorker、updateWorker | apps/admin/src/pages/accounts/index.vue | users、worker_profiles、wallets |
+| K-14 | 接单服务人员钱包管理 | getWallet、walletTransactions、adjustWallet、freezeWallet | apps/admin/src/pages/wallets/index.vue | wallets、wallet_transactions |
+| K-15 | VIP 名单管理 | listVips、addVip、removeVip | apps/admin/src/pages/vips/index.vue | vip_list |
+| K-16 | 商品(档位)管理 | listProducts、saveProduct、updateProductStatus | apps/admin/src/pages/products/index.vue | products |
+| K-17 | 字典与配置管理 | listDicts、saveDict、getConfigs、updateConfigs | apps/admin/src/pages/dicts/index.vue、configs/index.vue | dicts、configs |
+| K-18 | 提现审批与人工打款 | listWithdrawals、startWithdrawalReview、approveWithdrawal、startWithdrawalPayment、failWithdrawalPayment、markWithdrawalPaid、rejectWithdrawal | apps/admin/src/pages/withdrawals/index.vue | withdrawals、wallets、wallet_transactions、transfer_records |
+| K-19 | 报表 | reportOrders、reportWorkers、reportWithdrawals、reportProfit | apps/admin/src/pages/reports/index.vue | orders、wallets、withdrawals |
+| K-20 | 站内消息 | sendOrderMessage、listOrderMessages | apps/workbench/src/pages/cs/order-detail.vue、worker/orders.vue | order_messages |
+
+### 5.3 接单服务人员端(D-01~D-09)
+
+| 功能点 | 名称(V1.1 原文) | action | 前端文件 | 数据集合 |
+| --- | --- | --- | --- | --- |
+| D-01 | 登录与个人资料 | workerLogin、changePassword、getProfile、updateProfile、uploadFile | apps/workbench/src/pages/login/index.vue、worker/profile.vue | users、worker_profiles、attachments |
+| D-02 | 订单池 | listPool | apps/workbench/src/pages/worker/hall.vue | orders |
+| D-03 | 抢单 | grabOrder、getOrder | apps/workbench/src/pages/worker/hall.vue | orders、wallets、order_logs |
+| D-04 | 退单 | releaseOrder | apps/workbench/src/pages/worker/orders.vue | orders、order_logs |
+| D-05 | 指派处理 | acceptAssignment、rejectAssignment | apps/workbench/src/pages/worker/hall.vue | orders、order_logs |
+| D-06 | 我的订单 | listMyOrders、getMyOrder | apps/workbench/src/pages/worker/orders.vue | orders、order_messages |
+| D-07 | 完成申请 | submitCompletion、uploadFile | apps/workbench/src/pages/worker/orders.vue | orders、attachments、order_logs |
+| D-08 | 我的钱包与提现 | getWallet、walletTransactions、applyWithdrawal、listWithdrawals | apps/workbench/src/pages/worker/wallet.vue | wallets、wallet_transactions、withdrawals、worker_profiles |
+| D-09 | 站内消息 | sendOrderMessage、listOrderMessages | apps/workbench/src/pages/worker/orders.vue | order_messages |
+
+## 6. 关键链路动作序列表
+
+**下单支付双通道**
+
+1. 小程序 `miniLogin`(code2session 换小程序 openid → 建/取 customers → 签发 CUSTOMER 会话 token)
+2. `h5Token`(CUSTOMER 会话,签发 H5 下单 token,绑小程序 openid;兜底渠道:wechat-callback 凭 INTERNAL_SECRET 以 system 模式调用,绑 productId)
+3. web-view 打开 `H5_ORDER_BASE_URL/#/pages/h5-order/index?token=`(apps/client/src/api.js 第 5-6 行)
+4. `getH5Product`(验 H5 token 签名/过期 → 返回商品)
+5. 微信内:服务号网页授权 `oauthExchange`(code → 服务号 openid)
+6. `createOrderFromH5`(验 token,写订单,绑 payerOpenid=服务号 openid)
+7. `getPaymentParams`(payType=JSAPI → jsapi 参数由 WeixinJSBridge 拉起;payType=MWEB → mwebUrl 跳转)
+8. `payNotify`(TRANSACTION.SUCCESS 幂等 + 条件更新 + 金额核对;已超时关单走 reconcilePaidButClosed 补偿退款)
+
+**退款与追佣**
+
+1. `requestRefund`(差额比例 ratio=1−实际/保底,写 refunds 待审批)
+2. `approveRefund`(ADMIN,调微信退款 + 追佣 debitWallet,写 refunds/order_logs,事务)
+3. `payNotify` REFUND.SUCCESS 回调(按 wechatRefundId 幂等,refunds→SUCCESS)
+4. `refundSuccess`(订单 REFUNDING → REFUNDED)
+
+**提现 7 态**
+
+1. `applyWithdrawal`：SUBMITTED，实名 APPROVED + 周次数 + 起提 10 元，事务冻结余额；
+2. `startWithdrawalReview`：REVIEWING；`approveWithdrawal`：APPROVED；
+3. `startWithdrawalPayment`：PAYING；失败时 `failWithdrawalPayment`：PAY_FAILED，可重新开始出款；
+4. `markWithdrawalPaid`：PAID，写 batchNo/transfer_records 且只扣一次冻结余额；
+5. 审核阶段 `rejectWithdrawal`：REJECTED，释放冻结余额并通知。
+
+## 7. 构建/部署/环境变量
+
+- 环境变量:`docs/外包交接说明.md` 二、环境变量清单(2.1 微信支付 WECHAT_PAY_* / 2.2 微信账号 / 2.3 会话与 H5 下单密钥 / 2.4 前端 VITE_* / 2.5 本地联调)
+- 构建部署:`docs/外包交接说明.md` 三、构建与部署步骤

@@ -1,0 +1,100 @@
+{
+  "pages": [
+    {
+      "path": "pages/login/index",
+      "style": {
+        "navigationBarTitleText": "管理台登录"
+      }
+    },
+    {
+      "path": "pages/dashboard/index",
+      "style": {
+        "navigationBarTitleText": "管理概览"
+      }
+    },
+    {
+      "path": "pages/accounts/index",
+      "style": {
+        "navigationBarTitleText": "账号管理"
+      }
+    },
+    {
+      "path": "pages/products/index",
+      "style": {
+        "navigationBarTitleText": "商品管理"
+      }
+    },
+    {
+      "path": "pages/reviews/index",
+      "style": {
+        "navigationBarTitleText": "审核中心"
+      }
+    },
+    {
+      "path": "pages/orders/index",
+      "style": { "navigationBarTitleText": "订单管理" }
+    },
+    {
+      "path": "pages/ledger/index",
+      "style": { "navigationBarTitleText": "佣金账本与追佣" }
+    },
+    {
+      "path": "pages/withdrawals/index",
+      "style": { "navigationBarTitleText": "提现审批与出款" }
+    },
+    {
+      "path": "pages/disputes/index",
+      "style": { "navigationBarTitleText": "异议仲裁" }
+    },
+    {
+      "path": "pages/access/index",
+      "style": { "navigationBarTitleText": "角色与品牌权限" }
+    },
+    {
+      "path": "pages/audit/index",
+      "style": { "navigationBarTitleText": "审计日志" }
+    },
+    {
+      "path": "pages/brands/index",
+      "style": {
+        "navigationBarTitleText": "品牌配置"
+      }
+    },
+    {
+      "path": "pages/dicts/index",
+      "style": {
+        "navigationBarTitleText": "字典管理"
+      }
+    },
+    {
+      "path": "pages/configs/index",
+      "style": {
+        "navigationBarTitleText": "配置管理"
+      }
+    },
+    {
+      "path": "pages/vips/index",
+      "style": {
+        "navigationBarTitleText": "VIP 名单"
+      }
+    },
+    {
+      "path": "pages/wallets/index",
+      "style": {
+        "navigationBarTitleText": "钱包管理"
+      }
+    },
+    {
+      "path": "pages/reports/index",
+      "style": {
+        "navigationBarTitleText": "报表"
+      }
+    }
+  ],
+  "globalStyle": {
+    "navigationStyle": "custom",
+    "navigationBarBackgroundColor": "#ffffff",
+    "navigationBarTextStyle": "black",
+    "backgroundColor": "#f3f5f9"
+  }
+}

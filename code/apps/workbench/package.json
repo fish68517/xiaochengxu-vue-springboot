@@ -1,0 +1,19 @@
+{
+  "name": "@game-service/workbench",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev:h5": "uni",
+    "build:h5": "uni build"
+  },
+  "dependencies": {
+    "@dcloudio/uni-app": "vue3",
+    "@dcloudio/uni-h5": "vue3",
+    "vue": "^3.5.0"
+  },
+  "devDependencies": {
+    "@dcloudio/vite-plugin-uni": "vue3",
+    "vite": "^5.0.0",
+    "sass": "^1.77.0"
+  }
+}
