@@ -1,0 +1,87 @@
+code/apps/client/src/api.js
+  s_c6f0a82ffef8e9::t_4770b810adb74a 44-54,56-59,74
+  s_c6f0a82ffef8e9::t_4712ecb8fc5b04 7,130-132
+  s_c6f0a82ffef8e9::t_ca4ad60cfb894a 61-73,75
+  s_c6f0a82ffef8e9::t_09e98268320e68 1
+  s_c6f0a82ffef8e9::t_11211f1717d57a 60
+code/apps/client/.env.development
+  s_c6f0a82ffef8e9::t_6b18f532616f4e 1-3
+code/apps/client/package.json
+  s_c6f0a82ffef8e9::t_6b18f532616f4e 8
+code/apps/client/vite.config.js
+  s_c6f0a82ffef8e9::t_6b18f532616f4e 4
+code/apps/client/.env.production
+  s_c6f0a82ffef8e9::t_6b18f532616f4e 1-4
+code/apps/client/src/manifest.json
+  s_c6f0a82ffef8e9::t_6b18f532616f4e 18-19
+code/script/build-unicloud.ps1
+  s_c6f0a82ffef8e9::t_23131529f82a99 1
+  s_c6f0a82ffef8e9::t_e090ac3057c172 2-39,41-118
+  s_c6f0a82ffef8e9::t_556fc34c4e8e14 40
+code/.gitignore
+  s_c6f0a82ffef8e9::t_556fc34c4e8e14 12-13
+code/apps/admin/src/api.js
+  s_c6f0a82ffef8e9::t_ca4ad60cfb894a 88-104
+  s_c6f0a82ffef8e9::t_4712ecb8fc5b04 7,16-28,120-121,140-141
+  s_c6f0a82ffef8e9::t_09e98268320e68 125
+code/apps/admin/.env.production
+  s_c6f0a82ffef8e9::t_6b18f532616f4e 1-3
+code/uniCloud-tcb/cloudfunctions/game-service/test/entry-export.test.cjs
+  s_c6f0a82ffef8e9::t_3b0ec652f51a2b 1-10
+code/apps/client/uniCloud-aliyun/cloudfunctions/game-service/game-service.param.json
+  s_c6f0a82ffef8e9::t_3ad29ca6ccf108 1-6
+doc/前端提示入口函数必须为module.exports.md
+  s_c6f0a82ffef8e9::t_86300682cddf57 1-78
+  s_c6f0a82ffef8e9::t_841ff467fe063e 79-91
+code/apps/client/uniCloud-aliyun/cloudfunctions/game-service/index.js
+  s_c6f0a82ffef8e9::t_08caa80cbf05f7 103,189-193
+code/apps/client/uniCloud/cloudfunctions/game-service/index.js
+  s_c6f0a82ffef8e9::t_08caa80cbf05f7 103,189-193
+code/apps/admin/package.json
+  s_c6f0a82ffef8e9::t_6b18f532616f4e 5
+code/script/test-unicloud-cors.ps1
+  s_c6f0a82ffef8e9::t_f16958cdccbba4 1,48
+  s_c6f0a82ffef8e9::t_92a6a6d9092b15 49
+  s_c6f0a82ffef8e9::t_4770b810adb74a 2-47
+code/apps/workbench/package.json
+  s_c6f0a82ffef8e9::t_6b18f532616f4e 7-8
+code/apps/workbench/.env.development
+  s_c6f0a82ffef8e9::t_6b18f532616f4e 1-3
+code/apps/admin/vite.config.js
+  s_c6f0a82ffef8e9::t_6b18f532616f4e 4
+code/apps/admin/.env.development
+  s_c6f0a82ffef8e9::t_6b18f532616f4e 1-3
+code/apps/workbench/vite.config.js
+  s_c6f0a82ffef8e9::t_6b18f532616f4e 4
+code/uniCloud-tcb/cloudfunctions/game-service/index.js
+  s_c6f0a82ffef8e9::t_08caa80cbf05f7 103,189-193
+code/package.json
+  s_c6f0a82ffef8e9::t_6b18f532616f4e 19-25
+code/apps/workbench/.env.production
+  s_c6f0a82ffef8e9::t_6b18f532616f4e 1-3
+code/apps/workbench/src/api.js
+  s_c6f0a82ffef8e9::t_09e98268320e68 2
+  s_c6f0a82ffef8e9::t_4712ecb8fc5b04 7,41-46,136,162
+  s_c6f0a82ffef8e9::t_ca4ad60cfb894a 97-100,104-118
+code/script/README.md
+  s_c6f0a82ffef8e9::t_4770b810adb74a 75-90
+  s_c6f0a82ffef8e9::t_91fc277f36ee68 59-74
+game-service/index.js
+  s_c6f0a82ffef8e9::t_33f7b6c7627841 103,189-193
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.2",
+  "base_commit_sha": "5c04b52310fedc279ec75f8ad9010651a8ab24ff",
+  "prompts": {},
+  "sessions": {
+    "s_c6f0a82ffef8e9": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a0525b-3152-7f70-8eab-bf6495370f2f",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "yuhongwen <Hongwen_Yu.sgmwh@saic-gm.com>"
+    }
+  }
+}
