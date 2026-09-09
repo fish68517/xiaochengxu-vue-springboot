@@ -9,6 +9,9 @@
 unicloud 相关  15071469547@163.com  320435Yhw
 https://unicloud.dcloud.net.cn/
 
+测试域名：
+static-mp-d55868c9-2e64-41c5-baf6-ecbb16b511be.next.bspapp.com
+   h5.qmhyjoy.com
 
 
 第一阶段先采用 Mock 支付快速跑通核心后端。
@@ -24,6 +27,28 @@ SCHEDULER_SECRET=33aba72d9405567b68964f440821bd6978156267a34b0cbc70d9ad2bb6fa9d5
 
 system-runner
 33aaa72d9405567b68964f440821bd6978156267a34b0cbc70d9ad2bb6fa9d5c
+
+
+PS E:\bishe27\服务平台小程序\code> $PII_BLIND_INDEX_KEY = [Convert]::ToBase64String(
+>>     (1..32 | ForEach-Object { Get-Random -Maximum 256 })
+>> )
+PS E:\bishe27\服务平台小程序\code>
+PS E:\bishe27\服务平台小程序\code> Write-Host "PII_KEY_VERSION=v1"
+PII_KEY_VERSION=v1
+PS E:\bishe27\服务平台小程序\code> Write-Host "PII_KEYS_JSON={`"v1`":`"$PII_KEY`"}"
+PII_KEYS_JSON={"v1":"9UxZCuiFqDJISkvanWC/iYEQ2mLIm/ZKoN8kmuesILU="}
+PS E:\bishe27\服务平台小程序\code> Write-Host "PII_BLIND_INDEX_KEY=$PII_BLIND_INDEX_KEY"
+PII_BLIND_INDEX_KEY=4gM24G/BuemXI76oUKQXhZraYrwCAKWiHXhpI9KtzBw=
+
+
+PS E:\bishe27\服务平台小程序\code> $BOOTSTRAP_SECRET = [Convert]::ToBase64String(
+>>     (1..48 | ForEach-Object { Get-Random -Maximum 256 })
+>> )
+PS E:\bishe27\服务平台小程序\code>
+PS E:\bishe27\服务平台小程序\code> Write-Host $BOOTSTRAP_SECRET
+JYtIM8Nl8U35ziBFyskKludOTjN3aG3F8yPT48AIV66jPIo9lSIexOzDT0UhRBNE
+
+
 
 
 查询编译脚本
