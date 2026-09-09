@@ -8,3 +8,59 @@
 
 unicloud 相关  15071469547@163.com  320435Yhw
 https://unicloud.dcloud.net.cn/
+
+
+
+第一阶段先采用 Mock 支付快速跑通核心后端。
+PS E:\bishe27\服务平台小程序\code> Write-Host "H5_TOKEN_SECRET=$H5_TOKEN_SECRET"
+H5_TOKEN_SECRET=93ed8f4cdada55cfb3563342aca46715847c13691d43d0c3753e93abd14d8a6c
+
+PS E:\bishe27\服务平台小程序\code> Write-Host "INTERNAL_SECRET=$INTERNAL_SECRET"
+INTERNAL_SECRET=72cd167ec7771ceebb2c029d48d62dfdddd03fee8bd6aaf1a7e65444833b1ab7
+
+PS E:\bishe27\服务平台小程序\code> Write-Host "SCHEDULER_SECRET=$SCHEDULER_SECRET"
+SCHEDULER_SECRET=33aba72d9405567b68964f440821bd6978156267a34b0cbc70d9ad2bb6fa9d5c
+
+
+
+
+11. 配置 system-runner  ----怎么配置 ？？
+INTERNAL_SECRET=<必须和 game-service 使用同一值>
+SCHEDULER_SECRET=<前面生成的值>
+
+
+
+
+
+
+
+
+
+
+集合/表attachments不存在，是否自动在本服务空间的数据库中创建该表并
+重试上传操作？
+
+集合/表audit_logs不存在，是否自动在本服务空间的数据库中创建该表并重
+试上传操作?
+
+/表auth_sessions不存
+表brand_config_versions
+表brands
+commission_rules
+configs，customers，data_rights_requests,dicts,  disputes,  financial_exports  h5_token revocations   login_events  mfa_recovery_codes ,notifications 
+集合/表 operational_alerts 不
+该表并重试上传操作？
+集合/表 operational_events 不存在
+该表并重试上传操作？
+集合/表order_logs 不存在，是否
+试上传操作？
+合/表 order_messages 不存在，
+并重试上传操作？
+
+13:49:43.898 [阿里云:pwfinal]开始运行上传数据集合Schema(brand_config_versions.schema.json)
+13:50:08.319 [阿里云:pwfinal]创建数据表(brand_config_versions)成功
+13:50:28.966 [阿里云:pwfinal]上传数据集合Schema(brand_config_versions.schema.json)失败
+13:50:28.984 [阿里云:pwfinal]开始运行上传数据集合Schema(brands.schema.json)
+13:50:47.412 [阿里云:pwfinal]创建数据表(brands)成功
+13:50:50.289 [阿里云:pwfinal]上传数据集合Schema(brands.schema.json)成功
+13:50:50.294 [阿里云:pwfinal]开始运行上传数据集合Schema(commission_rules.schema.json)

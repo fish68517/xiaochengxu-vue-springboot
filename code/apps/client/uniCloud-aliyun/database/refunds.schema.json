@@ -1,0 +1,26 @@
+{
+  "bsonType": "object",
+  "required": ["brandId", "orderId", "type", "amountFen", "status", "createdAt"],
+  "permission": {
+    "read": false,
+    "create": false,
+    "update": false,
+    "delete": false
+  },
+  "properties": {
+    "_id": { "bsonType": "string", "description": "主键（统一 _id 为业务主键）" },
+    "brandId": { "bsonType": "string", "description": "品牌强制归属" },
+    "orderId": { "bsonType": "string" },
+    "paymentId": { "bsonType": "string", "description": "原支付单引用" },
+    "type": { "bsonType": "string", "enum": ["full", "partial_unstarted", "partial_progress", "partial_output", "dispute"] },
+    "ratio": { "bsonType": "number", "description": "退款比例（实际产出/保底产出，0-1）" },
+    "amountFen": { "bsonType": "int", "description": "退款金额（分）" },
+    "reason": { "bsonType": "string" },
+    "status": { "bsonType": "string", "enum": ["PENDING_APPROVAL", "APPROVED", "REJECTED", "PROCESSING", "SUCCESS", "FAILED"] },
+    "approvedBy": { "bsonType": "string" },
+    "wechatRefundId": { "bsonType": "string", "description": "微信退款流水号（唯一，幂等）" },
+    "commissionRecoveredFen": { "bsonType": "int", "description": "追回佣金金额（分）" },
+    "createdAt": { "bsonType": "number" },
+    "updatedAt": { "bsonType": "number" }
+  }
+}

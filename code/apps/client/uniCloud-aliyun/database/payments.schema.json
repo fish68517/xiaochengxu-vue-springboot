@@ -1,0 +1,22 @@
+{
+  "bsonType": "object",
+  "required": ["paymentNo", "brandId", "orderId", "channel", "amountFen", "status", "idempotencyKey", "createdAt", "updatedAt"],
+  "permission": { "read": false, "create": false, "update": false, "delete": false },
+  "properties": {
+    "_id": { "bsonType": "string" },
+    "paymentNo": { "bsonType": "string", "description": "平台支付单号，唯一" },
+    "brandId": { "bsonType": "string" },
+    "orderId": { "bsonType": "string" },
+    "channel": { "bsonType": "string", "enum": ["MOCK", "WECHAT_JSAPI", "WECHAT_MWEB"] },
+    "amountFen": { "bsonType": "int" },
+    "status": { "bsonType": "string", "enum": ["CREATED", "PENDING", "PROCESSING", "SUCCESS", "FAILED", "UNKNOWN", "CLOSED"] },
+    "providerTransactionId": { "bsonType": "string" },
+    "providerPrepayId": { "bsonType": "string" },
+    "idempotencyKey": { "bsonType": "string" },
+    "secretRef": { "bsonType": "string" },
+    "failureReason": { "bsonType": "string" },
+    "paidAt": { "bsonType": "number" },
+    "createdAt": { "bsonType": "number" },
+    "updatedAt": { "bsonType": "number" }
+  }
+}

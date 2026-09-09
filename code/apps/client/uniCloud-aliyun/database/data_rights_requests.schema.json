@@ -1,0 +1,12 @@
+{
+  "bsonType": "object",
+  "required": ["_id", "userId", "brandId", "type", "status", "createdAt"],
+  "permission": { "read": false, "create": false, "update": false, "delete": false },
+  "properties": {
+    "_id": { "bsonType": "string" }, "userId": { "bsonType": "string" }, "brandId": { "bsonType": "string" },
+    "type": { "bsonType": "string", "enum": ["COPY", "CORRECT", "DELETE", "APPEAL", "CLOSE_ACCOUNT"] },
+    "status": { "bsonType": "string" }, "reason": { "bsonType": "string" }, "correctionJson": { "bsonType": "string" },
+    "resultJson": { "bsonType": "string" }, "coolingEndsAt": { "bsonType": "number" },
+    "createdAt": { "bsonType": "number" }, "updatedAt": { "bsonType": "number" }
+  }
+}

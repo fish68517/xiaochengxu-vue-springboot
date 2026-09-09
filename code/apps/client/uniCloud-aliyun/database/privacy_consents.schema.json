@@ -1,0 +1,10 @@
+{
+  "bsonType": "object",
+  "required": ["_id", "userId", "brandId", "documentType", "version", "createdAt"],
+  "permission": { "read": false, "create": false, "update": false, "delete": false },
+  "properties": {
+    "_id": { "bsonType": "string" }, "userId": { "bsonType": "string" }, "brandId": { "bsonType": "string" },
+    "documentType": { "bsonType": "string" }, "version": { "bsonType": "string" },
+    "requestId": { "bsonType": "string" }, "createdAt": { "bsonType": "number" }
+  }
+}

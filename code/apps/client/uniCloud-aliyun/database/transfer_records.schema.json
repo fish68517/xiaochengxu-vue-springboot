@@ -1,0 +1,18 @@
+{
+  "bsonType": "object",
+  "required": ["brandId", "withdrawalId", "batchNo", "status", "createdAt"],
+  "permission": {
+    "read": false,
+    "create": false,
+    "update": false,
+    "delete": false
+  },
+  "properties": {
+    "_id": { "bsonType": "string", "description": "主键（统一 _id 为业务主键）" },
+    "brandId": { "bsonType": "string", "description": "提现品牌" },
+    "withdrawalId": { "bsonType": "string", "description": "关联提现单（唯一）" },
+    "batchNo": { "bsonType": "string", "description": "人工打款凭证号（银行/微信转账单号，唯一）" },
+    "status": { "bsonType": "string", "enum": ["PENDING_PAID", "PAID", "FAILED"] },
+    "createdAt": { "bsonType": "number" }
+  }
+}

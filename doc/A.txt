@@ -1,0 +1,44 @@
+PS E:\bishe27\服务平台小程序\code> Get-ChildItem .\uniCloud-tcb\cloudfunctions -Recurse -File |
+>> Where-Object {
+>>     $_.Extension -in '.js','.ts','.cjs','.mjs'
+>> } |
+>> ForEach-Object {
+>>     $file = $_.FullName
+>>     $content = Get-Content $file -Raw
+>>
+>>     [regex]::Matches(
+>>         $content,
+>>         'process\.env\.([A-Za-z_][A-Za-z0-9_]*)'
+>>     ) |
+>>     ForEach-Object {
+>>         [PSCustomObject]@{
+>>             File     = $file
+>>             Variable = $_.Groups[1].Value
+>>         }
+>>     }
+>> } |
+>> Sort-Object Variable,File -Unique
+
+File                                                                                                 Variable
+----                                                                                                 --------
+E:\bishe27\服务平台小程序\code\uniCloud-tcb\cloudfunctions\game-service\lib\payment-operations.cjs   APP_ENV
+E:\bishe27\服务平台小程序\code\uniCloud-tcb\cloudfunctions\game-service\lib\services.cjs             H5_ORDER_BASE_URL
+E:\bishe27\服务平台小程序\code\uniCloud-tcb\cloudfunctions\wechat-callback\index.js                  H5_ORDER_BASE_URL
+E:\bishe27\服务平台小程序\code\uniCloud-tcb\cloudfunctions\game-service\lib\services.cjs             H5_TOKEN_SECRET
+E:\bishe27\服务平台小程序\code\uniCloud-tcb\cloudfunctions\game-service\test\game-service.test.cjs   H5_TOKEN_SECRET
+E:\bishe27\服务平台小程序\code\uniCloud-tcb\cloudfunctions\game-service\test\pay-flow.test.cjs       H5_TOKEN_SECRET
+E:\bishe27\服务平台小程序\code\uniCloud-tcb\cloudfunctions\game-service\lib\services.cjs             H5_TOKEN_TTL_MS
+E:\bishe27\服务平台小程序\code\uniCloud-tcb\cloudfunctions\system-runner\index.js                    INTERNAL_SECRET
+E:\bishe27\服务平台小程序\code\uniCloud-tcb\cloudfunctions\system-runner\test\system-runner.test.cjs INTERNAL_SECRET
+E:\bishe27\服务平台小程序\code\uniCloud-tcb\cloudfunctions\wechat-callback\index.js                  INTERNAL_SECRET
+E:\bishe27\服务平台小程序\code\uniCloud-tcb\cloudfunctions\game-service\lib\services.cjs             PAYMENT_MODE
+E:\bishe27\服务平台小程序\code\uniCloud-tcb\cloudfunctions\game-service\test\game-service.test.cjs   PAYMENT_MODE
+E:\bishe27\服务平台小程序\code\uniCloud-tcb\cloudfunctions\system-runner\index.js                    SCHEDULER_SECRET
+E:\bishe27\服务平台小程序\code\uniCloud-tcb\cloudfunctions\system-runner\test\system-runner.test.cjs SCHEDULER_SECRET
+E:\bishe27\服务平台小程序\code\uniCloud-tcb\cloudfunctions\game-service\test\game-service.test.cjs   SESSION_SECRET
+E:\bishe27\服务平台小程序\code\uniCloud-tcb\cloudfunctions\game-service\test\pay-flow.test.cjs       SESSION_SECRET
+E:\bishe27\服务平台小程序\code\uniCloud-tcb\cloudfunctions\wechat-callback\index.js                  WECHAT_MP_APPID
+E:\bishe27\服务平台小程序\code\uniCloud-tcb\cloudfunctions\wechat-callback\index.js                  WECHAT_MP_KF_TOKEN
+E:\bishe27\服务平台小程序\code\uniCloud-tcb\cloudfunctions\wechat-callback\index.js                  WECHAT_MP_SECRET
+E:\bishe27\服务平台小程序\code\uniCloud-tcb\cloudfunctions\game-service\lib\payment-operations.cjs   WECHAT_PAY_CONFIG_MAP
+E:\bishe27\服务平台小程序\code\uniCloud-tcb\cloudfunctions\game-service\lib\services.cjs             WECHAT_PAY_MCHID

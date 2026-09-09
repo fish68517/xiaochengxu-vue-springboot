@@ -1,0 +1,15 @@
+{
+  "bsonType": "object",
+  "required": ["userId", "brandId", "roles", "permissions", "status", "createdAt"],
+  "permission": { "read": false, "create": false, "update": false, "delete": false },
+  "properties": {
+    "_id": { "bsonType": "string" },
+    "userId": { "bsonType": "string" },
+    "brandId": { "bsonType": "string" },
+    "roles": { "bsonType": "array", "items": { "bsonType": "string" } },
+    "permissions": { "bsonType": "array", "items": { "bsonType": "string" } },
+    "status": { "bsonType": "string", "enum": ["ACTIVE", "DISABLED"] },
+    "createdAt": { "bsonType": "number" },
+    "updatedAt": { "bsonType": "number" }
+  }
+}

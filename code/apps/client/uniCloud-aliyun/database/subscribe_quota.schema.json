@@ -1,0 +1,19 @@
+{
+  "bsonType": "object",
+  "required": ["brandId", "customerId", "templateKey", "grantedAt", "orderId"],
+  "permission": {
+    "read": false,
+    "create": false,
+    "update": false,
+    "delete": false
+  },
+  "properties": {
+    "_id": { "bsonType": "string", "description": "主键（统一 _id 为业务主键）" },
+    "brandId": { "bsonType": "string", "description": "订单品牌" },
+    "customerId": { "bsonType": "string" },
+    "templateKey": { "bsonType": "string", "description": "订阅消息模板 key" },
+    "grantedAt": { "bsonType": "number", "description": "授权时间（一次授权一单）" },
+    "usedAt": { "bsonType": "number", "description": "下发使用时间（可空）" },
+    "orderId": { "bsonType": "string", "description": "关联订单（orderId+templateKey 唯一）" }
+  }
+}

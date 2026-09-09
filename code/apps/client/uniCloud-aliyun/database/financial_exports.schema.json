@@ -1,0 +1,10 @@
+{
+  "bsonType": "object",
+  "required": ["_id", "brandId", "purpose", "exportedBy", "sha256", "createdAt"],
+  "permission": { "read": false, "create": false, "update": false, "delete": false },
+  "properties": {
+    "_id": { "bsonType": "string" }, "brandId": { "bsonType": "string" }, "purpose": { "bsonType": "string" },
+    "watermark": { "bsonType": "string" }, "exportedBy": { "bsonType": "string" }, "rowCount": { "bsonType": "int" },
+    "sha256": { "bsonType": "string" }, "createdAt": { "bsonType": "number" }
+  }
+}

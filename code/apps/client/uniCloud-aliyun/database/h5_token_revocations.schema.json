@@ -1,0 +1,14 @@
+{
+  "bsonType": "object",
+  "required": ["_id", "brandId", "reason", "revokedBy", "revokedAt", "expiresAt"],
+  "permission": { "read": false, "create": false, "update": false, "delete": false },
+  "properties": {
+    "_id": { "bsonType": "string", "description": "H5 token jti" },
+    "brandId": { "bsonType": "string" },
+    "reason": { "bsonType": "string" },
+    "revokedBy": { "bsonType": "string" },
+    "revokedAt": { "bsonType": "number" },
+    "expiresAt": { "bsonType": "number" }
+  }
+}
+

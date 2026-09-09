@@ -1,0 +1,10 @@
+{
+  "bsonType": "object",
+  "required": ["_id", "brandId", "eventType", "status", "createdAt"],
+  "permission": { "read": false, "create": false, "update": false, "delete": false },
+  "properties": {
+    "_id": { "bsonType": "string" }, "brandId": { "bsonType": "string" }, "eventType": { "bsonType": "string" },
+    "resourceId": { "bsonType": "string" }, "providerEventId": { "bsonType": "string" }, "status": { "bsonType": "string" },
+    "requestId": { "bsonType": "string" }, "payloadHash": { "bsonType": "string" }, "createdAt": { "bsonType": "number" }
+  }
+}

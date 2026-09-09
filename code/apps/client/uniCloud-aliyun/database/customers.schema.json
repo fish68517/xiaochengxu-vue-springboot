@@ -1,0 +1,19 @@
+{
+  "bsonType": "object",
+  "required": ["openid", "createdAt"],
+  "permission": {
+    "read": false,
+    "create": false,
+    "update": false,
+    "delete": false
+  },
+  "properties": {
+    "_id": { "bsonType": "string", "description": "主键（统一 _id 为业务主键）" },
+    "openid": { "bsonType": "string", "description": "小程序 openid（唯一）" },
+    "phone": { "bsonType": "string", "description": "下单联系方式-手机号（加密存储）" },
+    "wechat": { "bsonType": "string", "description": "下单联系方式-微信号（加密存储）" },
+    "isVip": { "bsonType": "bool", "description": "是否 VIP（由 vip_list 匹配更新）" },
+    "createdAt": { "bsonType": "number" },
+    "updatedAt": { "bsonType": "number" }
+  }
+}

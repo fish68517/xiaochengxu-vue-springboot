@@ -1,0 +1,18 @@
+{
+  "bsonType": "object",
+  "required": ["cfgKey", "createdAt"],
+  "permission": {
+    "read": false,
+    "create": false,
+    "update": false,
+    "delete": false
+  },
+  "properties": {
+    "_id": { "bsonType": "string", "description": "主键（统一 _id 为业务主键）" },
+    "cfgKey": { "bsonType": "string", "description": "配置键（唯一）" },
+    "cfgValue": { "bsonType": "any", "description": "配置值（数字/字符串/对象，按 cfgKey 约定解析）" },
+    "remark": { "bsonType": "string" },
+    "createdAt": { "bsonType": "number" },
+    "updatedAt": { "bsonType": "number" }
+  }
+}

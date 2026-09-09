@@ -1,0 +1,31 @@
+{
+  "bsonType": "object",
+  "required": ["orderId", "fromStatus", "toStatus", "action", "operatorType", "createdAt"],
+  "permission": {
+    "read": false,
+    "create": false,
+    "update": false,
+    "delete": false
+  },
+  "properties": {
+    "_id": { "bsonType": "string", "description": "主键（统一 _id 为业务主键）" },
+    "orderId": { "bsonType": "string" },
+    "brandId": { "bsonType": "string" },
+    "fromStatus": {
+      "bsonType": "string",
+      "enum": ["PENDING_PAYMENT", "PENDING_ACCEPT", "PENDING_GRAB", "ASSIGN_PENDING", "IN_SERVICE", "PENDING_CONFIRM", "SETTLED", "DISPUTING", "CANCELLED", "REFUNDING", "REFUNDED", "CLOSED"]
+    },
+    "toStatus": {
+      "bsonType": "string",
+      "enum": ["PENDING_PAYMENT", "PENDING_ACCEPT", "PENDING_GRAB", "ASSIGN_PENDING", "IN_SERVICE", "PENDING_CONFIRM", "SETTLED", "DISPUTING", "CANCELLED", "REFUNDING", "REFUNDED", "CLOSED"]
+    },
+    "action": { "bsonType": "string", "description": "entry/grab/assign/accept/reject/release/cancel/refund/complete/close/rework/dispute/resolve 等" },
+    "operatorType": { "bsonType": "string", "enum": ["system", "cs", "admin", "worker", "customer"] },
+    "operatorId": { "bsonType": "string" },
+    "operatorRole": { "bsonType": "string" },
+    "payloadSnapshot": { "bsonType": "object" },
+    "requestId": { "bsonType": "string" },
+    "remark": { "bsonType": "string" },
+    "createdAt": { "bsonType": "number" }
+  }
+}

@@ -1,0 +1,13 @@
+{
+  "bsonType": "object",
+  "required": ["_id", "action", "timestamp", "expiresAt", "createdAt"],
+  "permission": { "read": false, "create": false, "update": false, "delete": false },
+  "properties": {
+    "_id": { "bsonType": "string", "description": "内部请求 nonce，主键保证唯一" },
+    "action": { "bsonType": "string" },
+    "timestamp": { "bsonType": "number" },
+    "expiresAt": { "bsonType": "number" },
+    "createdAt": { "bsonType": "number" }
+  }
+}
+

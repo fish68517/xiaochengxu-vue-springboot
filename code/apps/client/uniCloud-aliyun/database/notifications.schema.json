@@ -1,0 +1,21 @@
+{
+  "bsonType": "object",
+  "required": ["brandId", "receiverId", "channel", "template", "status", "createdAt"],
+  "permission": {
+    "read": false,
+    "create": false,
+    "update": false,
+    "delete": false
+  },
+  "properties": {
+    "_id": { "bsonType": "string" },
+    "brandId": { "bsonType": "string", "description": "通知业务品牌" },
+    "receiverId": { "bsonType": "string" },
+    "channel": { "bsonType": "string", "enum": ["INBOX", "WECHAT_CUSTOMER_SERVICE", "SUBSCRIBE_MSG"] },
+    "template": { "bsonType": "string" },
+    "payload": { "bsonType": "object" },
+    "status": { "bsonType": "string", "enum": ["PENDING", "SENT", "READ", "FAILED", "SKIPPED"] },
+    "createdAt": { "bsonType": "number" },
+    "sentAt": { "bsonType": "number" }
+  }
+}

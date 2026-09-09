@@ -1,0 +1,11 @@
+{
+  "bsonType": "object",
+  "required": ["_id", "brandId", "action", "operatorId", "integrity", "createdAt"],
+  "permission": { "read": false, "create": false, "update": false, "delete": false },
+  "properties": {
+    "_id": { "bsonType": "string" }, "brandId": { "bsonType": "string" }, "action": { "bsonType": "string" },
+    "resourceId": { "bsonType": "string" }, "operatorId": { "bsonType": "string" }, "operatorRole": { "bsonType": "string" },
+    "purpose": { "bsonType": "string" }, "requestId": { "bsonType": "string" }, "integrity": { "bsonType": "string" },
+    "createdAt": { "bsonType": "number" }
+  }
+}

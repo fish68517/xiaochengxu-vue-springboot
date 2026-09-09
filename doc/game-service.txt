@@ -1,0 +1,218 @@
+PS E:\bishe27\服务平台小程序\code> Get-Content .\.env.example
+# 杩愯鐜锛歞evelopment / staging / production
+APP_ENV=development
+API_MODE=local
+PAYMENT_MODE=mock
+MESSAGE_MODE=mock
+BRAND_CODE=demo-a
+
+# 鍓嶇鍏紑鍙橀噺锛堝彲浠ヨ繘鍏ユ瀯寤轰骇鐗╋紝涓ョ鏀惧瘑閽ワ級
+VITE_API_BASE=http://127.0.0.1:4176
+VITE_APP_ENV=development
+VITE_API_MODE=local
+VITE_BRAND_CODE=demo-a
+VITE_BRAND_DISPLAY_NAME=鏄熸渤鏈嶅姟
+VITE_WECHAT_APP_ID=wxdemoa20260001
+VITE_PUBLIC_CHANNEL_ID=demo-a-mini-program
+
+# staging/production 鏈嶅姟绔彉閲忥紙姝ゆ枃浠朵粎鍒楅敭鍚嶏紝瀹為檯鍊艰繘鍏?Secret 绠＄悊锛?SESSION_SECRET=replace-in-secret-manager
+H5_TOKEN_SECRET=replace-in-secret-manager
+H5_TOKEN_TTL_MS=86400000
+INTERNAL_SECRET=replace-with-independent-secret-at-least-32-chars
+SCHEDULER_SECRET=replace-with-independent-secret-at-least-32-chars
+UNICLOUD_PROVIDER=tencent
+UNICLOUD_SPACE=replace-with-space-id
+HOSTING_CLIENT_SPACE=replace-with-client-space-id
+HOSTING_BACKEND_SPACE=replace-with-backend-space-id
+HOSTING_CLIENT_URL=https://replace.example.com
+HOSTING_BACKEND_URL=https://replace-admin.example.com
+H5_ORDER_BASE_URL=https://replace.example.com
+WECHAT_PAY_MCHID=replace-in-secret-manager
+WECHAT_PAY_SERIAL_NO=replace-in-secret-manager
+WECHAT_PAY_PRIVATE_KEY=replace-in-secret-manager
+WECHAT_PAY_APIV3_KEY=replace-in-secret-manager
+WECHAT_PAY_APPID=replace-with-bound-appid
+WECHAT_PAY_NOTIFY_URL=https://replace.example.com/pay-notify
+WECHAT_MP_KF_TOKEN=replace-in-secret-manager
+WECHAT_MP_APPID=replace-with-certified-appid
+WECHAT_MP_SECRET=replace-in-secret-manager
+
+# 璐︽埛瀹夊叏銆侀殣绉併€佹敮浠樿矾鐢便€佸憡璀﹀拰澶囦唤锛坰taging/production 蹇呭～锛?ACCOUNT_SECURITY_ENFORCE=false
+MFA_ENCRYPTION_KEY=replace-with-base64-32-byte-key
+MFA_ENCRYPTION_KEY_VERSION=v1
+PII_KEY_VERSION=v1
+PII_KEYS_JSON={"v1":"replace-with-base64-32-byte-key"}
+PII_BLIND_INDEX_KEY=replace-with-independent-base64-32-byte-key
+PRIVACY_LEGAL_DOCUMENTS_JSON=[]
+PRIVACY_RETENTION_POLICY_JSON={"approved":false}
+ACCOUNT_CLOSURE_COOLING_DAYS=7
+WECHAT_PAY_CONFIG_MAP={}
+ALERT_WEBHOOK_URL=https://replace.example.com/alert-webhook
+BACKUP_ENCRYPTION_KEY=replace-with-base64-32-byte-key
+
+# production 鍙戝竷闂ㄧ
+RELEASE_APPROVED=false
+COMMERCIAL_DECISIONS_APPROVED=false
+BRAND_ENTITY_MODE=single-entity
+PRODUCTION_BRAND_CODES=
+DEMO_DATA_ENABLED=true
+DB_BACKUP_ID=
+ROLLBACK_BUNDLE_PATH=
+COMMERCIAL_EVIDENCE_MANIFEST=
+SECURITY_SCAN_REPORT=
+SBOM_PATH=
+CAPACITY_REPORT=
+PS E:\bishe27\服务平台小程序\code> $path = ".\uniCloud-tcb\cloudfunctions\game-service\index.js"
+PS E:\bishe27\服务平台小程序\code> $lines = Get-Content $path
+PS E:\bishe27\服务平台小程序\code>
+PS E:\bishe27\服务平台小程序\code> 1..35 | ForEach-Object {
+>>     "{0,4}: {1}" -f $_, $lines[$_-1]
+>> }
+   1: 'use strict';
+   2: const { createUniCloudRepository } = require('./lib/repository.cjs');
+   3: const services = require('./lib/services.cjs');
+   4: const { createAuth } = require('./lib/auth.cjs');
+   5: const Privacy = require('./lib/privacy.cjs');
+   6: const Ops = require('./lib/commercial-ops.cjs');
+   7:
+   8: const auth = createAuth({ env: process.env });
+   9:
+  10: // 涓氬姟閿欒灏佸:甯?code 鐨勯敊璇敱璺敱灞傜粺涓€杞?{ok:false, code, message},涓嶄笂鎶涘埌浜戝嚱鏁板眰銆?class BizError extends Error {
+  11:   constructor(code, message) {
+  12:     super(message || code);
+  13:     this.name = 'BizError';
+  14:     this.code = code;
+  15:   }
+  16: }
+  17:
+  18: // 鎻愬彇浼氳瘽 token:鍏煎 callFunction 鐨?data.token 涓?HTTP 鐨?Authorization: Bearer銆?function extractToken(event, payload) {
+  19:   if (event && event.token) return event.token;
+  20:   if (payload && payload.token) return payload.token;
+  21:   if (event && event.headers) {
+  22:     const h = event.headers;
+  23:     const bearer = h.Authorization || h.authorization;
+  24:     if (typeof bearer === 'string' && bearer.startsWith('Bearer ')) return bearer.slice(7).trim();
+  25:   }
+  26:   return undefined;
+  27: }
+  28:
+  29: function extractInternalAuth(event = {}) {
+  30:   if (event.internalAuth && typeof event.internalAuth === 'object') return event.internalAuth;
+  31:   const headers = event.headers || {};
+  32:   const timestamp = headers['x-internal-timestamp'] || headers['X-Internal-Timestamp'];
+  33:   const nonce = headers['x-internal-nonce'] || headers['X-Internal-Nonce'];
+  34:   const signature = headers['x-internal-signature'] || headers['X-Internal-Signature'];
+  35:   return timestamp || nonce || signature ? { timestamp, nonce, signature } : null;
+PS E:\bishe27\服务平台小程序\code>
+PS E:\bishe27\服务平台小程序\code> 95..155 | ForEach-Object {
+>>     "{0,4}: {1}" -f $_, $lines[$_-1]
+>> }
+  95: function snapshot(value) {
+  96:   if (value == null) return null;
+  97:   return JSON.parse(JSON.stringify(value));
+  98: }
+  99:
+ 100: exports.main = async (event = {}) => {
+ 101:   // URL 鍖?HTTP 璇锋眰:寰俊鏀粯鍥炶皟(鍦?uniCloud 鎺у埗鍙颁负 game-service 閰嶇疆 URL 鍖栬矾寰?/pay-notify)銆?  if (event && event.httpMethod) {
+ 102:     const path = (event.path || '').split('?')[0];
+ 103:     if (path === '/pay-notify' || path.endsWith('/pay-notify')) {
+ 104:       const repo = Privacy.protectRepository(createUniCloudRepository(uniCloud.database()), process.env);
+ 105:       let result;
+ 106:       try {
+ 107:         result = await services.payNotify(repo, { headers: event.headers || {}, body: event.body || '' });
+ 108:       } catch (err) {
+ 109:         result = toEnvelope(err);
+ 110:       }
+ 111:       return {
+ 112:         mpserverlessComposedResponse: true,
+ 113:         statusCode: 200,
+ 114:         headers: { 'content-type': 'application/json; charset=utf-8' },
+ 115:         body: JSON.stringify(result),
+ 116:       };
+ 117:     }
+ 118:     return {
+ 119:       mpserverlessComposedResponse: true,
+ 120:       statusCode: 404,
+ 121:       headers: { 'content-type': 'application/json; charset=utf-8' },
+ 122:       body: JSON.stringify(toEnvelope(new BizError('UNKNOWN_PATH', `鏈煡璺緞: ${path}`))),
+ 123:     };
+ 124:   }
+ 125:
+ 126:   try {
+ 127:     const action = event.action;
+ 128:     const payload = { ...(event.payload || {}) };
+ 129:     const eventIdempotencyKey = event.idempotencyKey
+ 130:       || (event.headers && (event.headers['x-idempotency-key'] || event.headers['X-Idempotency-Key'] || event.headers['idempotency-key']));
+ 131:     if (eventIdempotencyKey && !payload.idempotencyKey) payload.idempotencyKey = eventIdempotencyKey;
+ 132:     if (!action) throw new BizError('MISSING_ACTION', '缂哄皯 action');
+ 133:     if (!services[action]) throw new BizError('UNKNOWN_ACTION', `鏈煡 action: ${action}`);
+ 134:     const db = uniCloud.database();
+ 135:     const repo = Privacy.protectRepository(createUniCloudRepository(db), process.env);
+ 136:     // action 璺敱鍓嶇粺涓€閴存潈:鍏紑/鐧藉悕鍗?H5 token/绯荤粺鍏ュ彛鏀捐,鍙椾繚鎶?action 鏍￠獙浼氳瘽 token + 瑙掕壊鐭╅樀銆?    const headers = event.headers || {};
+ 137:     const trustedContext = {
+ 138:       sourceIp: event.sourceIp || event.clientIP || '',
+ 139:       deviceId: String(headers['x-device-id'] || headers['X-Device-Id'] || '').slice(0, 128),
+ 140:       requestId: Ops.requestId(event.requestId || headers['x-request-id'] || headers['X-Request-Id']),
+ 141:     };
+ 142:     const ctx = { token: extractToken(event, payload), internalAuth: extractInternalAuth(event), payload };
+ 143:     let session; let authMode; let internal;
+ 144:     try {
+ 145:       ({ session, mode: authMode, internal } = await auth.require(repo, action, ctx));
+ 146:     } catch (err) {
+ 147:       // 閴存潈澶辫触缁熶竴灏佸,涓嶄笂鎶涘埌浜戝嚱鏁板眰銆?      return { ok: false, code: 'UNAUTHORIZED', message: err && err.message ? err.message : String(err) };
+ 148:     }
+ 149:     const brandId = await enforceResourceBrand(repo, payload, session);
+ 150:     const resource = ROUTE_AUDIT_ACTIONS.has(action) ? await auditResource(repo, payload) : null;
+ 151:     const startedAt = Date.now();
+ 152:     let result;
+ 153:     try {
+ 154:       result = await services[action](repo, payload, session, trustedContext);
+ 155:       await Ops.recordOperation(repo, { action, requestId: trustedContext.requestId, durationMs: Date.now() - startedAt, ok: true, sourceIp: trustedContext.sourceIp, brandId: brandId || payload.brandId || 'default' });
+PS E:\bishe27\服务平台小程序\code> Get-ChildItem .\uniCloud-tcb\database -Filter *.schema.json |
+>> ForEach-Object {
+>>     $_.Name -replace '\.schema\.json$',''
+>> } |
+>> Sort-Object
+account_security
+assignments
+attachments
+audit_logs
+auth_sessions
+brand_config_versions
+brands
+commission_rules
+configs
+customers
+data_rights_requests
+dicts
+disputes
+financial_exports
+h5_token_revocations
+login_events
+mfa_recovery_codes
+notifications
+operational_alerts
+operational_events
+order_logs
+order_messages
+orders
+payment_events
+payments
+privacy_audit_logs
+privacy_consents
+products
+reconciliation_cases
+reconciliation_runs
+refunds
+security_rate_limits
+subscribe_quota
+system_nonces
+transfer_records
+user_brand_roles
+users
+vip_list
+wallet_transactions
+wallets
+withdrawals
+worker_profiles
+PS E:\bishe27\服务平台小程序\code>

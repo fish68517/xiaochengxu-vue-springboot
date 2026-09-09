@@ -1,0 +1,19 @@
+{
+  "bsonType": "object",
+  "required": ["brandId", "orderId", "senderType", "senderId", "content", "createdAt"],
+  "permission": {
+    "read": false,
+    "create": false,
+    "update": false,
+    "delete": false
+  },
+  "properties": {
+    "_id": { "bsonType": "string", "description": "主键（统一 _id 为业务主键）" },
+    "brandId": { "bsonType": "string", "description": "订单品牌" },
+    "orderId": { "bsonType": "string" },
+    "senderType": { "bsonType": "string", "enum": ["cs", "admin", "worker", "customer"] },
+    "senderId": { "bsonType": "string" },
+    "content": { "bsonType": "string", "description": "订单维度站内留言（全留痕，不可删改）" },
+    "createdAt": { "bsonType": "number" }
+  }
+}

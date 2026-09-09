@@ -1,0 +1,22 @@
+{
+  "bsonType": "object",
+  "required": ["ownerId", "availableFen", "pendingWithdrawFen", "withdrawnFen", "freezeWithdrawal", "freezeAccept", "version", "createdAt"],
+  "permission": {
+    "read": false,
+    "create": false,
+    "update": false,
+    "delete": false
+  },
+  "properties": {
+    "_id": { "bsonType": "string", "description": "主键（统一 _id 为业务主键）" },
+    "ownerId": { "bsonType": "string", "description": "接单人员 user._id（唯一；内部卷 worker_id）" },
+    "availableFen": { "bsonType": "int", "description": "可用余额（分，可为负：退款追回佣金所致）" },
+    "pendingWithdrawFen": { "bsonType": "int", "description": "提现中冻结金额（分）" },
+    "withdrawnFen": { "bsonType": "int", "description": "已提现总额（分）" },
+    "freezeWithdrawal": { "bsonType": "bool", "description": "冻结提现" },
+    "freezeAccept": { "bsonType": "bool", "description": "冻结接单" },
+    "version": { "bsonType": "int", "description": "乐观锁版本号" },
+    "createdAt": { "bsonType": "number" },
+    "updatedAt": { "bsonType": "number" }
+  }
+}

@@ -1,0 +1,12 @@
+PS E:\bishe27\服务平台小程序\code> Get-ChildItem .\uniCloud-tcb\cloudfunctions -Recurse -File |
+>> Where-Object {
+>>     $_.Extension -in '.js','.ts','.cjs','.mjs'
+>> } |
+>> Select-String -Pattern `
+>> 'UNICLOUD_PROVIDER',
+>> 'UNICLOUD_SPACE',
+>> 'HOSTING_CLIENT_SPACE',
+>> 'HOSTING_BACKEND_SPACE',
+>> 'tencent',
+>> 'aliyun' |
+>> Select-Object Path,LineNumber,Line

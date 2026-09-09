@@ -1,0 +1,36 @@
+{
+  "bsonType": "object",
+  "required": ["brandId", "code", "appId", "name", "status", "version", "createdAt"],
+  "permission": {
+    "read": false,
+    "create": false,
+    "update": false,
+    "delete": false
+  },
+  "properties": {
+    "_id": { "bsonType": "string" },
+    "brandId": { "bsonType": "string", "description": "品牌唯一标识（业务主键，upsert 依据）" },
+    "code": { "bsonType": "string", "description": "非敏感构建品牌编码" },
+    "appId": { "bsonType": "string", "description": "小程序 AppID，用于按端匹配品牌" },
+    "name": { "bsonType": "string" },
+    "logo": { "bsonType": "string" },
+    "themeTokens": {
+      "bsonType": "object",
+      "description": "主题 token：primary/secondary/bg/text/border/radius 等"
+    },
+    "copy": { "bsonType": "object", "description": "文案字典，key-value 覆盖默认文案" },
+    "banners": { "bsonType": "array", "items": { "bsonType": "string" } },
+    "binding": { "bsonType": "object", "description": "预留空间/商户/回调等绑定信息" },
+    "publicConfig": { "bsonType": "object" },
+    "assetConfig": { "bsonType": "object" },
+    "contactConfig": { "bsonType": "object" },
+    "legalConfig": { "bsonType": "object" },
+    "channelRefs": { "bsonType": "object", "description": "仅保存渠道和 Secret 引用，不保存明文密钥" },
+    "version": { "bsonType": "int", "minimum": 1 },
+    "publishedVersion": { "bsonType": "int", "minimum": 0 },
+    "isDefault": { "bsonType": "bool", "description": "无 appId 匹配时的默认品牌标记" },
+    "status": { "bsonType": "string", "enum": ["ON", "OFF"] },
+    "createdAt": { "bsonType": "number" },
+    "updatedAt": { "bsonType": "number" }
+  }
+}
