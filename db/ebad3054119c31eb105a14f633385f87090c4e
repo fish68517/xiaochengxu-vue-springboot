@@ -1,0 +1,69 @@
+code/apps/client/uniCloud-aliyun/cloudfunctions/bootstrap-seed/README.md
+  s_c6f0a82ffef8e9::t_fe8af5e2b58420 1-32
+code/apps/client/uniCloud-aliyun/cloudfunctions/bootstrap-seed/test/bootstrap-seed.test.cjs
+  s_c6f0a82ffef8e9::t_9f9a8347106743 1-24,33-39,53-56,58-117
+  s_c6f0a82ffef8e9::t_cac6c08292741a 57
+  s_c6f0a82ffef8e9::t_fe8af5e2b58420 25-32
+  s_c6f0a82ffef8e9::t_112659647df83d 40-52
+code/apps/client/uniCloud-aliyun/cloudfunctions/bootstrap-seed/.env.example
+  s_c6f0a82ffef8e9::t_fe8af5e2b58420 1-7
+code/apps/client/uniCloud-aliyun/cloudfunctions/bootstrap-seed/index.js
+  s_c6f0a82ffef8e9::t_cac6c08292741a 48-51
+  s_c6f0a82ffef8e9::t_112659647df83d 146-148
+  s_c6f0a82ffef8e9::t_fe8af5e2b58420 1-47,52-145,149-166
+code/apps/client/uniCloud-aliyun/cloudfunctions/bootstrap-seed/package.json
+  s_c6f0a82ffef8e9::t_fcf0cda212f590 6-9
+  s_c6f0a82ffef8e9::t_fe8af5e2b58420 1-5,10
+code/.gitignore
+  s_c6f0a82ffef8e9::t_7ab3a7f283188a 18
+code/apps/client/uniCloud-aliyun/cloudfunctions/bootstrap-seed/lib/account-security.cjs
+  s_c6f0a82ffef8e9::t_49ea77f7649cd3 1-335
+code/apps/client/uniCloud-aliyun/cloudfunctions/bootstrap-seed/lib/auth.cjs
+  s_c6f0a82ffef8e9::t_62ef2108e55e15 1-270
+code/apps/client/uniCloud-aliyun/cloudfunctions/bootstrap-seed/lib/commercial-finance.cjs
+  s_c6f0a82ffef8e9::t_9ec6d4917987d0 1-98
+code/apps/client/uniCloud-aliyun/cloudfunctions/bootstrap-seed/lib/commercial-ops.cjs
+  s_c6f0a82ffef8e9::t_85963fdf7726a9 1-107
+code/apps/client/uniCloud-aliyun/cloudfunctions/bootstrap-seed/lib/domain.cjs
+  s_c6f0a82ffef8e9::t_87846c241c2fcc 1-761
+code/apps/client/uniCloud-aliyun/cloudfunctions/bootstrap-seed/lib/h5-link.cjs
+  s_c6f0a82ffef8e9::t_315c78f07a7cc9 1-12
+code/apps/client/uniCloud-aliyun/cloudfunctions/bootstrap-seed/lib/internal-auth.cjs
+  s_c6f0a82ffef8e9::t_03b15652b74027 1-43
+code/apps/client/uniCloud-aliyun/cloudfunctions/bootstrap-seed/lib/oauth.cjs
+  s_c6f0a82ffef8e9::t_9b7252440de6a2 1-51
+code/apps/client/uniCloud-aliyun/cloudfunctions/bootstrap-seed/lib/payment-config.cjs
+  s_c6f0a82ffef8e9::t_2c43e07e58e2f1 1-25
+code/apps/client/uniCloud-aliyun/cloudfunctions/bootstrap-seed/lib/payment-operations.cjs
+  s_c6f0a82ffef8e9::t_d14d16170e257d 1-150
+code/apps/client/uniCloud-aliyun/cloudfunctions/bootstrap-seed/lib/privacy.cjs
+  s_c6f0a82ffef8e9::t_e744fc8650881e 1-379
+code/apps/client/uniCloud-aliyun/cloudfunctions/bootstrap-seed/lib/reconcile.cjs
+  s_c6f0a82ffef8e9::t_f7d2f644a62b5e 1-49
+code/apps/client/uniCloud-aliyun/cloudfunctions/bootstrap-seed/lib/repository.cjs
+  s_c6f0a82ffef8e9::t_03995c38ace28f 1-148
+code/apps/client/uniCloud-aliyun/cloudfunctions/bootstrap-seed/lib/services.cjs
+  s_c6f0a82ffef8e9::t_0555fd92bbcb81 1-1998
+code/apps/client/uniCloud-aliyun/cloudfunctions/bootstrap-seed/lib/subscribe.cjs
+  s_c6f0a82ffef8e9::t_e60efd3e37dba5 1-118
+code/apps/client/uniCloud-aliyun/cloudfunctions/bootstrap-seed/lib/upload.cjs
+  s_c6f0a82ffef8e9::t_c9237797dc06cb 1-108
+code/apps/client/uniCloud-aliyun/cloudfunctions/bootstrap-seed/lib/wechat-pay.cjs
+  s_c6f0a82ffef8e9::t_7ef017b7de5443 1-246
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.2",
+  "base_commit_sha": "dbebad3054119c31eb105a14f633385f87090c4e",
+  "prompts": {},
+  "sessions": {
+    "s_c6f0a82ffef8e9": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a0525b-3152-7f70-8eab-bf6495370f2f",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "yuhongwen <Hongwen_Yu.sgmwh@saic-gm.com>"
+    }
+  }
+}
