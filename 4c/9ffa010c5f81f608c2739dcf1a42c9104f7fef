@@ -1,0 +1,119 @@
+code/apps/client/uniCloud-aliyun/cloudfunctions/game-service/game-service/lib/domain.cjs
+  s_c6f0a82ffef8e9::t_b0c12f5d9c5ac4 1-761
+code/apps/client/uniCloud-aliyun/cloudfunctions/game-service/game-service/lib/payment-config.cjs
+  s_c6f0a82ffef8e9::t_5c858e2bf4cc41 1-25
+code/apps/client/uniCloud-aliyun/cloudfunctions/game-service/game-service/test/account-security.test.cjs
+  s_c6f0a82ffef8e9::t_4ff85f31c4be4c 1-70
+code/apps/client/uniCloud-aliyun/cloudfunctions/game-service/lib/domain.cjs
+  s_c6f0a82ffef8e9::t_8e61ac005cd687 1-761
+code/apps/client/uniCloud-aliyun/cloudfunctions/game-service/lib/payment-config.cjs
+  s_c6f0a82ffef8e9::t_62aa026c36a66d 1-25
+code/apps/client/uniCloud-aliyun/cloudfunctions/game-service/test/account-security.test.cjs
+  s_c6f0a82ffef8e9::t_582d91c35ccea5 1-70
+code/apps/client/uniCloud/cloudfunctions/game-service/lib/domain.cjs
+  s_c6f0a82ffef8e9::t_10a0f487c406c8 1-761
+code/apps/client/uniCloud/cloudfunctions/game-service/lib/payment-config.cjs
+  s_c6f0a82ffef8e9::t_7ef6d687da2d47 1-25
+code/apps/client/uniCloud/cloudfunctions/game-service/test/account-security.test.cjs
+  s_c6f0a82ffef8e9::t_1265bcba195d65 1-70
+code/apps/client/uniCloud-aliyun/cloudfunctions/game-service/game-service/index.js
+  s_c6f0a82ffef8e9::t_fb21c68cce7c20 1-189
+code/apps/client/uniCloud-aliyun/cloudfunctions/game-service/game-service/lib/auth.cjs
+  s_c6f0a82ffef8e9::t_8c8568cd582c89 1-270
+code/apps/client/uniCloud-aliyun/cloudfunctions/game-service/game-service/lib/commercial-finance.cjs
+  s_c6f0a82ffef8e9::t_10ee5d05da962c 1-98
+code/apps/client/uniCloud-aliyun/cloudfunctions/game-service/game-service/lib/commercial-ops.cjs
+  s_c6f0a82ffef8e9::t_979ced6af595d4 1-107
+code/apps/client/uniCloud-aliyun/cloudfunctions/game-service/game-service/lib/payment-operations.cjs
+  s_c6f0a82ffef8e9::t_f306fb7e58e84e 1-150
+code/apps/client/uniCloud-aliyun/cloudfunctions/game-service/game-service/lib/privacy.cjs
+  s_c6f0a82ffef8e9::t_9fa30dc7e26d86 1-379
+code/apps/client/uniCloud-aliyun/cloudfunctions/game-service/game-service/lib/services.cjs
+  s_c6f0a82ffef8e9::t_2146f6307ec533 1-1998
+code/apps/client/uniCloud-aliyun/cloudfunctions/game-service/game-service/test/auth.test.cjs
+  s_c6f0a82ffef8e9::t_acbd989678a79e 1-85
+code/apps/client/uniCloud-aliyun/cloudfunctions/game-service/game-service/test/game-service.test.cjs
+  s_c6f0a82ffef8e9::t_969cf899483888 1-346
+code/apps/client/uniCloud-aliyun/cloudfunctions/game-service/index.js
+  s_c6f0a82ffef8e9::t_b3bb061bcf2a99 1-189
+code/apps/client/uniCloud-aliyun/cloudfunctions/game-service/lib/auth.cjs
+  s_c6f0a82ffef8e9::t_83c9a9ca6fa357 1-270
+code/apps/client/uniCloud-aliyun/cloudfunctions/game-service/lib/commercial-finance.cjs
+  s_c6f0a82ffef8e9::t_c05124624cd222 1-98
+code/apps/client/uniCloud-aliyun/cloudfunctions/game-service/lib/commercial-ops.cjs
+  s_c6f0a82ffef8e9::t_0fa3a626db8a90 1-107
+code/apps/client/uniCloud-aliyun/cloudfunctions/game-service/lib/payment-operations.cjs
+  s_c6f0a82ffef8e9::t_ce4255cbb6952a 1-150
+code/apps/client/uniCloud-aliyun/cloudfunctions/game-service/lib/privacy.cjs
+  s_c6f0a82ffef8e9::t_25b271ed2d943d 1-379
+code/apps/client/uniCloud-aliyun/cloudfunctions/game-service/lib/services.cjs
+  s_c6f0a82ffef8e9::t_f7712d104db66f 1-1998
+code/apps/client/uniCloud-aliyun/cloudfunctions/game-service/test/auth.test.cjs
+  s_c6f0a82ffef8e9::t_a16543ccc47122 1-85
+code/apps/client/uniCloud-aliyun/cloudfunctions/game-service/test/game-service.test.cjs
+  s_c6f0a82ffef8e9::t_9fbd6d33491b80 1-346
+code/apps/client/uniCloud-aliyun/database/account_security.schema.json
+  s_c6f0a82ffef8e9::t_a3407bef6478b0 1-14
+code/apps/client/uniCloud-aliyun/database/auth_sessions.schema.json
+  s_c6f0a82ffef8e9::t_30df0403cc0a3e 1-13
+code/apps/client/uniCloud-aliyun/database/data_rights_requests.schema.json
+  s_c6f0a82ffef8e9::t_c4a5732da1edcd 1-12
+code/apps/client/uniCloud-aliyun/database/financial_exports.schema.json
+  s_c6f0a82ffef8e9::t_528497b1b5ecad 1-10
+code/apps/client/uniCloud-aliyun/database/login_events.schema.json
+  s_c6f0a82ffef8e9::t_cb7ff57b8e8ac3 1-6
+code/apps/client/uniCloud-aliyun/database/mfa_recovery_codes.schema.json
+  s_c6f0a82ffef8e9::t_ac9ae2d0697d51 1-9
+code/apps/client/uniCloud-aliyun/database/operational_alerts.schema.json
+  s_c6f0a82ffef8e9::t_dad914a9e136a4 1-11
+code/apps/client/uniCloud-aliyun/database/operational_events.schema.json
+  s_c6f0a82ffef8e9::t_a95e4b7b998024 1-10
+code/apps/client/uniCloud-aliyun/database/payment_events.schema.json
+  s_c6f0a82ffef8e9::t_e46a240a51e7fa 1-10
+code/apps/client/uniCloud-aliyun/database/privacy_audit_logs.schema.json
+  s_c6f0a82ffef8e9::t_126c9a1e0d7a0b 1-11
+code/apps/client/uniCloud-aliyun/database/privacy_consents.schema.json
+  s_c6f0a82ffef8e9::t_9001720cf2ce4e 1-10
+code/apps/client/uniCloud-aliyun/database/reconciliation_cases.schema.json
+  s_c6f0a82ffef8e9::t_7f5f1d6c852407 1-11
+code/apps/client/uniCloud-aliyun/database/reconciliation_runs.schema.json
+  s_c6f0a82ffef8e9::t_8ef28ca6192a2a 1-10
+code/apps/client/uniCloud-aliyun/database/security_rate_limits.schema.json
+  s_c6f0a82ffef8e9::t_8726fa7fa4f7ec 1-10
+code/apps/client/uniCloud-aliyun/database/users.schema.json
+  s_c6f0a82ffef8e9::t_2ef02f933329ae 1-31
+code/apps/client/uniCloud/cloudfunctions/game-service/index.js
+  s_c6f0a82ffef8e9::t_771e4d645304e1 1-189
+code/apps/client/uniCloud/cloudfunctions/game-service/lib/auth.cjs
+  s_c6f0a82ffef8e9::t_895626c74d070f 1-270
+code/apps/client/uniCloud/cloudfunctions/game-service/lib/commercial-finance.cjs
+  s_c6f0a82ffef8e9::t_657023e3b5bd97 1-98
+code/apps/client/uniCloud/cloudfunctions/game-service/lib/commercial-ops.cjs
+  s_c6f0a82ffef8e9::t_fd29c86b971e5d 1-107
+code/apps/client/uniCloud/cloudfunctions/game-service/lib/payment-operations.cjs
+  s_c6f0a82ffef8e9::t_ea3e40ba228bc6 1-150
+code/apps/client/uniCloud/cloudfunctions/game-service/lib/privacy.cjs
+  s_c6f0a82ffef8e9::t_f00770db1d921b 1-379
+code/apps/client/uniCloud/cloudfunctions/game-service/lib/services.cjs
+  s_c6f0a82ffef8e9::t_2265d22607d824 1-1998
+code/apps/client/uniCloud/cloudfunctions/game-service/test/auth.test.cjs
+  s_c6f0a82ffef8e9::t_485a6b475242ee 1-85
+code/apps/client/uniCloud/cloudfunctions/game-service/test/game-service.test.cjs
+  s_c6f0a82ffef8e9::t_7e57a12ef4374e 1-346
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.2",
+  "base_commit_sha": "4c9ffa010c5f81f608c2739dcf1a42c9104f7fef",
+  "prompts": {},
+  "sessions": {
+    "s_c6f0a82ffef8e9": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a0525b-3152-7f70-8eab-bf6495370f2f",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "yuhongwen <Hongwen_Yu.sgmwh@saic-gm.com>"
+    }
+  }
+}
