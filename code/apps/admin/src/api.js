@@ -4,14 +4,27 @@ const HTTP_BASE =
   (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_API_BASE) || '';
 const APP_ENV = (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_APP_ENV) || 'development';
 const API_MODE = (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_API_MODE) || (HTTP_BASE ? 'local' : 'unicloud');
+if (!['local', 'unicloud'].includes(API_MODE)) throw new Error(`不支持的 VITE_API_MODE: ${API_MODE}`);
 if (['staging', 'production'].includes(APP_ENV)) {
   if (API_MODE !== 'unicloud') throw new Error(`${APP_ENV} 必须使用 VITE_API_MODE=unicloud`);
-  if (/^https?:\/\/(?:127\.0\.0\.1|localhost|0\.0\.0\.0)(?::|\/|$)/i.test(HTTP_BASE)) throw new Error(`${APP_ENV} 禁止使用本机 API 地址`);
   if (API_MODE === 'unicloud' && HTTP_BASE) throw new Error(`${APP_ENV} 使用 uniCloud 时 VITE_API_BASE 必须留空`);
 }
 
 const CLOUD_FN = 'game-service';
 const ACTIVE_BRAND_KEY = '__admin_active_brand__';
+
+function cloudAvailable() {
+  try {
+    return typeof uniCloud !== 'undefined' && !!uniCloud && typeof uniCloud.callFunction === 'function';
+  } catch (e) {
+    return false;
+  }
+}
+
+function assertTransportReady() {
+  if (API_MODE === 'local' && !HTTP_BASE) throw new Error('本地模式未配置 VITE_API_BASE');
+  if (API_MODE === 'unicloud' && !cloudAvailable()) throw new Error('当前环境无法调用 uniCloud，请检查前端项目的云服务空间关联');
+}
 
 export function getActiveBrandId() {
   try { return uni.getStorageSync(ACTIVE_BRAND_KEY) || ''; } catch (e) { return ''; }
@@ -72,29 +85,23 @@ function http(path, { method = 'GET', data } = {}, { idempotencyKey } = {}) {
 }
 
 // 云函数调用：token 与幂等键随 data 传递；统一 { code, message } 错误约定。
-function cloud(action, payload, { idempotencyKey } = {}) {
-  return new Promise((resolve, reject) => {
-    if (typeof uniCloud === 'undefined' || !uniCloud.callFunction) {
-      reject(new Error('uniCloud 不可用'));
-      return;
-    }
-    const data = { action, payload };
-    const token = getToken();
-    if (token) data.token = token;
-    if (idempotencyKey) data.idempotencyKey = idempotencyKey;
-    uniCloud.callFunction({
-      name: CLOUD_FN,
-      data,
-      success: (res) => {
-        const r = res.result || {};
-        if (res.errCode && res.errCode !== 0) reject(new BizError(res.errMsg || '服务端错误', res.errCode));
-        else if (typeof r.code !== 'undefined' && r.code !== 0 && r.code !== 'SUCCESS')
-          reject(new BizError(r.message, r.code));
-        else resolve(r);
-      },
-      fail: (err) => reject(new Error(err.errMsg || '云函数调用失败')),
-    });
-  });
+async function cloud(action, payload, { idempotencyKey } = {}) {
+  if (typeof uniCloud === 'undefined' || !uniCloud.callFunction) throw new Error('uniCloud 不可用');
+  const data = { action, payload };
+  const token = getToken();
+  if (token) data.token = token;
+  if (idempotencyKey) data.idempotencyKey = idempotencyKey;
+  try {
+    // 保持 uniCloud 原生 Promise 调用，禁止本地 HTTP 包装逻辑介入 SDK 的 /client 请求。
+    const res = await uniCloud.callFunction({ name: CLOUD_FN, data });
+    const r = res.result || {};
+    if (res.errCode && res.errCode !== 0) throw new BizError(res.errMsg || '服务端错误', res.errCode);
+    if (typeof r.code !== 'undefined' && r.code !== 0 && r.code !== 'SUCCESS') throw new BizError(r.message, r.code);
+    return r;
+  } catch (err) {
+    if (err instanceof BizError) throw err;
+    throw new Error((err && (err.errMsg || err.message)) || '云函数调用失败');
+  }
 }
 
 // 写请求在途表：同一 action+payload 复用同一 Promise，防抖去重。
@@ -110,11 +117,12 @@ function keyOf(action, payload) {
 
 // 写请求走单一 transport（HTTP 或云函数），失败即报错，绝不跨 transport 重试。
 function primary(action, payload, { path, idempotencyKey }) {
-  if (HTTP_BASE) return http(path, { method: 'POST', data: payload }, { idempotencyKey });
+  assertTransportReady();
+  if (API_MODE === 'local') return http(path, { method: 'POST', data: payload }, { idempotencyKey });
   return cloud(action, payload, { idempotencyKey });
 }
 
-// 统一分发：读请求网络失败回退云函数；写请求防抖 + 幂等键。
+// 统一分发：本地与云端 transport 严格隔离；写请求防抖 + 幂等键。
 async function dispatch(action, payload = {}, { read = false, path } = {}) {
   if (!read) {
     const key = keyOf(action, payload);
@@ -129,14 +137,8 @@ async function dispatch(action, payload = {}, { read = false, path } = {}) {
     inFlight.set(key, p);
     return p;
   }
-  if (HTTP_BASE) {
-    try {
-      return await http(path, { method: 'GET', data: payload });
-    } catch (e) {
-      if (e instanceof BizError) throw e;
-      // 网络失败回退云函数，成功路径不重复。
-    }
-  }
+  assertTransportReady();
+  if (API_MODE === 'local') return http(path, { method: 'GET', data: payload });
   return cloud(action, payload);
 }
 

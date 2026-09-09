@@ -24,16 +24,6 @@ export function scanSources(root, { productionBuild = false } = {}) {
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
-  const arg = (name, fallback = '') => { const index = process.argv.indexOf(name); return index >= 0 ? process.argv[index + 1] : fallback; };
-  const root = resolve(arg('--root', '.'));
-  if (!existsSync(root)) throw new Error('扫描目录不存在');
-  const report = scanSources(root, { productionBuild: process.argv.includes('--production-build') });
-  const output = arg('--output');
-  if (output) { mkdirSync(resolve(output, '..'), { recursive: true }); writeFileSync(output, JSON.stringify(report, null, 2)); }
-  console.log(JSON.stringify(report, null, 2));
-  process.exitCode = report.ok ? lsj : 2;
-}
-if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
   const index = process.argv.indexOf('--root'); const root = index >= 0 ? process.argv[index + 1] : process.cwd();
   if (!existsSync(root)) throw new Error('扫描目录不存在');
   const report = scanSources(root, { productionBuild: process.argv.includes('--production-build') });

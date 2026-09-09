@@ -100,7 +100,7 @@ function snapshot(value) {
   return JSON.parse(JSON.stringify(value));
 }
 
-exports.main = async (event = {}) => {
+async function main(event = {}) {
   // URL 化 HTTP 请求:微信支付回调(在 uniCloud 控制台为 game-service 配置 URL 化路径 /pay-notify)。
   if (event && event.httpMethod) {
     const path = (event.path || '').split('?')[0];
@@ -186,4 +186,8 @@ exports.main = async (event = {}) => {
   } catch (err) {
     return toEnvelope(err);
   }
-};
+}
+
+// 兼容 uniCloud 标准的 exports.main 与 pwfinal 当前运行时要求的函数型 module.exports。
+module.exports = main;
+module.exports.main = main;

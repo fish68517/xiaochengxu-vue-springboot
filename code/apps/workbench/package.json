@@ -4,7 +4,8 @@
   "private": true,
   "scripts": {
     "dev:h5": "uni",
-    "build:h5": "uni build"
+    "build:h5": "uni build",
+    "build:prod": "uni build --mode production"
   },
   "dependencies": {
     "@dcloudio/uni-app": "vue3",

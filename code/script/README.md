@@ -56,3 +56,35 @@ http://192.168.2.185:5173/#/pages/category/index
 - 本地 API：`http://127.0.0.1:4176`
 
 日志位于 `code/.runtime/local-dev/logs`。本地 API 使用内存数据，停止服务后业务数据不会保留。
+
+## uniCloud 生产构建
+
+在 `code` 目录执行：
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File .\script\build-unicloud.ps1
+```
+
+如需在构建时指定品牌编码：
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File .\script\build-unicloud.ps1 -BrandCode "品牌编码"
+```
+
+脚本会依次构建客户 H5、工作台和管理后台，并检查入口文件与本地地址残留。生产构建只使用 `uniCloud` 的 `game-service`，不会使用本地 `4176` API。
+
+## uniCloud Web 安全域名检查
+
+自定义 H5 域名发布后，在 `code` 目录执行：
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File .\script\test-unicloud-cors.ps1
+```
+
+指定其他域名或服务空间时：
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File .\script\test-unicloud-cors.ps1 -Origin "https://h5.example.com" -SpaceId "mp-服务空间ID"
+```
+
+脚本退出码为 `0` 表示 `Access-Control-Allow-Origin` 已正确返回；退出码为 `2` 表示需要在对应 uniCloud 服务空间的“跨域配置 / Web 安全域名”中添加该 H5 域名。

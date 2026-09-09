@@ -9,6 +9,8 @@ alerts/
 .env
 .env.*
 !.env.example
+!apps/*/.env.development
+!apps/*/.env.production
 *.log
 *.pem
 *.key

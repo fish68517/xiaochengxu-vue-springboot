@@ -1,0 +1,6 @@
+{
+  "action": "getBrandConfig",
+  "payload": {
+    "appId": "__UNI__80260AB"
+  }
+}

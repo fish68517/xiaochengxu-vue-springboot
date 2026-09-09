@@ -15,7 +15,8 @@
     "h5" : {
         "title" : "游戏服务下单",
         "router" : {
-            "mode" : "hash"
+            "mode" : "hash",
+            "base" : "/"
         }
     },
     "vueVersion" : "3"

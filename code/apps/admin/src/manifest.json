@@ -1,15 +1,15 @@
 {
-  "name": "游戏服务管理台",
-  "appid": "__UNTOUCHED__",
-  "versionName": "0.1.0",
-  "versionCode": "100",
-  "transformPx": false,
-  "h5": {
-    "title": "游戏服务管理台",
-    "router": {
-      "mode": "hash",
-      "base": "/admin/"
-    }
-  },
-  "vueVersion": "3"
+    "name" : "游戏服务管理台",
+    "appid" : "__UNI__8BE9699",
+    "versionName" : "0.1.0",
+    "versionCode" : "100",
+    "transformPx" : false,
+    "h5" : {
+        "title" : "游戏服务管理台",
+        "router" : {
+            "mode" : "hash",
+            "base" : "/admin/"
+        }
+    },
+    "vueVersion" : "3"
 }

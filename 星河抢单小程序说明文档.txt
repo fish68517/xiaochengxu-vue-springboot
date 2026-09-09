@@ -12,6 +12,7 @@ https://unicloud.dcloud.net.cn/
 
 
 第一阶段先采用 Mock 支付快速跑通核心后端。
+game-service
 PS E:\bishe27\服务平台小程序\code> Write-Host "H5_TOKEN_SECRET=$H5_TOKEN_SECRET"
 H5_TOKEN_SECRET=93ed8f4cdada55cfb3563342aca46715847c13691d43d0c3753e93abd14d8a6c
 
@@ -20,6 +21,31 @@ INTERNAL_SECRET=72cd167ec7771ceebb2c029d48d62dfdddd03fee8bd6aaf1a7e65444833b1ab7
 
 PS E:\bishe27\服务平台小程序\code> Write-Host "SCHEDULER_SECRET=$SCHEDULER_SECRET"
 SCHEDULER_SECRET=33aba72d9405567b68964f440821bd6978156267a34b0cbc70d9ad2bb6fa9d5c
+
+system-runner
+33aaa72d9405567b68964f440821bd6978156267a34b0cbc70d9ad2bb6fa9d5c
+
+
+查询编译脚本
+PS E:\bishe27\服务平台小程序\code> Write-Host "`n===== WORKBENCH ====="
+
+===== WORKBENCH =====
+PS E:\bishe27\服务平台小程序\code> (Get-Content .\apps\workbench\package.json -Raw | ConvertFrom-Json).scripts
+
+dev:h5 build:h5
+------ --------
+uni    uni build
+
+
+PS E:\bishe27\服务平台小程序\code>
+PS E:\bishe27\服务平台小程序\code> Write-Host "`n===== ADMIN ====="
+
+===== ADMIN =====
+PS E:\bishe27\服务平台小程序\code> (Get-Content .\apps\admin\package.json -Raw | ConvertFrom-Json).scripts
+
+dev:h5 build:h5
+------ --------
+uni    uni build
 
 
 

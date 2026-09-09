@@ -1,12 +1,12 @@
 // api.js — 环境化请求层（T0-08）+ §D.2 action 全量映射
-// 传输通道在模块加载时确定性选择：显式配置 VITE_API_BASE 走 HTTP，否则有 uniCloud 走云函数，否则同源 HTTP。
+// 传输通道在模块加载时确定性选择：VITE_API_MODE=local 走 HTTP，unicloud 走云函数。
 // 写请求不跨 transport 重试；仅读请求在网络/瞬时错误时重试一次；POST 附加幂等键并做在途去重。
 const API_BASE = (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_API_BASE) || '';
 const APP_ENV = (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_APP_ENV) || 'development';
 const API_MODE = (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_API_MODE) || (API_BASE ? 'local' : 'unicloud');
+if (!['local', 'unicloud'].includes(API_MODE)) throw new Error(`不支持的 VITE_API_MODE: ${API_MODE}`);
 if (['staging', 'production'].includes(APP_ENV)) {
   if (API_MODE !== 'unicloud') throw new Error(`${APP_ENV} 必须使用 VITE_API_MODE=unicloud`);
-  if (/^https?:\/\/(?:127\.0\.0\.1|localhost|0\.0\.0\.0)(?::|\/|$)/i.test(API_BASE)) throw new Error(`${APP_ENV} 禁止使用本机 API 地址`);
   if (API_MODE === 'unicloud' && API_BASE) throw new Error(`${APP_ENV} 使用 uniCloud 时 VITE_API_BASE 必须留空`);
 }
 const CLOUD_NAME = 'game-service';
@@ -38,7 +38,12 @@ function cloudAvailable() {
     return false;
   }
 }
-const TRANSPORT = API_BASE ? 'http' : (cloudAvailable() ? 'cloud' : 'http');
+const TRANSPORT = API_MODE === 'unicloud' ? 'cloud' : 'http';
+
+function assertTransportReady() {
+  if (TRANSPORT === 'http' && !API_BASE) throw new Error('本地模式未配置 VITE_API_BASE');
+  if (TRANSPORT === 'cloud' && !cloudAvailable()) throw new Error('当前环境无法调用 uniCloud，请检查前端项目的云服务空间关联');
+}
 
 // 将 HTTP 状态归类：4xx=业务错误(不可重试)，5xx/0=网络或服务端瞬时错误(可重试)
 function classifyHttpError(status, body) {
@@ -89,30 +94,28 @@ function httpRequest(path, { method = 'GET', data, idemKey } = {}) {
 }
 
 // 云函数传输：单一 action 入口，业务错误转异常
-function cloudRequest(action, payload) {
-  return new Promise((resolve, reject) => {
-    uniCloud.callFunction({
+async function cloudRequest(action, payload) {
+  try {
+    // 仅传 name/data；uniCloud SDK 自行构造并签名 /client 请求体。
+    const res = await uniCloud.callFunction({
       name: CLOUD_NAME,
       data: { action, payload, token: currentToken() },
-      success: (res) => {
-        const r = res.result || {};
-        if (isCloudError(r)) {
-          const e = new Error(r.message || `业务错误 ${r.code}`);
-          e.code = r.code;
-          e.retryable = false;
-          reject(e);
-        } else {
-          resolve(r);
-        }
-      },
-      fail: (err) => {
-        const e = new Error((err && err.errMsg) || '云函数调用失败');
-        e.code = 'NETWORK_ERROR';
-        e.retryable = true;
-        reject(e);
-      },
     });
-  });
+    const r = res.result || {};
+    if (isCloudError(r)) {
+      const e = new Error(r.message || `业务错误 ${r.code}`);
+      e.code = r.code;
+      e.retryable = false;
+      throw e;
+    }
+    return r;
+  } catch (err) {
+    if (err && err.retryable === false) throw err;
+    const e = new Error((err && (err.errMsg || err.message)) || '云函数调用失败');
+    e.code = 'NETWORK_ERROR';
+    e.retryable = true;
+    throw e;
+  }
 }
 
 // 写请求在途去重：相同 action+payload 的并发调用复用同一 Promise，防双击重复提交
@@ -130,6 +133,7 @@ async function call(action, payload = {}, { method = 'GET' } = {}) {
   if (dedupKey && inFlight.has(dedupKey)) return inFlight.get(dedupKey);
 
   const run = async () => {
+    assertTransportReady();
     const attempts = write ? 1 : 2;
     let lastErr;
     for (let i = 0; i < attempts; i += 1) {
@@ -155,6 +159,7 @@ async function call(action, payload = {}, { method = 'GET' } = {}) {
 // 凭证/身份证上传：HTTP 走 multipart，云函数先传对象存储再登记 attachments
 export function uploadFile(bizType, filePath, fileName) {
   return new Promise((resolve, reject) => {
+    try { assertTransportReady(); } catch (e) { reject(e); return; }
     if (TRANSPORT === 'cloud' && typeof uniCloud !== 'undefined' && uniCloud.uploadFile) {
       const cloudPath = `workbench/${bizType}/${Date.now()}-${fileName || 'file'}`;
       uniCloud.uploadFile({
