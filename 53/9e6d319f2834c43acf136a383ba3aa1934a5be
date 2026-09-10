@@ -1,0 +1,209 @@
+code/apps/client/uniCloud-aliyun/cloudfunctions/game-service/lib/domain.cjs
+  s_c6f0a82ffef8e9::t_e988144ce6b2a0 30,39,54,143,153,163,364,372,377,381,383,385,532-542,545,547-548,550,552-565,752,761,776
+  s_c6f0a82ffef8e9::t_cd77b10f5188cf 543-544,546,549,551
+code/uniCloud-tcb/database/brand-indexes.json
+  s_c6f0a82ffef8e9::t_f598f2de996d37 6-7,17
+code/apps/workbench/src/common.js
+  s_c6f0a82ffef8e9::t_f25164e04b7ddf 118
+code/apps/admin/src/pages/security/index.vue
+  s_c6f0a82ffef8e9::t_f25164e04b7ddf 1-97
+code/scripts/api-server.mjs
+  s_c6f0a82ffef8e9::t_70e824b43c1d61 296
+  s_c6f0a82ffef8e9::t_51191789b29f09 17,20
+code/apps/admin/src/pages/vips/index.vue
+  s_c6f0a82ffef8e9::t_84ccec232e3d92 85-86
+code/docs/code-audit/DATABASE_MATRIX.md
+  s_c6f0a82ffef8e9::t_fce45b921d47ca 1-67
+code/docs/code-audit/ORDER_STATE_MACHINE_AUDIT.md
+  s_c6f0a82ffef8e9::t_cc918370a3fd33 1-60
+code/packages/backend/test/p0-security.test.js
+  s_c6f0a82ffef8e9::t_824169c92d0d9e 1-80
+code/docs/deployment/SYSTEM_RUNNER_TRIGGER.md
+  s_c6f0a82ffef8e9::t_9cf95be2be539c 1-26
+code/uniCloud-tcb/cloudfunctions/game-service/lib/auth.cjs
+  s_c6f0a82ffef8e9::t_375f1337ebb3e5 67-68
+  s_c6f0a82ffef8e9::t_b2d39a0d972e13 126-127
+  s_c6f0a82ffef8e9::t_92f23a295522fd 65,111-112
+code/docs/code-audit/TEST_CASE_AUDIT.md
+  s_c6f0a82ffef8e9::t_fdf76beff6f855 560,766
+  s_c6f0a82ffef8e9::t_abac686ccfbf36 1-507
+  s_c6f0a82ffef8e9::t_b733dae1b90ae6 508-559,561-765,767-1016
+code/apps/client/src/pages/h5-order/index.vue
+  s_c6f0a82ffef8e9::t_814af1bcb76fc0 6,25,293-296
+  s_c6f0a82ffef8e9::t_2fa4545bdcc897 297-298
+code/apps/workbench/src/pages/cs/workbench.vue
+  s_c6f0a82ffef8e9::t_78b804d0c71d6a 44-51
+  s_c6f0a82ffef8e9::t_0881ca5198e789 10,27,74,77-81
+code/scripts/build-domain.mjs
+  s_c6f0a82ffef8e9::t_36bfd88ce502c4 10-13,16-29
+code/apps/admin/src/api.js
+  s_c6f0a82ffef8e9::t_f25164e04b7ddf 80,125-131,140-142,151-157,166,231
+  s_c6f0a82ffef8e9::t_84ccec232e3d92 170-171,237
+  s_c6f0a82ffef8e9::t_51c3f6d7cd2220 235-236
+  s_c6f0a82ffef8e9::t_51191789b29f09 182-183,255-256
+code/packages/domain/src/redline.js
+  s_c6f0a82ffef8e9::t_70e824b43c1d61 4-5
+  s_c6f0a82ffef8e9::t_36bfd88ce502c4 1-3,6-17
+code/apps/admin/src/pages/login/index.vue
+  s_c6f0a82ffef8e9::t_f25164e04b7ddf 50-51,54-57
+code/apps/workbench/src/pages/login/index.vue
+  s_c6f0a82ffef8e9::t_f25164e04b7ddf 35,48-49,53-54
+code/uniCloud-tcb/cloudfunctions/game-service/lib/services.cjs
+  s_c6f0a82ffef8e9::t_ecc696cb94e94d 1104,1109,1125,1128,1245,1247
+  s_c6f0a82ffef8e9::t_dbb44b865a6578 340-379,381-383
+  s_c6f0a82ffef8e9::t_2088e1e9aa83e8 2052-2057
+  s_c6f0a82ffef8e9::t_9cc833e97ac08e 1478-1479
+  s_c6f0a82ffef8e9::t_d216a504a20baa 806,821,1755
+  s_c6f0a82ffef8e9::t_3e4a80e8188249 1450,1464,1466
+  s_c6f0a82ffef8e9::t_375f1337ebb3e5 274-281,608-609,643,1448,1465
+  s_c6f0a82ffef8e9::t_56a1364951fdd7 606,615,620,634-636,1462,1467-1468,1474,1808,1810-1811,1813,1815
+  s_c6f0a82ffef8e9::t_f5d3ee45a71976 594-602,696,702-715
+  s_c6f0a82ffef8e9::t_0e7fb203c5915a 632,1098
+  s_c6f0a82ffef8e9::t_208fdb6af0e055 1259,1271,1539,1550,1996,1999,2010,2013
+  s_c6f0a82ffef8e9::t_aa0d4c1c99186b 1843-1844,1846,1851,1854-1855,1857,1860-1864,1867-1874,1876,1879-1880,1882,1886,1889-1890,1892,1899,1903,1913-1914,1922-1926
+  s_c6f0a82ffef8e9::t_8089ffe95e6f09 69-91,627,629-631,633,1831-1832,1834
+  s_c6f0a82ffef8e9::t_b6590fa7bcd1c3 1085,1093
+  s_c6f0a82ffef8e9::t_3d972aea7bb6bc 1915
+  s_c6f0a82ffef8e9::t_0591942a2a4654 716
+code/packages/domain/src/order-machine.js
+  s_c6f0a82ffef8e9::t_36bfd88ce502c4 56,66,76,311,319,324,330,332,334
+code/apps/workbench/src/pages/worker/hall.vue
+  s_c6f0a82ffef8e9::t_647820d52dc03e 2-3,11,19,21-22,25,34
+code/docs/code-audit/CODE_GAP_REPORT.md
+  s_c6f0a82ffef8e9::t_ff21f9bdde3ab7 26
+  s_c6f0a82ffef8e9::t_29bb3a2d9debbb 1-25,27-44
+code/apps/client/uniCloud/cloudfunctions/system-runner/index.js
+  s_c6f0a82ffef8e9::t_9ed2c5ee001317 18,32,34-35
+code/docs/第二阶段代码修改任务.md
+  s_c6f0a82ffef8e9::t_0cd492d16280fb 1-414
+code/apps/admin/src/components/AdminShell.vue
+  s_c6f0a82ffef8e9::t_f25164e04b7ddf 20,29,68,79,91,98
+  s_c6f0a82ffef8e9::t_31f201e8277edc 92
+code/docs/code-audit/PROJECT_READINESS_SUMMARY.md
+  s_c6f0a82ffef8e9::t_29bb3a2d9debbb 1-51
+code/apps/admin/src/utils/redline.js
+  s_c6f0a82ffef8e9::t_84ccec232e3d92 1-2,6,9
+  s_c6f0a82ffef8e9::t_07ab4b1db2981a 10
+code/apps/client/uniCloud-aliyun/cloudfunctions/game-service/lib/services.cjs
+  s_c6f0a82ffef8e9::t_aa0d4c1c99186b 1843-1844,1846,1851,1854-1855,1857,1860-1864,1867-1874,1876,1879-1880,1882,1886,1889-1890,1892,1899,1903,1913-1914,1922-1926
+  s_c6f0a82ffef8e9::t_8089ffe95e6f09 69-91,627,629-631,633,1831-1832,1834
+  s_c6f0a82ffef8e9::t_0e7fb203c5915a 632,1098
+  s_c6f0a82ffef8e9::t_f5d3ee45a71976 594-602,696,702-715
+  s_c6f0a82ffef8e9::t_b6590fa7bcd1c3 1085,1093
+  s_c6f0a82ffef8e9::t_3d972aea7bb6bc 1915
+  s_c6f0a82ffef8e9::t_9cc833e97ac08e 1478-1479
+  s_c6f0a82ffef8e9::t_dbb44b865a6578 340-379,381-383
+  s_c6f0a82ffef8e9::t_2088e1e9aa83e8 2052-2057
+  s_c6f0a82ffef8e9::t_375f1337ebb3e5 274-281,608-609,643,1448,1465
+  s_c6f0a82ffef8e9::t_208fdb6af0e055 1259,1271,1539,1550,1996,1999,2010,2013
+  s_c6f0a82ffef8e9::t_ecc696cb94e94d 1104,1109,1125,1128,1245,1247
+  s_c6f0a82ffef8e9::t_56a1364951fdd7 606,615,620,634-636,1462,1467-1468,1474,1808,1810-1811,1813,1815
+  s_c6f0a82ffef8e9::t_3e4a80e8188249 1450,1464,1466
+  s_c6f0a82ffef8e9::t_d216a504a20baa 806,821,1755
+  s_c6f0a82ffef8e9::t_0dddf441dd8c2a 716
+code/packages/backend/src/services.js
+  s_c6f0a82ffef8e9::t_b2d39a0d972e13 234-235
+  s_c6f0a82ffef8e9::t_c9b1c9fc9f3f99 945
+  s_c6f0a82ffef8e9::t_92f23a295522fd 172,224-225,764-773,978,983-997,2719,2723
+  s_c6f0a82ffef8e9::t_3d972aea7bb6bc 1955
+  s_c6f0a82ffef8e9::t_472ce64e11c9c5 741
+  s_c6f0a82ffef8e9::t_4db4db75c36825 109,1203,1554,1607,1800-1804,1838,1840,2591,2601
+  s_c6f0a82ffef8e9::t_2088e1e9aa83e8 2625-2632,2637
+  s_c6f0a82ffef8e9::t_8089ffe95e6f09 118-140,815,817-821,1102-1103,1106,1109
+  s_c6f0a82ffef8e9::t_26c73926cb5e60 75,780,795-796,807,822-825
+  s_c6f0a82ffef8e9::t_375f1337ebb3e5 211,213,444-451,784-787,833,900,933
+  s_c6f0a82ffef8e9::t_a01781dd1c9cfc 406-438,1954,1969-1971,2350,2352-2355,2358,2362,2364-2367,2378,2380-2383,2395-2405,2410,2412-2415,2423
+  s_c6f0a82ffef8e9::t_3e4a80e8188249 834
+  s_c6f0a82ffef8e9::t_17faa93da54baa 922,930,942
+  s_c6f0a82ffef8e9::t_06ad49aad34754 1004,1076,1079-1080,1083,1086,1124,1126-1130
+  s_c6f0a82ffef8e9::t_0e7fb203c5915a 1548
+code/apps/admin/src/pages/products/index.vue
+  s_c6f0a82ffef8e9::t_51191789b29f09 116
+code/apps/workbench/src/pages.json
+  s_c6f0a82ffef8e9::t_f25164e04b7ddf 16-20
+  s_c6f0a82ffef8e9::t_da6a3ace29a74d 15
+code/docs/code-audit/P0_FIX_REPORT.md
+  s_c6f0a82ffef8e9::t_ff21f9bdde3ab7 1-38
+code/apps/workbench/src/components/WorkbenchShell.vue
+  s_c6f0a82ffef8e9::t_f25164e04b7ddf 19
+code/docs/code-audit/FIX_PRIORITY_PLAN.md
+  s_c6f0a82ffef8e9::t_29bb3a2d9debbb 1-39
+code/packages/backend/test/account-product.test.js
+  s_c6f0a82ffef8e9::t_472ce64e11c9c5 69,71
+code/apps/workbench/src/pages/security/index.vue
+  s_c6f0a82ffef8e9::t_f25164e04b7ddf 1-82
+code/uniCloud-tcb/cloudfunctions/game-service/test/game-service.test.cjs
+  s_c6f0a82ffef8e9::t_0d0eb8d57f6b19 347-389
+code/packages/domain/src/index.js
+  s_c6f0a82ffef8e9::t_36bfd88ce502c4 47-48
+code/apps/admin/src/pages.json
+  s_c6f0a82ffef8e9::t_f25164e04b7ddf 16-20
+  s_c6f0a82ffef8e9::t_ced26a22a83558 15
+tmp/pdfs/manual-test-audit/手动测试用例.txt
+  s_c6f0a82ffef8e9::t_ea95e9eefa7a0a 1-300
+code/uniCloud-tcb/cloudfunctions/game-service/lib/domain.cjs
+  s_c6f0a82ffef8e9::t_e988144ce6b2a0 30,39,54,143,153,163,364,372,377,381,383,385,532-542,545,547-548,550,552-565,752,761,776
+  s_c6f0a82ffef8e9::t_cd77b10f5188cf 543-544,546,549,551
+code/apps/client/uniCloud-aliyun/cloudfunctions/game-service/lib/auth.cjs
+  s_c6f0a82ffef8e9::t_92f23a295522fd 65,111-112
+  s_c6f0a82ffef8e9::t_b2d39a0d972e13 126-127
+  s_c6f0a82ffef8e9::t_375f1337ebb3e5 67-68
+code/docs/code-audit/LOCAL_VS_PRODUCTION.md
+  s_c6f0a82ffef8e9::t_cc918370a3fd33 1-33
+code/uniCloud-tcb/cloudfunctions/system-runner/index.js
+  s_c6f0a82ffef8e9::t_9ed2c5ee001317 18,32,34-35
+code/apps/admin/src/pages/dicts/index.vue
+  s_c6f0a82ffef8e9::t_a734cbdd3a1133 20,22,93,103-111,122
+code/docs/deployment/UNICLOUD_INDEXES.md
+  s_c6f0a82ffef8e9::t_9cf95be2be539c 1-2,4-10,13-21,23-30,33-41
+  s_c6f0a82ffef8e9::t_f598f2de996d37 3,11-12,22
+  s_c6f0a82ffef8e9::t_f9f44e401915a4 31-32
+code/docs/code-audit/PROJECT_READINESS_SUMMARY_V2.md
+  s_c6f0a82ffef8e9::t_28cc5e1a3c06bc 1-43
+code/apps/client/uniCloud-aliyun/cloudfunctions/system-runner/system-runner/index.js
+  s_c6f0a82ffef8e9::t_9ed2c5ee001317 18,32,34-35
+code/docs/code-audit/ROLE_PERMISSION_MATRIX.md
+  s_c6f0a82ffef8e9::t_cc918370a3fd33 1-62
+code/docs/code-audit/TEST_CASE_MATRIX_V2.md
+  s_c6f0a82ffef8e9::t_28cc5e1a3c06bc 1-67
+code/packages/backend/test/p1-commercial.test.js
+  s_c6f0a82ffef8e9::t_ec9fca57791070 1-79
+code/apps/workbench/src/api.js
+  s_c6f0a82ffef8e9::t_f25164e04b7ddf 129-139,162-165
+  s_c6f0a82ffef8e9::t_51191789b29f09 222
+code/apps/client/uniCloud-aliyun/cloudfunctions/system-runner/index.js
+  s_c6f0a82ffef8e9::t_9ed2c5ee001317 18,32,34-35
+code/docs/code-audit/TEST_CASE_MATRIX.md
+  s_c6f0a82ffef8e9::t_ff21f9bdde3ab7 37-38,57,63
+  s_c6f0a82ffef8e9::t_29bb3a2d9debbb 1-36,39-56,58-62,64-73
+code/docs/code-audit/FIX_IMPLEMENTATION_REPORT.md
+  s_c6f0a82ffef8e9::t_28cc5e1a3c06bc 1-15,17-33,35-64
+  s_c6f0a82ffef8e9::t_45ae9773fa241a 16,34
+code/apps/workbench/src/pages/worker/profile.vue
+  s_c6f0a82ffef8e9::t_f25164e04b7ddf 40
+  s_c6f0a82ffef8e9::t_3d3c160d3598e3 4,39
+  s_c6f0a82ffef8e9::t_31f201e8277edc 15
+code/docs/code-audit/CODE_GAP_REPORT_V2.md
+  s_c6f0a82ffef8e9::t_28cc5e1a3c06bc 1-43
+code/apps/admin/src/pages/accounts/index.vue
+  s_c6f0a82ffef8e9::t_cd1c2090886785 4,7-13,26,29,37,39-40,43-44,63-64,69,78-79,87,96,98,107-118,134,157
+  s_c6f0a82ffef8e9::t_51c3f6d7cd2220 20,70,90-93
+code/apps/client/uniCloud-aliyun/database/brand-indexes.json
+  s_c6f0a82ffef8e9::t_f598f2de996d37 1-26
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "539e6d319f2834c43acf136a383ba3aa1934a5be",
+  "prompts": {},
+  "sessions": {
+    "s_c6f0a82ffef8e9": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a0525b-3152-7f70-8eab-bf6495370f2f",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "yuhongwen <Hongwen_Yu.sgmwh@saic-gm.com>"
+    }
+  }
+}
