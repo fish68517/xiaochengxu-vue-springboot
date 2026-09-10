@@ -32,7 +32,7 @@ const errorMsg = ref('');
 const isDev = import.meta.env.DEV;
 function selectMode(value) { mode.value = value; errorMsg.value = ''; uni.setStorageSync('lastWorkbenchMode', value); }
 
-// 双角色登录：客服走 authLogin，接单人员走 workerLogin；worker 首次登录强制改密
+// 双角色登录：客服走 authLogin，接单人员走 workerLogin；初始或弱密码统一强制进入对应安全页面。
 async function login() {
   errorMsg.value = '';
   if (!phone.value || !password.value) {
@@ -45,12 +45,13 @@ async function login() {
     const res = mode.value === 'worker' ? await api.workerLogin(payload) : await api.authLogin(payload);
     uni.setStorageSync('token', res.token);
     uni.setStorageSync('user', res.user || { role: res.role });
+    if (res.mustChangePwd) uni.setStorageSync('mustChangePwd', true);
+    else uni.removeStorageSync('mustChangePwd');
     setActiveBrandId('');
     uni.setStorageSync('accessProfile', await api.getAccessProfile());
 
-    if (mode.value === 'worker' && res.mustChangePwd) {
-      uni.setStorageSync('mustChangePwd', true);
-      uni.redirectTo({ url: '/pages/worker/profile' });
+    if (res.mustChangePwd) {
+      uni.redirectTo({ url: mode.value === 'worker' ? '/pages/worker/profile' : '/pages/security/index?required=1' });
       return;
     }
     uni.redirectTo({ url: roleHome(res.user ? res.user.role : res.role) });

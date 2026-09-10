@@ -53,6 +53,7 @@ export function createOrder({
   contactWechat = '',
   contactPhone = '',
   productSnapshot,
+  paymentTimeoutMs = PAYMENT_TIMEOUT_MS,
   createdAt = Date.now(),
 }) {
   if (!id) throw new Error('订单 id 不能为空');
@@ -62,6 +63,7 @@ export function createOrder({
   if (!contactWechat && !contactPhone) {
     throw new Error('微信号与手机号至少填写一项');
   }
+  if (!Number.isFinite(paymentTimeoutMs) || paymentTimeoutMs <= 0) throw new Error('支付超时时长必须为正数');
   return {
     id,
     amountFen,
@@ -71,7 +73,7 @@ export function createOrder({
     contactPhone,
     productSnapshot,
     status: OrderStatus.PENDING_PAYMENT,
-    payDeadline: createdAt + PAYMENT_TIMEOUT_MS,
+    payDeadline: createdAt + paymentTimeoutMs,
     createdAt,
     updatedAt: createdAt,
   };
@@ -306,7 +308,7 @@ export function rejectCompletion(order, { rejectedBy, reason }) {
 }
 
 // 结单：待确认 -> 已结单，写入结单时间与异议截止（结单 + 72h）。
-export function confirmSettlement(order, { confirmedBy, customerConfirmed }) {
+export function confirmSettlement(order, { confirmedBy, customerConfirmed, disputeWindowMs = DISPUTE_WINDOW_MS }) {
   assertIn(order, [OrderStatus.PENDING_CONFIRM], '结单');
   if (order.verificationStatus !== 'VERIFIED') {
     throw new Error('结单前必须先核对完成结果');
@@ -314,20 +316,22 @@ export function confirmSettlement(order, { confirmedBy, customerConfirmed }) {
   if (customerConfirmed !== true) {
     throw new Error('结单前必须与客户确认');
   }
+  if (!Number.isFinite(disputeWindowMs) || disputeWindowMs <= 0) throw new Error('异议窗口必须为正数');
   const now = Date.now();
   order.status = OrderStatus.SETTLED;
   order.confirmedBy = confirmedBy;
   order.completedAt = now;
-  order.disputeDeadline = now + DISPUTE_WINDOW_MS;
+  order.disputeDeadline = now + disputeWindowMs;
   order.updatedAt = now;
   return order;
 }
 
 // 补单：待确认 -> 服务中（补单子标记），补单次数 +1，未达上限方可补单。
-export function reworkOrder(order, { reworkedBy, note }) {
+export function reworkOrder(order, { reworkedBy, note, maxReworkCount = DEFAULT_MAX_REWORK }) {
   assertIn(order, [OrderStatus.PENDING_CONFIRM], '补单');
+  if (!Number.isInteger(maxReworkCount) || maxReworkCount < 0) throw new Error('补单次数上限必须为非负整数');
   const reworkCount = order.reworkCount || 0;
-  if (reworkCount >= DEFAULT_MAX_REWORK) {
+  if (reworkCount >= maxReworkCount) {
     throw new Error('补单次数已达上限');
   }
   order.status = OrderStatus.IN_SERVICE;

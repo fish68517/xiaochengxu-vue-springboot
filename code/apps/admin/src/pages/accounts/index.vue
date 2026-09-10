@@ -1,26 +1,32 @@
 <template>
   <AdminShell title="账号管理">
   <view class="page">
-    <PageHeader eyebrow="STAFF ACCOUNTS" title="账号管理" description="创建接单人员账号并管理实名审核与账号状态" />
+    <PageHeader eyebrow="STAFF ACCOUNTS" title="账号管理" description="统一创建接单服务人员与客服账号，管理实名审核和账号状态" />
 
     <view class="form">
-      <text class="section-title">创建接单服务人员</text>
+      <text class="section-title">创建员工账号</text>
+      <view class="field">
+        <text class="label">员工角色</text>
+        <picker :range="roleOptions" range-key="label" @change="(e) => (createForm.role = roleOptions[e.detail.value].value)">
+          <view class="input role-picker">{{ roleOptions.find((item) => item.value === createForm.role)?.label }}</view>
+        </picker>
+      </view>
       <view class="field">
         <text class="label">手机号</text>
         <input v-model="createForm.phone" class="input" placeholder="接单服务人员手机号" />
       </view>
       <view class="field">
         <text class="label">初始密码</text>
-        <input v-model="createForm.initialPassword" class="input" password placeholder="初始密码（首次登录强制改密）" />
+        <input v-model="createForm.initialPassword" class="input" password placeholder="12–128 位，至少满足 3 类字符" />
       </view>
       <view class="field">
         <text class="label">昵称</text>
         <input v-model="createForm.nickname" class="input" placeholder="昵称（选填）" />
       </view>
-      <button class="save-btn" :disabled="creating" @click="create">创建账号</button>
+      <button class="save-btn" :disabled="creating" @click="create">创建员工账号</button>
     </view>
 
-    <text class="section-title">接单服务人员列表</text>
+    <text class="section-title">员工列表</text>
     <view v-if="error" class="empty">
       <text>{{ error }}</text>
       <button class="mini-btn" @click="load">重试</button>
@@ -28,12 +34,14 @@
     <view v-else-if="workers.length === 0" class="empty"><text>暂无接单服务人员</text></view>
     <view v-for="w in workers" :key="idOf(w)" class="worker-row">
       <view class="worker-main">
-        <text class="worker-name">{{ w.nickname || '未命名' }}（服务接单人员）</text>
+        <text class="worker-name">{{ w.nickname || '未命名' }}（{{ roleText(w.role) }}）</text>
         <text class="worker-phone">{{ maskPhone(w.phone) }}</text>
-        <text class="worker-sub">实名：{{ realnameText(w.realnameStatus) }} · 状态：{{ w.status === 'DISABLED' ? '已停用' : '正常' }}</text>
+        <text class="worker-sub">{{ w.role === 'WORKER' ? `实名：${realnameText(w.realnameStatus)} · ` : '' }}状态：{{ w.status === 'DISABLED' ? '已停用' : '正常' }}</text>
+        <text v-if="w.realnameRejectReason" class="worker-sub">驳回原因：{{ w.realnameRejectReason }}</text>
       </view>
       <view class="worker-actions">
-        <button v-if="w.realnameStatus !== 'APPROVED'" class="mini-btn" @click="approveRealname(w)">审核实名通过</button>
+        <button v-if="w.role === 'WORKER' && w.realnameStatus !== 'APPROVED'" class="mini-btn" @click="approveRealname(w)">实名通过</button>
+        <button v-if="w.role === 'WORKER' && w.realnameStatus !== 'REJECTED'" class="mini-btn danger" @click="rejectRealname(w)">实名驳回</button>
         <button class="mini-btn" :class="{ danger: w.status !== 'DISABLED' }" @click="toggleStatus(w)">
           {{ w.status === 'DISABLED' ? '启用账号' : '停用账号' }}
         </button>
@@ -52,11 +60,14 @@ import { maskPhone } from '../../utils/display.js';
 const workers = ref([]);
 const error = ref('');
 const creating = ref(false);
-const createForm = ref({ phone: '', initialPassword: '', nickname: '' });
+const roleOptions = [{ label: '接单服务人员', value: 'WORKER' }, { label: '客服', value: 'CS' }];
+const createForm = ref({ role: 'WORKER', phone: '', initialPassword: '', nickname: '' });
 
 // 主键兼容：统一 _id 后以 _id 为准，兼容旧 id/workerId。
 function idOf(w) { return w._id || w.id || w.workerId; }
 function realnameText(s) { return { APPROVED: '已通过', PENDING: '待审核', REJECTED: '已驳回' }[s] || s || '未提交'; }
+function roleText(role) { return role === 'WORKER' ? '接单服务人员' : ['CS', 'CUSTOMER_SERVICE'].includes(role) ? '客服' : role; }
+function passwordClassCount(value) { return [/[A-Z]/, /[a-z]/, /\d/, /[^A-Za-z0-9]/].filter((rule) => rule.test(value || '')).length; }
 
 onLoad(load);
 
@@ -64,8 +75,8 @@ onLoad(load);
 async function load() {
   error.value = '';
   try {
-    const list = await api.listWorkers();
-    workers.value = Array.isArray(list) ? list : [];
+    const list = await api.listUsers();
+    workers.value = (Array.isArray(list) ? list : []).filter((item) => ['WORKER', 'CS', 'CUSTOMER_SERVICE'].includes(item.role));
   } catch (e) {
     error.value = e.message || '账号列表加载失败';
   }
@@ -73,20 +84,36 @@ async function load() {
 
 // 创建接单人员（createWorker：手机号唯一 + mustChangePwd=true），成功以服务端返回更新列表。
 async function create() {
-  const { phone, initialPassword, nickname } = createForm.value;
+  const { role, phone, initialPassword, nickname } = createForm.value;
   if (!phone) { uni.showToast({ title: '手机号不能为空', icon: 'none' }); return; }
   if (!initialPassword) { uni.showToast({ title: '初始密码不能为空', icon: 'none' }); return; }
+  if (initialPassword.length < 12 || initialPassword.length > 128 || passwordClassCount(initialPassword) < 3) {
+    uni.showToast({ title: '初始密码需 12–128 位且至少满足 3 类字符', icon: 'none' });
+    return;
+  }
   creating.value = true;
   try {
-    const user = await api.createWorker({ phone, initialPassword, nickname: nickname || phone });
+    const user = await api.createStaff({ role, phone, password: initialPassword, nickname: nickname || phone });
     workers.value.push(user);
-    createForm.value = { phone: '', initialPassword: '', nickname: '' };
+    createForm.value = { role: 'WORKER', phone: '', initialPassword: '', nickname: '' };
     uni.showToast({ title: '已创建，首次登录强制改密', icon: 'success' });
   } catch (e) {
     uni.showToast({ title: e.message || '创建失败', icon: 'none' });
   } finally {
     creating.value = false;
   }
+}
+
+async function rejectRealname(w) {
+  const result = await new Promise((resolve) => uni.showModal({ title: '实名审核驳回', content: '', editable: true, placeholderText: '请输入驳回原因', success: resolve }));
+  if (!result.confirm) return;
+  const reason = String(result.content || '').trim();
+  if (!reason) { uni.showToast({ title: '驳回原因不能为空', icon: 'none' }); return; }
+  try {
+    await api.updateWorker({ workerId: idOf(w), realnameStatus: 'REJECTED', realnameRejectReason: reason });
+    await load();
+    uni.showToast({ title: '已驳回', icon: 'none' });
+  } catch (e) { uni.showToast({ title: e.message || '操作失败', icon: 'none' }); }
 }
 
 // 实名审核通过：真实调 updateWorker，成功后以服务端结果替换本地行。
@@ -104,7 +131,7 @@ async function approveRealname(w) {
 async function toggleStatus(w) {
   const next = w.status === 'DISABLED' ? 'ACTIVE' : 'DISABLED';
   try {
-    const updated = await api.updateWorker({ workerId: idOf(w), status: next });
+    const updated = await api.updateStaff({ userId: idOf(w), status: next });
     replaceRow(w, updated);
     uni.showToast({ title: next === 'DISABLED' ? '已停用' : '已启用', icon: 'success' });
   } catch (e) {
@@ -127,6 +154,7 @@ function replaceRow(w, updated) {
 .field { margin-bottom: 20rpx; }
 .label { display: block; font-size: 26rpx; color: var(--es-primary); margin-bottom: 8rpx; }
 .input { height: 80rpx; padding: 0 24rpx; background: #0f172a; border: 1rpx solid var(--es-border-soft); border-radius: var(--es-radius); color: var(--es-text); }
+.role-picker { display: flex; align-items: center; }
 .worker-row { display: flex; justify-content: space-between; align-items: center; padding: 24rpx; margin-bottom: 16rpx; background: var(--es-bg-panel); border-radius: var(--es-radius); }
 .worker-main { display: flex; flex-direction: column; }
 .worker-name { font-size: 30rpx; color: var(--es-text); font-weight: 600; }

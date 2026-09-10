@@ -77,7 +77,7 @@ function http(path, { method = 'GET', data } = {}, { idempotencyKey } = {}) {
       success: (res) => {
         const body = res.data || {};
         if (res.statusCode >= 200 && res.statusCode < 300) resolve(body);
-        else reject(new BizError(body.message || body.error || `HTTP ${res.statusCode}`, res.statusCode));
+        else reject(new BizError(body.message || body.error || `HTTP ${res.statusCode}`, body.code || `HTTP_${res.statusCode}`));
       },
       fail: (err) => reject(new Error(err.errMsg || '网络错误')),
     });
@@ -122,6 +122,13 @@ function primary(action, payload, { path, idempotencyKey }) {
   return cloud(action, payload, { idempotencyKey });
 }
 
+function handleSecurityRedirect(error) {
+  if (!error || error.code !== 'PASSWORD_CHANGE_REQUIRED') return;
+  try { uni.setStorageSync('mustChangePwd', true); } catch (_e) { /* 存储失败时仍执行跳转 */ }
+  const path = globalThis.location?.hash?.replace(/^#\//, '').split('?')[0] || '';
+  if (path !== 'pages/security/index') uni.reLaunch({ url: '/pages/security/index?required=1' });
+}
+
 // 统一分发：本地与云端 transport 严格隔离；写请求防抖 + 幂等键。
 async function dispatch(action, payload = {}, { read = false, path } = {}) {
   if (!read) {
@@ -130,6 +137,9 @@ async function dispatch(action, payload = {}, { read = false, path } = {}) {
     const p = (async () => {
       try {
         return await primary(action, payload, { path, idempotencyKey: newIdempotencyKey() });
+      } catch (error) {
+        handleSecurityRedirect(error);
+        throw error;
       } finally {
         inFlight.delete(key);
       }
@@ -138,8 +148,13 @@ async function dispatch(action, payload = {}, { read = false, path } = {}) {
     return p;
   }
   assertTransportReady();
-  if (API_MODE === 'local') return http(path, { method: 'GET', data: payload });
-  return cloud(action, payload);
+  try {
+    if (API_MODE === 'local') return await http(path, { method: 'GET', data: payload });
+    return await cloud(action, payload);
+  } catch (error) {
+    handleSecurityRedirect(error);
+    throw error;
+  }
 }
 
 const read = (action, payload, path) => dispatch(action, payload || {}, { read: true, path });
@@ -148,9 +163,12 @@ const write = (action, payload, path) => dispatch(action, payload || {}, { read:
 // HTTP 路由映射（与 api-server 镜像一致，波次 5 联调时校准）。
 const PATH = {
   authLogin: '/api/auth/login',
+  changePassword: '/api/changePassword',
   getAccessProfile: '/api/getAccessProfile',
   dashboard: '/api/dashboard',
   listUsers: '/api/listUsers',
+  createStaff: '/api/createStaff',
+  updateStaff: '/api/updateStaff',
   listWorkers: '/api/workers',
   createWorker: '/api/workers',
   updateWorker: '/api/workers/update',
@@ -161,6 +179,8 @@ const PATH = {
   addVip: '/api/vips',
   removeVip: '/api/vips/remove',
   listProducts: '/api/products',
+  listManagedProducts: '/api/listManagedProducts',
+  getManagedProduct: '/api/getManagedProduct',
   saveProduct: '/api/products',
   updateProductStatus: '/api/products/status',
   listDicts: '/api/dicts',
@@ -208,10 +228,13 @@ const PATH = {
 export const api = {
   // 登录
   authLogin: (data) => write('authLogin', data, PATH.authLogin),
+  changePassword: (data) => write('changePassword', data, PATH.changePassword),
   getAccessProfile: () => read('getAccessProfile', {}, PATH.getAccessProfile),
   // 管理概览待办
   dashboard: () => read('dashboard', withActiveBrand({}), PATH.dashboard),
-  listUsers: (params = {}) => read('listUsers', params, PATH.listUsers),
+  listUsers: (params = {}) => read('listUsers', withActiveBrand(params), PATH.listUsers),
+  createStaff: (data) => write('createStaff', withActiveBrand(data), PATH.createStaff),
+  updateStaff: (data) => write('updateStaff', data, PATH.updateStaff),
   // K-13 接单人员管理
   listWorkers: () => read('listWorkers', withActiveBrand({}), PATH.listWorkers),
   createWorker: (data) => write('createWorker', data, PATH.createWorker),
@@ -229,6 +252,8 @@ export const api = {
   removeVip: (data) => write('removeVip', data, PATH.removeVip),
   // K-16 商品
   listProducts: (params = {}) => read('listProducts', withActiveBrand(params), PATH.listProducts),
+  listManagedProducts: (params = {}) => read('listManagedProducts', withActiveBrand(params), PATH.listManagedProducts),
+  getManagedProduct: (productId) => read('getManagedProduct', { productId }, PATH.getManagedProduct),
   saveProduct: (data) => write('saveProduct', withActiveBrand(data), PATH.saveProduct),
   updateProductStatus: (data) => write('updateProductStatus', data, PATH.updateProductStatus),
   // K-17 字典 / 配置

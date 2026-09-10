@@ -344,3 +344,46 @@ test('memory 仓储事务:回调抛错时回滚', async () => {
   assert.equal(list.length, 1);
   assert.equal(list[0]._id, 'o-before');
 });
+
+test('P0 对象级权限：接单人员仅可读写本人订单留言，品牌客服不可跨品牌', async () => {
+  const repo = createMemoryRepository();
+  await repo.insert('orders', { _id: 'order-a1', brandId: 'brand-a', workerId: 'worker-a', status: 'IN_SERVICE' });
+  await repo.insert('orders', { _id: 'order-a2', brandId: 'brand-a', workerId: 'worker-b', status: 'IN_SERVICE' });
+  await repo.insert('orders', { _id: 'order-b1', brandId: 'brand-b', workerId: 'worker-b', status: 'IN_SERVICE' });
+  const worker = { userId: 'worker-a', role: 'WORKER', roles: ['WORKER'], brandScopes: ['brand-a'] };
+  const csA = { userId: 'cs-a', role: 'CS', roles: ['CS'], brandScopes: ['brand-a'] };
+  const root = { userId: 'root', role: 'SUPER_ADMIN', roles: ['SUPER_ADMIN'], brandScopes: ['*'] };
+
+  await services.sendOrderMessage(repo, { orderId: 'order-a1', content: '本人留言' }, worker);
+  assert.equal((await services.listOrderMessages(repo, { orderId: 'order-a1' }, worker)).length, 1);
+  await assert.rejects(services.sendOrderMessage(repo, { orderId: 'order-a2', content: '越权' }, worker), /FORBIDDEN/);
+  await assert.rejects(services.listOrderMessages(repo, { orderId: 'order-a2' }, worker), /FORBIDDEN/);
+  await assert.rejects(services.listOrderMessages(repo, { orderId: 'order-b1' }, csA), /BRAND_FORBIDDEN/);
+  await services.sendOrderMessage(repo, { orderId: 'order-b1', content: '平台巡检' }, root);
+  assert.equal((await services.listOrderMessages(repo, { orderId: 'order-b1' }, root)).length, 1);
+});
+
+test('P0 报表隔离：单品牌、多品牌与平台范围只返回授权品牌数据', async () => {
+  const repo = createMemoryRepository();
+  await repo.insert('users', { _id: 'worker-a', role: 'WORKER' });
+  await repo.insert('users', { _id: 'worker-b', role: 'WORKER' });
+  await repo.insert('user_brand_roles', { _id: 'ubr-a', userId: 'worker-a', brandId: 'brand-a', status: 'ACTIVE' });
+  await repo.insert('user_brand_roles', { _id: 'ubr-b', userId: 'worker-b', brandId: 'brand-b', status: 'ACTIVE' });
+  await repo.insert('orders', { _id: 'order-a', brandId: 'brand-a', workerId: 'worker-a', status: 'SETTLED', earningsFen: 100, transactionId: 'tx-a', amountFen: 1000, createdAt: 1 });
+  await repo.insert('orders', { _id: 'order-b', brandId: 'brand-b', workerId: 'worker-b', status: 'SETTLED', earningsFen: 200, transactionId: 'tx-b', amountFen: 2000, createdAt: 2 });
+  await repo.insert('wallet_transactions', { _id: 'wtx-a', accountId: 'worker-a', brandId: 'brand-a', type: 'ORDER_EARNINGS', amountFen: 100, createdAt: 1 });
+  await repo.insert('wallet_transactions', { _id: 'wtx-b', accountId: 'worker-b', brandId: 'brand-b', type: 'ORDER_EARNINGS', amountFen: 200, createdAt: 2 });
+  await repo.insert('withdrawals', { _id: 'wd-a', workerId: 'worker-a', brandId: 'brand-a', status: 'PAID', amountFen: 50, createdAt: 1 });
+  await repo.insert('withdrawals', { _id: 'wd-b', workerId: 'worker-b', brandId: 'brand-b', status: 'PAID', amountFen: 80, createdAt: 2 });
+
+  const brandA = { userId: 'admin-a', role: 'BRAND_ADMIN', roles: ['BRAND_ADMIN'], brandScopes: ['brand-a'] };
+  const brandAB = { userId: 'admin-ab', role: 'BRAND_ADMIN', roles: ['BRAND_ADMIN'], brandScopes: ['brand-a', 'brand-b'] };
+  const root = { userId: 'root', role: 'SUPER_ADMIN', roles: ['SUPER_ADMIN'], brandScopes: ['*'] };
+  assert.equal((await services.reportOrders(repo, {}, brandA)).total, 1);
+  assert.deepEqual((await services.reportWorkers(repo, {}, brandA)).rows.map((row) => row.workerId), ['worker-a']);
+  assert.equal((await services.reportWithdrawals(repo, {}, brandA)).total, 1);
+  assert.equal((await services.reportProfit(repo, {}, brandA)).commissionFen, 100);
+  assert.equal((await services.reportOrders(repo, {}, brandAB)).total, 2);
+  assert.equal((await services.reportOrders(repo, {}, root)).total, 2);
+  await assert.rejects(services.reportOrders(repo, { brandId: 'brand-b' }, brandA), /BRAND_FORBIDDEN/);
+});

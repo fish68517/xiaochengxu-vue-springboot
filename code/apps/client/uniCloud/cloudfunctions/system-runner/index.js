@@ -15,7 +15,7 @@ function secretEqual(actual, expected) {
 }
 
 // 此云函数仅供 uniCloud 定时触发器调用。定时触发器事件需注入 schedulerSecret，且该值只保存在控制台配置。
-exports.main = async (event = {}) => {
+async function main(event = {}) {
   const schedulerSecret = process.env.SCHEDULER_SECRET;
   const internalSecret = process.env.INTERNAL_SECRET;
   if (!schedulerSecret || !internalSecret) throw new Error('系统任务密钥未配置(fail-closed)');
@@ -29,6 +29,8 @@ exports.main = async (event = {}) => {
     data: { action, payload, internalAuth },
   });
   return response.result;
-};
+}
 
+module.exports = main;
+module.exports.main = main;
 module.exports.SCHEDULED_ACTIONS = SCHEDULED_ACTIONS;

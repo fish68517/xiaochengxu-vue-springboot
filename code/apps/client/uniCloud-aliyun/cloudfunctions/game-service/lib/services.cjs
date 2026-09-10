@@ -43,9 +43,6 @@ function getH5Secret() {
   return s;
 }
 
-// 文案红线禁用词(G.5):命中抛错,商品命名/描述不得出现。
-const BANNED_WORDS = ['代练', '代打', '代刷', '上分', '带练', '买币', '卖币', '刷币', '保币', '托管', '垫资', '担保', '返利'];
-
 // 全局配置默认值(V1.1 §11.1)。
 const DEFAULTS = {
   maxActiveOrders: 3,
@@ -68,6 +65,29 @@ const CONFIG_DEFAULTS = {
   pollIntervalSeconds: 10,
   sessionTimeoutMinutes: 30,
 };
+
+const CONFIG_LIMITS = Object.freeze({
+  payTimeoutMinutes: [1, 1440],
+  poolTimeoutMinutes: [1, 1440],
+  assignTimeoutMinutes: [1, 1440],
+  maxActiveOrders: [1, 100],
+  weeklyWithdrawLimit: [1, 100],
+  maxReworkCount: [0, 20],
+  disputeWindowHours: [1, 720],
+  minWithdrawFen: [1, 100000000],
+  pollIntervalSeconds: [3, 3600],
+  sessionTimeoutMinutes: [5, 1440],
+});
+
+function normalizeConfigValue(key, value) {
+  const limits = CONFIG_LIMITS[key];
+  if (!limits) return undefined;
+  const number = Number(value);
+  if (!Number.isInteger(number) || number < limits[0] || number > limits[1]) {
+    throw new Error(`配置 ${key} 必须为 ${limits[0]}~${limits[1]} 的整数`);
+  }
+  return number;
+}
 
 // 退款类型枚举(契约定案):requestRefund 仅接受该集合。
 const REFUND_TYPES = ['full', 'partial_unstarted', 'partial_progress', 'partial_output', 'dispute'];
@@ -246,11 +266,17 @@ function assertBrandAccess(session, brandId) {
 }
 
 async function userHasBrandScope(repo, userId, brandId) {
-  const user = await repo.getById('users', userId);
-  if (user && ['ADMIN', 'SUPER_ADMIN'].includes(normalizeRole(user.role))) return true;
   const rows = await repo.find('user_brand_roles', { userId });
   const active = rows.filter((row) => row.status !== 'DISABLED');
   return active.length === 0 ? brandId === 'default' : active.some((row) => row.brandId === '*' || row.brandId === brandId);
+}
+
+async function assertUserInSessionScope(repo, userId, session) {
+  if (canAccessBrand(session, '*')) return true;
+  const rows = (await repo.find('user_brand_roles', { userId })).filter((row) => row.status !== 'DISABLED');
+  const scopes = rows.length ? rows.map((row) => row.brandId) : ['default'];
+  if (!scopes.some((brandId) => canAccessBrand(session, brandId))) throw new Error('BRAND_FORBIDDEN');
+  return true;
 }
 
 async function appendAudit(repo, {
@@ -311,11 +337,50 @@ async function sendSubscribe(repo, { receiverId, templateKey, templateId, page, 
 }
 
 // 对账指标:对账补偿金额(延迟支付已关单的退款)、钱包可用余额合计、钱包总余额(含在途冻结)。
-async function computeReconcileMetrics(repo) {
-  const [refunds, wallets] = await Promise.all([repo.find('refunds', {}), repo.find('wallets', {})]);
+function reportBrandVisible(session, requestedBrandId = '') {
+  if (requestedBrandId) assertBrandAccess(session, requestedBrandId);
+  return (brandId) => {
+    const resolved = brandId || 'default';
+    return (!requestedBrandId || resolved === requestedBrandId) && canAccessBrand(session, resolved);
+  };
+}
+
+async function relatedBrandId(repo, row) {
+  if (row && row.brandId) return row.brandId;
+  if (row && row.orderId) return (await repo.getById('orders', row.orderId))?.brandId || '';
+  if (row && row.withdrawalId) return (await repo.getById('withdrawals', row.withdrawalId))?.brandId || '';
+  if (row && row.refundId) {
+    const refund = await repo.getById('refunds', row.refundId);
+    return refund ? (await repo.getById('orders', refund.orderId))?.brandId || '' : '';
+  }
+  const userId = row && (row.workerId || row.accountId || row.ownerId);
+  if (!userId) return '';
+  const roleRows = (await repo.find('user_brand_roles', { userId })).filter((item) => item.status !== 'DISABLED');
+  const scopes = [...new Set(roleRows.map((item) => item.brandId).filter((item) => item && item !== '*'))];
+  return scopes.length === 1 ? scopes[0] : '';
+}
+
+async function filterRelatedRows(repo, rows, visibleBrand) {
+  const visible = [];
+  for (const row of rows) {
+    const brandId = await relatedBrandId(repo, row);
+    if (brandId && visibleBrand(brandId)) visible.push(row);
+  }
+  return visible;
+}
+
+async function computeReconcileMetrics(repo, session, requestedBrandId = '') {
+  const visibleBrand = reportBrandVisible(session, requestedBrandId);
+  const [allRefunds, allTransactions, allWithdrawals] = await Promise.all([
+    repo.find('refunds', {}), repo.find('wallet_transactions', {}), repo.find('withdrawals', {}),
+  ]);
+  const refunds = await filterRelatedRows(repo, allRefunds, visibleBrand);
+  const transactions = (await filterRelatedRows(repo, allTransactions, visibleBrand)).filter((row) => row.status !== 'REVERSED');
+  const withdrawals = await filterRelatedRows(repo, allWithdrawals, visibleBrand);
   const reconciliationFen = refunds.filter((r) => r.reconcileTransactionId).reduce((s, r) => s + (r.amountFen || 0), 0);
-  const totalWalletBalanceFen = wallets.reduce((s, w) => s + (w.availableFen || 0), 0);
-  const walletBalanceSumFen = wallets.reduce((s, w) => s + (w.availableFen || 0) + (w.pendingWithdrawFen || 0), 0);
+  const totalWalletBalanceFen = transactions.reduce((s, row) => s + (row.amountFen || 0), 0);
+  const pendingWithdrawFen = withdrawals.filter((row) => !['PAID', 'REJECTED'].includes(row.status)).reduce((sum, row) => sum + (row.amountFen || 0), 0);
+  const walletBalanceSumFen = totalWalletBalanceFen + pendingWithdrawFen;
   return { reconciliationFen, totalWalletBalanceFen, walletBalanceSumFen };
 }
 
@@ -526,36 +591,56 @@ const services = {
     return accessProfile(session);
   },
 
+  async getRuntimeConfig(repo) {
+    return {
+      maxActiveOrders: Number(await getConfig(repo, 'maxActiveOrders', CONFIG_DEFAULTS.maxActiveOrders)),
+      poolTimeoutMinutes: Number(await getConfig(repo, 'poolTimeoutMinutes', CONFIG_DEFAULTS.poolTimeoutMinutes)),
+      assignTimeoutMinutes: Number(await getConfig(repo, 'assignTimeoutMinutes', CONFIG_DEFAULTS.assignTimeoutMinutes)),
+      pollIntervalSeconds: Number(await getConfig(repo, 'pollIntervalSeconds', CONFIG_DEFAULTS.pollIntervalSeconds)),
+    };
+  },
+
   // 后台员工管理：与本地镜像保持同名同语义，WORKER 仍由 createWorker 管理。
   async createStaff(repo, { role, phone, password, nickname, brandId = 'default', requestId = '', idempotencyKey = '' }, session) {
     const normalized = normalizeRole(role);
-    if (!['ADMIN', 'CS', 'DISPATCHER', 'BRAND_ADMIN', 'FINANCE_REVIEWER', 'ARBITRATOR', 'SUPER_ADMIN'].includes(normalized)) throw new Error('后台员工角色不在允许范围');
+    if (!['WORKER', 'ADMIN', 'CS', 'DISPATCHER', 'BRAND_ADMIN', 'FINANCE_REVIEWER', 'ARBITRATOR', 'SUPER_ADMIN'].includes(normalized)) throw new Error('后台员工角色不在允许范围');
     if (!phone || !password) throw new Error('手机号和密码不能为空');
+    assertBrandAccess(session, brandId);
+    if (normalizeRole(session.role) === 'BRAND_ADMIN' && !['WORKER', 'CS'].includes(normalized)) throw new Error('品牌管理员仅可创建接单人员或客服');
     Security.assertPasswordStrength(password);
     if (await repo.findOne('users', { phone })) throw new Error('手机号已存在');
     const storedRole = normalized === 'CS' ? 'CUSTOMER_SERVICE' : normalized;
     const user = await repo.insert('users', {
       _id: newIdNo('user'), role: storedRole, phone, passwordHash: auth.hashPassword(password),
-      nickname: nickname || phone, status: 'ACTIVE', mustChangePwd: true, securityVersion: 0, createdAt: Date.now(), updatedAt: Date.now(),
+      nickname: nickname || phone, status: 'ACTIVE', acceptEnabled: normalized === 'WORKER' ? true : undefined, mustChangePwd: true, securityVersion: 0, createdAt: Date.now(), updatedAt: Date.now(),
     });
     if (!['ADMIN', 'SUPER_ADMIN'].includes(normalized)) {
       await repo.insert('user_brand_roles', { _id: newIdNo('ubr'), userId: user._id, brandId, roles: [normalized], permissions: [], status: 'ACTIVE', createdAt: Date.now(), updatedAt: Date.now() });
     }
+    if (normalized === 'WORKER') await ensureWallet(repo, user._id);
     await appendAudit(repo, { brandId, action: 'createStaff', resourceType: 'user', resourceId: user._id, after: publicUser(user), requestId: requestId || idempotencyKey }, session);
     return publicUser(user);
   },
 
   async listUsers(repo, { brandId } = {}, session) {
     const users = await repo.find('users', {});
-    if (!brandId) return users.map(publicUser);
+    if (brandId) assertBrandAccess(session, brandId);
     const visible = [];
-    for (const user of users) if (await userHasBrandScope(repo, user._id, brandId)) visible.push(publicUser(user));
+    for (const user of users) {
+      const inScope = brandId
+        ? await userHasBrandScope(repo, user._id, brandId)
+        : canAccessBrand(session, '*') || (await Promise.all((session.brandScopes || []).filter((scope) => scope !== '*').map((scope) => userHasBrandScope(repo, user._id, scope)))).some(Boolean);
+      if (!inScope) continue;
+      const profile = normalizeRole(user.role) === 'WORKER' ? await repo.findOne('worker_profiles', { workerId: user._id }) : null;
+      visible.push({ ...publicUser(user), realnameStatus: profile && profile.realnameStatus || '', realnameRejectReason: profile && profile.realnameRejectReason || '' });
+    }
     return visible;
   },
 
   async updateStaff(repo, { userId, status, acceptEnabled, requestId = '', idempotencyKey = '' }, session) {
     const user = await repo.getById('users', userId);
     if (!user) throw new Error('用户不存在');
+    await assertUserInSessionScope(repo, userId, session);
     const before = publicUser({ ...user });
     const patch = { updatedAt: Date.now() };
     if (status !== undefined) {
@@ -608,10 +693,25 @@ const services = {
 
   async getProduct(repo, { productId, brandId, brandCode, appId }) {
     const product = await repo.getById('products', productId);
-    if (!product) throw new Error('商品不存在');
+    if (!product || product.status !== 'ON') throw new Error('商品已下架或不存在');
     const context = await resolveRequestBrand(repo, { brandId, brandCode, appId }, { allowDefault: true });
     if ((product.brandId || 'default') !== context.brandId) throw new Error('BRAND_FORBIDDEN');
     return { ...product, id: product._id };
+  },
+
+  async listManagedProducts(repo, { brandId = '' } = {}, session) {
+    if (brandId) assertBrandAccess(session, brandId);
+    return (await repo.find('products', {}))
+      .filter((product) => canAccessBrand(session, product.brandId || 'default'))
+      .filter((product) => !brandId || (product.brandId || 'default') === brandId)
+      .sort((a, b) => (a.sort || 0) - (b.sort || 0));
+  },
+
+  async getManagedProduct(repo, { productId }, session) {
+    const product = await repo.getById('products', productId);
+    if (!product) throw new Error('商品不存在');
+    assertBrandAccess(session, product.brandId || 'default');
+    return product;
   },
 
   // 公开查单:orderNo 相等且联系方式任一匹配 → 返回脱敏订单 DTO;不匹配返回 ORDER_NOT_FOUND。
@@ -703,6 +803,7 @@ const services = {
     const activeRule = (product.commissionRuleId && await repo.getById('commission_rules', product.commissionRuleId))
       || rules.filter((rule) => ['ACTIVE', 'DEMO_ONLY'].includes(rule.status) && (rule.effectiveAt || 0) <= Date.now()).sort((a, b) => (b.version || 0) - (a.version || 0))[0];
     const now = Date.now();
+    const payTimeoutMinutes = Number(await getConfig(repo, 'payTimeoutMinutes', CONFIG_DEFAULTS.payTimeoutMinutes));
     const orderId = newIdNo('order');
     const order = D.createOrder({
       id: orderId,
@@ -717,6 +818,7 @@ const services = {
         coverImage: (Array.isArray(product.images) && product.images[0]) || '',
         images: product.images || [], assetIds: product.assetIds || [], formSchema: product.formSchema || [], productVersion: product.version || 1,
       },
+      paymentTimeoutMs: payTimeoutMinutes * 60 * 1000,
       createdAt: now,
     });
     order._id = orderId;
@@ -980,6 +1082,7 @@ const services = {
     if (brandId) assertBrandAccess(session, brandId);
     const pool = await repo.find('orders', { status: D.OrderStatus.PENDING_GRAB });
     const now = Date.now();
+    const configuredTimeoutMs = Number(await getConfig(repo, 'poolTimeoutMinutes', CONFIG_DEFAULTS.poolTimeoutMinutes)) * 60 * 1000;
     return pool
       .filter((o) => canAccessBrand(session, o.brandId || 'default'))
       .filter((o) => !brandId || (o.brandId || 'default') === brandId)
@@ -987,20 +1090,23 @@ const services = {
       ...o,
       allowedActions: staffAllowedActions(o, session),
       pooledDurationMs: o.pooledAt ? now - o.pooledAt : 0,
-      pooledTimeout: !!(o.pooledAt && now - o.pooledAt > (o.poolTimeoutMs || DEFAULTS.poolTimeoutMs)),
+      pooledTimeout: !!(o.pooledAt && now - o.pooledAt > (o.poolTimeoutMs || configuredTimeoutMs)),
     }));
   },
 
   async enterOrder(repo, { orderId, game, region, serviceType, customerUid, customerNickname, expectStartAt, requirementNote, sessionNote, internalNote, contactWechat, contactPhone }, session) {
+    D.assertNoRedline([requirementNote, sessionNote, internalNote].filter(Boolean).join(' '));
     const before = await repo.getById('orders', orderId);
     if (!before) throw new Error('订单不存在');
     // 客服修正联系方式:与现值不同才记为变更,进池后补写 order_logs 留痕。
     const contactChanged = (contactWechat !== undefined && contactWechat !== before.contactWechat) ||
       (contactPhone !== undefined && contactPhone !== before.contactPhone);
+    const poolTimeoutMinutes = Number(await getConfig(repo, 'poolTimeoutMinutes', CONFIG_DEFAULTS.poolTimeoutMinutes));
     const result = await transition(repo, orderId, D.OrderStatus.PENDING_ACCEPT, (clone) => {
       if (contactWechat !== undefined) clone.contactWechat = contactWechat;
       if (contactPhone !== undefined) clone.contactPhone = contactPhone;
       D.enterOrder(clone, { game, region, serviceType, customerUid, customerNickname, expectStartAt, requirementNote, sessionNote, internalNote });
+      clone.poolTimeoutMs = poolTimeoutMinutes * 60 * 1000;
     }, { action: 'enterOrder', operatorType: normRole(session.role), operatorId: session.userId, remark: '录入完成进池' });
     if (contactChanged) {
       await addOrderLog(repo, orderId, { fromStatus: D.OrderStatus.PENDING_ACCEPT, toStatus: D.OrderStatus.PENDING_GRAB, action: 'enterOrder', operatorType: normRole(session.role), operatorId: session.userId, remark: `客服修正联系方式: 微信 ${before.contactWechat || ''}→${contactWechat || ''}、手机 ${before.contactPhone || ''}→${contactPhone || ''}` });
@@ -1016,8 +1122,10 @@ const services = {
     const brandId = order.brandId || 'default';
     assertBrandAccess(session, brandId);
     if (!await userHasBrandScope(repo, workerId, brandId)) throw new Error('BRAND_FORBIDDEN');
+    const assignTimeoutMinutes = Number(await getConfig(repo, 'assignTimeoutMinutes', CONFIG_DEFAULTS.assignTimeoutMinutes));
     const result = await transition(repo, orderId, D.OrderStatus.PENDING_GRAB, (clone) => {
       D.assignOrder(clone, workerId, { assignedBy: session.userId });
+      clone.assignmentTimeoutMs = assignTimeoutMinutes * 60 * 1000;
     }, { action: 'assignOrder', operatorType: normRole(session.role), operatorId: session.userId, remark: `指派给 ${workerId}` });
     await addAssignment(repo, result, { type: 'ASSIGN', workerId, operatorId: session.userId });
     return result;
@@ -1134,8 +1242,9 @@ const services = {
   },
 
   async reworkOrder(repo, { orderId, note }, session) {
+    const maxReworkCount = Number(await getConfig(repo, 'maxReworkCount', CONFIG_DEFAULTS.maxReworkCount));
     return transition(repo, orderId, D.OrderStatus.PENDING_CONFIRM, (clone) => {
-      D.reworkOrder(clone, { reworkedBy: session.userId, note });
+      D.reworkOrder(clone, { reworkedBy: session.userId, note, maxReworkCount });
     }, { action: 'reworkOrder', operatorType: normRole(session.role), operatorId: session.userId, remark: `补单: ${note || ''}` });
   },
 
@@ -1147,6 +1256,7 @@ const services = {
     if (pre.completedAt) return pre; // 幂等:重复结单不重复入账
     const workerId = pre.workerId;
     if (!workerId) throw new Error('订单未分配接单人员,无法结单');
+    const disputeWindowHours = Number(await getConfig(repo, 'disputeWindowHours', CONFIG_DEFAULTS.disputeWindowHours));
     const settled = await repo.transaction(async (tr) => {
       const cur = await tr.getById('orders', orderId);
       if (!cur) throw new Error('订单不存在');
@@ -1158,7 +1268,7 @@ const services = {
       const nowTs = Date.now();
       const res = await tr.updateWhere('orders', { _id: orderId, status: D.OrderStatus.PENDING_CONFIRM }, {
         status: D.OrderStatus.SETTLED, confirmedBy: session.userId, completedAt: nowTs,
-        disputeDeadline: nowTs + D.DISPUTE_WINDOW_MS, earningsFen: earnings, updatedAt: nowTs,
+        disputeDeadline: nowTs + disputeWindowHours * 60 * 60 * 1000, earningsFen: earnings, updatedAt: nowTs,
       });
       if (res.updated !== 1) {
         const retry = await tr.getById('orders', orderId);
@@ -1335,7 +1445,9 @@ const services = {
   },
 
   async createWorker(repo, { phone, initialPassword, nickname, brandId = 'default' }, session) {
+    assertBrandAccess(session, brandId);
     if (!phone || !initialPassword) throw new Error('手机号和初始密码不能为空');
+    Security.assertPasswordStrength(initialPassword);
     const existed = await repo.findOne('users', { phone });
     if (existed) throw new Error('手机号已存在');
     const user = await repo.insert('users', {
@@ -1347,19 +1459,24 @@ const services = {
     return publicUser(user);
   },
 
-  async updateWorker(repo, { workerId, realnameStatus, status }, session) {
+  async updateWorker(repo, { workerId, realnameStatus, realnameRejectReason = '', status }, session) {
     const user = await repo.getById('users', workerId);
-    if (!user) throw new Error('接单人员不存在');
+    if (!user || normalizeRole(user.role) !== 'WORKER') throw new Error('接单人员不存在');
+    await assertUserInSessionScope(repo, workerId, session);
+    if (status !== undefined && !['ACTIVE', 'DISABLED'].includes(status)) throw new Error('账号状态不合法');
+    if (realnameStatus !== undefined && !['PENDING', 'APPROVED', 'REJECTED'].includes(realnameStatus)) throw new Error('实名状态不合法');
+    if (realnameStatus === 'REJECTED' && !String(realnameRejectReason).trim()) throw new Error('实名驳回原因不能为空');
     const patch = { updatedAt: Date.now() };
     if (status !== undefined) patch.status = status;
     if (status !== undefined) await repo.updateById('users', workerId, patch);
     if (realnameStatus !== undefined) {
       const existed = await repo.findOne('worker_profiles', { workerId });
-      const profile = { workerId, realnameStatus, updatedAt: Date.now() };
+      const profile = { workerId, realnameStatus, realnameRejectReason: realnameStatus === 'REJECTED' ? String(realnameRejectReason).trim() : '', updatedAt: Date.now() };
       if (existed) await repo.updateById('worker_profiles', existed._id, profile);
       else await repo.insert('worker_profiles', { _id: newIdNo('profile'), ...profile, createdAt: Date.now() });
     }
-    return publicUser({ ...user, ...patch });
+    const profile = await repo.findOne('worker_profiles', { workerId });
+    return { ...publicUser({ ...user, ...patch }), realnameStatus: profile && profile.realnameStatus || '', realnameRejectReason: profile && profile.realnameRejectReason || '' };
   },
 
   // ---- 钱包 ----
@@ -1419,6 +1536,7 @@ const services = {
     const profile = await repo.findOne('worker_profiles', { workerId });
     const realnameApproved = !!(profile && profile.realnameStatus === 'APPROVED');
     const weeklyLimit = await getConfig(repo, 'weeklyWithdrawLimit', DEFAULTS.weeklyWithdrawLimit);
+    const minWithdrawFen = await getConfig(repo, 'minWithdrawFen', DEFAULTS.minWithdrawFen);
     const weekStart = startOfWeek();
     const weekList = await repo.find('withdrawals', { workerId });
     const applyCountWeek = weekList.filter((w) => w.createdAt >= weekStart).length;
@@ -1429,7 +1547,7 @@ const services = {
         wal = { _id: newIdNo('wallet'), ownerId: workerId, ...D.createWallet(), createdAt: Date.now(), updatedAt: Date.now() };
         await tr.insert('wallets', wal);
       }
-      const w = D.createWithdrawal(wal, { id: withdrawalId, amountFen, realnameApproved, weeklyLimit, applyCountWeek });
+      const w = D.createWithdrawal(wal, { id: withdrawalId, amountFen, minWithdrawFen, realnameApproved, weeklyLimit, applyCountWeek });
       w._id = withdrawalId;
       delete w.id; // 统一主键:删除冗余 id 字段(T0-03)
       w.workerId = workerId;
@@ -1634,8 +1752,7 @@ const services = {
   async saveProduct(repo, { id, title, game, serviceType, tierName, guaranteedOutput, outputUnit, priceFen, commission, images = [], assetIds = [], formSchema = [], commissionRuleId = '', status = 'ON', sort = 0, brandId = 'default', description = '', requestId = '', idempotencyKey = '' }, session) {
     assertBrandAccess(session, brandId);
     const textForCheck = [title, game, serviceType, tierName, description].filter(Boolean).join(' ');
-    const hit = BANNED_WORDS.find((w) => textForCheck.includes(w));
-    if (hit) throw new Error(`商品文案含禁用词: ${hit}`);
+    D.assertNoRedline(textForCheck);
     if (!title && !tierName) throw new Error('商品名/档位名不能为空');
     if (!Number.isInteger(priceFen) || priceFen <= 0) throw new Error('商品价格必须为正整数(分)');
     if (!commission) throw new Error('缺少抽成配置');
@@ -1688,12 +1805,14 @@ const services = {
     return list.sort((a, b) => (a.sort || 0) - (b.sort || 0));
   },
 
-  async saveDict(repo, { type, code, name, sort = 0 }, session) {
+  async saveDict(repo, { type, code, name, sort = 0, status = 'ACTIVE' }, session) {
     if (!type || !code || !name) throw new Error('字典类型/编码/名称不能为空');
+    if (!['ACTIVE', 'DISABLED'].includes(status)) throw new Error('字典状态必须为 ACTIVE/DISABLED');
+    D.assertNoRedline(name);
     const existed = await repo.findOne('dicts', { type, code });
-    const doc = { type, code, name, sort: sort || 0, updatedAt: Date.now() };
+    const doc = { type, code, name, sort: sort || 0, status, updatedAt: Date.now() };
     if (existed) { await repo.updateById('dicts', existed._id, doc); return { ...existed, ...doc }; }
-    return repo.insert('dicts', { _id: newIdNo('dict'), ...doc, status: 'ACTIVE', createdAt: Date.now() });
+    return repo.insert('dicts', { _id: newIdNo('dict'), ...doc, createdAt: Date.now() });
   },
 
   async getConfigs(repo, {}, session) {
@@ -1709,9 +1828,10 @@ const services = {
   async updateConfigs(repo, { configs = {} }, session) {
     const results = [];
     for (const [key, value] of Object.entries(configs)) {
-      if (!Object.prototype.hasOwnProperty.call(CONFIG_DEFAULTS, key)) continue; // 仅接受契约定案键
+      const normalized = normalizeConfigValue(key, value);
+      if (normalized === undefined) continue; // 仅接受契约定案键
       const existed = await repo.findOne('configs', { cfgKey: key });
-      const doc = { cfgKey: key, cfgValue: value, updatedAt: Date.now() };
+      const doc = { cfgKey: key, cfgValue: normalized, updatedAt: Date.now() };
       if (existed) { await repo.updateById('configs', existed._id, doc); results.push({ ...existed, ...doc }); }
       else results.push(await repo.insert('configs', { _id: newIdNo('cfg'), ...doc, createdAt: Date.now() }));
     }
@@ -1720,48 +1840,67 @@ const services = {
 
   // ---- 报表四件套 ----
 
-  async reportOrders(repo, { from, to } = {}, session) {
+  async reportOrders(repo, { from, to, brandId = '' } = {}, session) {
+    const visibleBrand = reportBrandVisible(session, brandId);
     let list = await repo.find('orders', {});
+    list = list.filter((order) => visibleBrand(order.brandId || 'default'));
     if (from) list = list.filter((o) => o.createdAt >= from);
     if (to) list = list.filter((o) => o.createdAt <= to);
     const byStatus = {};
     for (const o of list) byStatus[o.status] = (byStatus[o.status] || 0) + 1;
-    return { total: list.length, byStatus, list, ...(await computeReconcileMetrics(repo)) };
+    return { total: list.length, byStatus, list, ...(await computeReconcileMetrics(repo, session, brandId)) };
   },
 
-  async reportWorkers(repo, {}, session) {
+  async reportWorkers(repo, { from, to, brandId = '' } = {}, session) {
+    const visibleBrand = reportBrandVisible(session, brandId);
     const workers = await repo.find('users', { role: 'WORKER' });
+    const roleRows = (await repo.find('user_brand_roles', {})).filter((row) => row.status !== 'DISABLED');
     const rows = [];
     for (const w of workers) {
-      const wallet = await repo.findOne('wallets', { ownerId: w._id });
-      const orders = await repo.find('orders', { workerId: w._id });
+      let orders = (await repo.find('orders', { workerId: w._id })).filter((order) => visibleBrand(order.brandId || 'default'));
+      if (from) orders = orders.filter((order) => (order.completedAt || order.createdAt || 0) >= from);
+      if (to) orders = orders.filter((order) => (order.completedAt || order.createdAt || 0) <= to);
+      const assignedBrands = roleRows.filter((row) => row.userId === w._id).map((row) => row.brandId);
+      if (!orders.length && !assignedBrands.some((scope) => visibleBrand(scope))) continue;
       const completed = orders.filter((o) => o.status === D.OrderStatus.SETTLED).length;
       const earnings = orders.reduce((s, o) => s + (o.earningsFen || 0), 0);
-      rows.push({ workerId: w._id, phone: w.phone, nickname: w.nickname, completed, earningsFen: earnings, balanceFen: wallet ? wallet.availableFen : 0 });
+      let transactions = await repo.find('wallet_transactions', { accountId: w._id });
+      if (!transactions.length) {
+        const wallet = await repo.findOne('wallets', { ownerId: w._id });
+        transactions = wallet ? await repo.find('wallet_transactions', { walletId: wallet._id }) : [];
+      }
+      transactions = (await filterRelatedRows(repo, transactions, visibleBrand)).filter((row) => row.status !== 'REVERSED');
+      const balanceFen = transactions.reduce((sum, row) => sum + (row.amountFen || 0), 0);
+      rows.push({ workerId: w._id, phone: w.phone, nickname: w.nickname, completed, earningsFen: earnings, balanceFen });
     }
-    return { rows, ...(await computeReconcileMetrics(repo)) };
+    return { rows, ...(await computeReconcileMetrics(repo, session, brandId)) };
   },
 
-  async reportWithdrawals(repo, { from, to } = {}, session) {
+  async reportWithdrawals(repo, { from, to, brandId = '' } = {}, session) {
+    const visibleBrand = reportBrandVisible(session, brandId);
     let list = await repo.find('withdrawals', {});
+    list = await filterRelatedRows(repo, list, visibleBrand);
     if (from) list = list.filter((w) => w.createdAt >= from);
     if (to) list = list.filter((w) => w.createdAt <= to);
     const totalFen = list.filter((w) => w.status === D.WithdrawalStatus.PAID).reduce((s, w) => s + w.amountFen, 0);
-    return { total: list.length, totalPaidFen: totalFen, list, ...(await computeReconcileMetrics(repo)) };
+    return { total: list.length, totalPaidFen: totalFen, list, ...(await computeReconcileMetrics(repo, session, brandId)) };
   },
 
-  async reportProfit(repo, { from, to } = {}, session) {
+  async reportProfit(repo, { from, to, brandId = '' } = {}, session) {
+    const visibleBrand = reportBrandVisible(session, brandId);
     let orders = await repo.find('orders', {});
+    orders = orders.filter((order) => visibleBrand(order.brandId || 'default'));
     if (from) orders = orders.filter((o) => o.createdAt >= from);
     if (to) orders = orders.filter((o) => o.createdAt <= to);
     const paidFen = orders.filter((o) => [D.OrderStatus.PENDING_ACCEPT, D.OrderStatus.PENDING_GRAB, D.OrderStatus.IN_SERVICE, D.OrderStatus.PENDING_CONFIRM, D.OrderStatus.SETTLED, D.OrderStatus.DISPUTING, D.OrderStatus.REFUNDING, D.OrderStatus.REFUNDED, D.OrderStatus.CANCELLED].includes(o.status)).reduce((s, o) => s + (o.transactionId ? o.amountFen : 0), 0);
     const refundedFen = orders.filter((o) => o.status === D.OrderStatus.REFUNDED).reduce((s, o) => s + o.amountFen, 0);
     const commissionFen = orders.reduce((s, o) => s + (o.earningsFen || 0), 0);
     let ledger = await repo.find('wallet_transactions', {});
+    ledger = await filterRelatedRows(repo, ledger, visibleBrand);
     if (from) ledger = ledger.filter((row) => row.createdAt >= from);
     if (to) ledger = ledger.filter((row) => row.createdAt <= to);
     const clawbackFen = ledger.filter((row) => ['REFUND_CLAWBACK', 'COMMISSION_REVERSAL'].includes(row.type)).reduce((sum, row) => sum + Math.abs(row.amountFen || 0), 0);
-    return { paidFen, refundedFen, commissionFen, clawbackFen, commissionNetFen: commissionFen - clawbackFen, netIncomeFen: paidFen - refundedFen - commissionFen + clawbackFen, ...(await computeReconcileMetrics(repo)) };
+    return { paidFen, refundedFen, commissionFen, clawbackFen, commissionNetFen: commissionFen - clawbackFen, netIncomeFen: paidFen - refundedFen - commissionFen + clawbackFen, ...(await computeReconcileMetrics(repo, session, brandId)) };
   },
 
   // ---- 站内消息 ----
@@ -1771,12 +1910,20 @@ const services = {
     const order = await repo.getById('orders', orderId);
     if (!order) throw new Error('订单不存在');
     assertBrandAccess(session, order.brandId || 'default');
+    if (normRole(session.role) === 'WORKER' && order.workerId !== session.userId) throw new Error('FORBIDDEN:无权访问其他接单人员的订单留言');
+    if (normRole(session.role) === 'CUSTOMER' && order.customerId !== (session.openid || session.userId)) throw new Error('FORBIDDEN:无权访问其他客户的订单留言');
+    D.assertNoRedline(content);
     return repo.insert('order_messages', {
       _id: newIdNo('omsg'), brandId: order.brandId || 'default', orderId, senderType: normRole(session.role), senderId: session.userId, content, createdAt: Date.now(),
     });
   },
 
   async listOrderMessages(repo, { orderId }, session) {
+    const order = await repo.getById('orders', orderId);
+    if (!order) throw new Error('订单不存在');
+    assertBrandAccess(session, order.brandId || 'default');
+    if (normRole(session.role) === 'WORKER' && order.workerId !== session.userId) throw new Error('FORBIDDEN:无权访问其他接单人员的订单留言');
+    if (normRole(session.role) === 'CUSTOMER' && order.customerId !== (session.openid || session.userId)) throw new Error('FORBIDDEN:无权访问其他客户的订单留言');
     const list = await repo.find('order_messages', { orderId });
     return list.sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0));
   },
@@ -1846,9 +1993,10 @@ const services = {
   // 入池 30 分钟打超时标(不自动关单)。
   async timeoutMarkPool(repo, { now = Date.now() } = {}) {
     const pool = await repo.find('orders', { status: D.OrderStatus.PENDING_GRAB });
+    const configuredTimeoutMs = Number(await getConfig(repo, 'poolTimeoutMinutes', CONFIG_DEFAULTS.poolTimeoutMinutes)) * 60 * 1000;
     let marked = 0;
     for (const order of pool) {
-      if (order.pooledAt && now - order.pooledAt > (order.poolTimeoutMs || DEFAULTS.poolTimeoutMs) && !order.poolTimeout) {
+      if (order.pooledAt && now - order.pooledAt > (order.poolTimeoutMs || configuredTimeoutMs) && !order.poolTimeout) {
         await repo.updateById('orders', order._id, { poolTimeout: true, updatedAt: now });
         marked += 1;
       }
@@ -1859,9 +2007,10 @@ const services = {
   // 指派 30 分钟未处理自动拒绝(回池)。
   async timeoutRejectAssignments(repo, { now = Date.now() } = {}) {
     const list = await repo.find('orders', { status: D.OrderStatus.ASSIGN_PENDING });
+    const configuredTimeoutMs = Number(await getConfig(repo, 'assignTimeoutMinutes', CONFIG_DEFAULTS.assignTimeoutMinutes)) * 60 * 1000;
     let rejected = 0;
     for (const order of list) {
-      if (order.assignedAt && now - order.assignedAt > (order.assignmentTimeoutMs || DEFAULTS.assignmentTimeoutMs)) {
+      if (order.assignedAt && now - order.assignedAt > (order.assignmentTimeoutMs || configuredTimeoutMs)) {
         const clone = cloneOrder(order);
         D.rejectAssignment(clone, order.workerId, { reason: '指派超时自动拒绝' });
         const res = await repo.updateWhere('orders', { _id: order._id, status: D.OrderStatus.ASSIGN_PENDING }, clone);
@@ -1900,7 +2049,12 @@ const services = {
       totalOrders: visibleOrders.length,
       pendingAcceptOrders: visibleOrders.filter((o) => o.status === D.OrderStatus.PENDING_ACCEPT).length,
       inServiceOrders: visibleOrders.filter((o) => o.status === D.OrderStatus.IN_SERVICE).length,
-      workers: users.filter((u) => normalizeRole(u.role) === 'WORKER' && (!brandId || roleRows.some((row) => row.userId === u._id && row.brandId === brandId && row.status !== 'DISABLED'))).length,
+      workers: users.filter((user) => {
+        if (normalizeRole(user.role) !== 'WORKER') return false;
+        const rows = roleRows.filter((row) => row.userId === user._id && row.status !== 'DISABLED');
+        const scopes = rows.length ? rows.map((row) => row.brandId) : ['default'];
+        return scopes.some((scope) => (!brandId || scope === brandId) && canAccessBrand(session, scope));
+      }).length,
       pendingConfirmOrders: visibleOrders.filter((o) => o.status === D.OrderStatus.PENDING_CONFIRM).length,
       pendingRefunds: visibleRefunds.filter((r) => r.status === D.RefundStatus.PENDING_APPROVAL).length,
       pendingWithdrawals: withdrawals.filter((w) => ['PENDING_REVIEW', 'SUBMITTED', 'REVIEWING', 'APPROVED', 'PAYING', 'PAY_FAILED'].includes(w.status) && canAccessBrand(session, w.brandId || 'default') && (!brandId || (w.brandId || 'default') === brandId)).length,

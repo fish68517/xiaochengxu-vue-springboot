@@ -7,20 +7,26 @@ import { dirname, resolve } from 'node:path';
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 export const DOMAIN_ENTRY = resolve(ROOT, 'packages/domain/src/index.js');
 export const DOMAIN_OUTFILE = resolve(ROOT, 'uniCloud-tcb/cloudfunctions/game-service/lib/domain.cjs');
+export const DOMAIN_OUTFILES = [
+  DOMAIN_OUTFILE,
+  resolve(ROOT, 'apps/client/uniCloud-aliyun/cloudfunctions/game-service/lib/domain.cjs'),
+];
 
 export async function buildDomain() {
-  await build({
-    entryPoints: [DOMAIN_ENTRY],
-    bundle: true,
-    format: 'cjs',
-    platform: 'node',
-    target: 'node18',
-    outfile: DOMAIN_OUTFILE,
-    banner: {
-      js: "'use strict';\n// 本文件由 packages/domain 构建生成（node scripts/build-domain.mjs），请勿手改。",
-    },
-    logLevel: 'info',
-  });
+  for (const outfile of DOMAIN_OUTFILES) {
+    await build({
+      entryPoints: [DOMAIN_ENTRY],
+      bundle: true,
+      format: 'cjs',
+      platform: 'node',
+      target: 'node18',
+      outfile,
+      banner: {
+        js: "'use strict';\n// 本文件由 packages/domain 构建生成（node scripts/build-domain.mjs），请勿手改。",
+      },
+      logLevel: 'info',
+    });
+  }
   return DOMAIN_OUTFILE;
 }
 

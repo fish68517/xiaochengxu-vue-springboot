@@ -17,8 +17,9 @@
     <view v-for="d in dicts" :key="d._id || d.code" class="dict-row">
       <view class="dict-main">
         <text class="dict-name">{{ d.name }}（{{ d.code }}）</text>
-        <text class="dict-sub">排序 {{ d.sort ?? 0 }}</text>
+        <text class="dict-sub">排序 {{ d.sort ?? 0 }} · {{ d.status === 'DISABLED' ? '已停用' : '启用中' }}</text>
       </view>
+      <button class="mini-btn" @click="toggleStatus(d)">{{ d.status === 'DISABLED' ? '启用' : '停用' }}</button>
     </view>
 
     <view class="form">
@@ -89,7 +90,7 @@ async function save() {
 
   saving.value = true;
   try {
-    const saved = await api.saveDict({ type: activeType.value, code, name, sort: Number(form.value.sort || 0) });
+    const saved = await api.saveDict({ type: activeType.value, code, name, sort: Number(form.value.sort || 0), status: 'ACTIVE' });
     dicts.value.push(saved);
     form.value = { code: '', name: '', sort: '' };
     uni.showToast({ title: '已新增', icon: 'success' });
@@ -98,6 +99,15 @@ async function save() {
   } finally {
     saving.value = false;
   }
+}
+
+async function toggleStatus(item) {
+  const status = item.status === 'DISABLED' ? 'ACTIVE' : 'DISABLED';
+  try {
+    await api.saveDict({ type: item.type, code: item.code, name: item.name, sort: Number(item.sort || 0), status });
+    await load();
+    uni.showToast({ title: status === 'DISABLED' ? '已停用，历史数据保留' : '已启用', icon: 'none' });
+  } catch (e) { uni.showToast({ title: e.message || '操作失败', icon: 'none' }); }
 }
 </script>
 
@@ -109,7 +119,7 @@ async function save() {
 .tab { flex: 1; padding: 16rpx; text-align: center; font-size: 26rpx; color: var(--es-text-dim); background: var(--es-bg-panel); border: 1rpx solid var(--es-border-soft); border-radius: var(--es-radius); }
 .tab.active { color: var(--es-primary); border-color: var(--es-primary); }
 .dict-row { display: flex; align-items: center; padding: 24rpx; margin-bottom: 16rpx; background: var(--es-bg-panel); border-radius: var(--es-radius); }
-.dict-main { display: flex; flex-direction: column; }
+.dict-main { display: flex; flex: 1; flex-direction: column; }
 .dict-name { font-size: 28rpx; color: var(--es-text); font-weight: 600; }
 .dict-sub { margin-top: 8rpx; font-size: 22rpx; color: var(--es-text-dim); }
 .form { margin-top: 24rpx; padding: 24rpx; background: var(--es-bg-panel); border: 1rpx solid var(--es-border-soft); border-radius: var(--es-radius); }

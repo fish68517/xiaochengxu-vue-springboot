@@ -47,8 +47,14 @@ async function login() {
     }
     uni.setStorageSync('token', res.token);
     uni.setStorageSync('user', res.user);
+    if (res.mustChangePwd) uni.setStorageSync('mustChangePwd', true);
+    else uni.removeStorageSync('mustChangePwd');
     setActiveBrandId('');
     uni.setStorageSync('accessProfile', await api.getAccessProfile());
+    if (res.mustChangePwd) {
+      uni.redirectTo({ url: '/pages/security/index?required=1' });
+      return;
+    }
     uni.redirectTo({ url: '/pages/dashboard/index' });
   } catch (e) {
     errorMsg.value = e.message || '登录失败，请检查账号或网络';

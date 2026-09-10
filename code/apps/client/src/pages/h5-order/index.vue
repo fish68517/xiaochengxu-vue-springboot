@@ -3,7 +3,7 @@
     <view class="checkout-steps"><view class="active"><text>1</text><text>填写信息</text></view><view class="step-line"/><view :class="{active:phase!=='form'}"><text>2</text><text>确认支付</text></view><view class="step-line"/><view :class="{active:phase==='success'}"><text>3</text><text>完成</text></view></view>
     <view v-if="loading" class="state-box"><view class="loader"/><text class="state-title">正在准备订单</text><text class="state-desc">请稍候，不要关闭页面</text></view>
     <view v-else-if="errorMsg" class="state-box"><image class="state-illustration" src="/static/empty-state.svg" mode="aspectFit"/><text class="state-title">下单页暂不可用</text><text class="state-desc">{{ errorMsg }}</text><button class="primary-btn" @click="retry">重新加载</button></view>
-    <view v-else-if="phase==='success'" class="success-box"><view class="success-mark"><view class="success-check"/></view><text class="success-title">支付成功</text><text class="state-desc">订单已创建，客服将尽快为您安排服务</text><view class="order-number"><text>订单号</text><text>{{ paidOrderNo }}</text></view><button class="primary-btn" @click="copyOrderNo">复制订单号</button><button class="ghost-btn" @click="goMiniProgram">返回小程序查看订单</button><text class="hint">如需帮助，请在小程序内联系订单客服</text></view>
+    <view v-else-if="phase==='success'" class="success-box"><view class="success-mark"><view class="success-check"/></view><text class="success-title">支付成功</text><text class="state-desc">订单已创建，客服将尽快为您安排服务</text><view class="order-number"><text>订单号</text><text>{{ paidOrderNo }}</text></view><button class="primary-btn" @click="copyOrderNo">复制订单号</button><button class="ghost-btn" @click="contactSupport">联系客服（自动携带订单号）</button><button class="ghost-btn" @click="goMiniProgram">返回小程序查看订单</button><text class="hint">咨询时请核对订单号，客服不会索要支付密码或验证码</text></view>
     <view v-else-if="['processing','unknown','failed'].includes(phase)" class="state-box"><view class="loader" :class="{stopped:phase==='failed'}"/><text class="state-title">{{ phase==='processing'?'支付处理中':phase==='unknown'?'支付结果确认中':'支付未完成' }}</text><text class="state-desc">{{ paymentMessage }}</text><button v-if="pendingPaymentId" class="primary-btn" @click="refreshPaymentStatus">查询支付结果</button><button v-if="phase==='failed'" class="ghost-btn" @click="continuePay">重新支付</button></view>
     <view v-else-if="phase==='continue'" class="form-view"><view class="hero"><text class="eyebrow">待支付订单</text><text class="product-title">继续完成支付</text><text class="success-order">订单号 {{ continueOrderNo||'加载中' }}</text></view><view class="footer"><view class="secure-note"><image src="/static/icons/shield.svg" mode="aspectFit"/><text>支付信息已加密保护</text></view><button class="submit-btn" :disabled="submitting" @click="continuePay">{{ submitting?'处理中…':'继续支付' }}</button></view></view>
     <view v-else-if="product" class="form-view">
@@ -22,6 +22,7 @@ import { ref } from 'vue';
 import { onLoad, onShow } from '@dcloudio/uni-app';
 import { api, ApiError, OAUTH_APPID } from '../../api.js';
 import { brandState } from '../../brand.js';
+import { brandContact } from '../../brand-assets.js';
 import { fenToYuan, gameText, serviceTypeText } from '../../client-utils.js';
 
 const token = ref('');
@@ -287,6 +288,12 @@ function showSuccess(orderNo) {
 
 function copyOrderNo() {
   uni.setClipboardData({ data: paidOrderNo.value, success: () => uni.showToast({ title: '已复制', icon: 'success' }) });
+}
+
+function contactSupport() {
+  const contact = brandContact();
+  const lines = [`订单号：${paidOrderNo.value || '—'}`, contact.serviceWechat && `客服微信：${contact.serviceWechat}`, contact.servicePhone && `客服电话：${contact.servicePhone}`, contact.serviceHours && `服务时间：${contact.serviceHours}`].filter(Boolean);
+  uni.showModal({ title: '联系客服', content: lines.join('\n'), showCancel: false, confirmText: '我知道了' });
 }
 
 // 回小程序:web-view 内返回小程序;普通浏览器则提示打开小程序。

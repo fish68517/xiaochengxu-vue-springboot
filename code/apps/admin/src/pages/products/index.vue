@@ -113,7 +113,7 @@ onLoad(load);
 async function load() {
   error.value = '';
   try {
-    const list = await api.listProducts({});
+    const list = await api.listManagedProducts({});
     products.value = Array.isArray(list) ? list : [];
   } catch (e) {
     error.value = e.message || '商品列表加载失败';

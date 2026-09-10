@@ -126,6 +126,17 @@ function nextIdemKey() {
   return `wb-${Date.now().toString(36)}-${idemSeq}-${Math.random().toString(36).slice(2, 8)}`;
 }
 
+function handleSecurityRedirect(error) {
+  if (!error || error.code !== 'PASSWORD_CHANGE_REQUIRED') return;
+  try { uni.setStorageSync('mustChangePwd', true); } catch (_e) { /* 存储失败时仍执行跳转 */ }
+  const path = globalThis.location?.hash?.replace(/^#\//, '').split('?')[0] || '';
+  if (path !== 'pages/security/index' && path !== 'pages/worker/profile') {
+    const user = uni.getStorageSync('user') || {};
+    const target = user.role === 'WORKER' ? '/pages/worker/profile' : '/pages/security/index?required=1';
+    uni.reLaunch({ url: target });
+  }
+}
+
 // 统一调用：读请求网络错误重试 1 次，写请求不重试且绝不切换传输通道
 async function call(action, payload = {}, { method = 'GET' } = {}) {
   const write = method !== 'GET';
@@ -148,7 +159,10 @@ async function call(action, payload = {}, { method = 'GET' } = {}) {
     throw lastErr;
   };
 
-  const p = run();
+  const p = run().catch((error) => {
+    handleSecurityRedirect(error);
+    throw error;
+  });
   if (dedupKey) {
     inFlight.set(dedupKey, p);
     p.then(() => inFlight.delete(dedupKey), () => inFlight.delete(dedupKey));
@@ -205,6 +219,7 @@ export const api = {
   workerLogin: (data) => call('workerLogin', data, { method: 'POST' }),
   changePassword: (data) => call('changePassword', data, { method: 'POST' }),
   getAccessProfile: () => call('getAccessProfile'),
+  getRuntimeConfig: () => call('getRuntimeConfig'),
   // —— 客服/管理 ——
   dashboard: () => call('dashboard', withActiveBrand({})),
   listOrders: (filters = {}) => call('listOrders', withActiveBrand(filters)),

@@ -44,6 +44,8 @@ export {
 
 export { resolveBrand, missingKeys } from './brand.js';
 
+export { REDLINE_WORDS, findRedlineWord, assertNoRedline } from './redline.js';
+
 export {
   SUPER_ADMIN_ROLES,
   resolveBrandContext,

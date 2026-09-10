@@ -82,8 +82,8 @@ async function add() {
 // 移除 VIP：真实调 removeVip，成功后移除本地行。
 async function remove(v) {
   try {
-    await api.removeVip({ matchType: v.matchType, matchKey: v.matchKey });
-    vips.value = vips.value.filter((x) => !(x.matchType === v.matchType && x.matchKey === v.matchKey));
+    await api.removeVip({ vipId: v._id || v.id });
+    vips.value = vips.value.filter((x) => (x._id || x.id) !== (v._id || v.id));
     uni.showToast({ title: '已移除', icon: 'none' });
   } catch (e) {
     uni.showToast({ title: e.message || '操作失败', icon: 'none' });

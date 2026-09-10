@@ -27,6 +27,7 @@ __export(index_exports, {
   MIN_WITHDRAW_FEN: () => MIN_WITHDRAW_FEN,
   OrderStatus: () => OrderStatus,
   PAYMENT_TIMEOUT_MS: () => PAYMENT_TIMEOUT_MS,
+  REDLINE_WORDS: () => REDLINE_WORDS,
   RefundStatus: () => RefundStatus,
   SUPER_ADMIN_ROLES: () => SUPER_ADMIN_ROLES,
   WithdrawalStatus: () => WithdrawalStatus,
@@ -35,6 +36,7 @@ __export(index_exports, {
   approveUnstartedCancel: () => approveUnstartedCancel,
   approveWithdrawal: () => approveWithdrawal,
   assertBrandAccess: () => assertBrandAccess,
+  assertNoRedline: () => assertNoRedline,
   assignOrder: () => assignOrder,
   calculateCommissionRecovery: () => calculateCommissionRecovery,
   calculateEarnings: () => calculateEarnings,
@@ -49,6 +51,7 @@ __export(index_exports, {
   debitWallet: () => debitWallet,
   enterOrder: () => enterOrder,
   failWithdrawalPayment: () => failWithdrawalPayment,
+  findRedlineWord: () => findRedlineWord,
   grabOrder: () => grabOrder,
   hasBrandAccess: () => hasBrandAccess,
   isPaymentExpired: () => isPaymentExpired,
@@ -137,6 +140,7 @@ function createOrder({
   contactWechat = "",
   contactPhone = "",
   productSnapshot,
+  paymentTimeoutMs = PAYMENT_TIMEOUT_MS,
   createdAt = Date.now()
 }) {
   if (!id) throw new Error("\u8BA2\u5355 id \u4E0D\u80FD\u4E3A\u7A7A");
@@ -146,6 +150,7 @@ function createOrder({
   if (!contactWechat && !contactPhone) {
     throw new Error("\u5FAE\u4FE1\u53F7\u4E0E\u624B\u673A\u53F7\u81F3\u5C11\u586B\u5199\u4E00\u9879");
   }
+  if (!Number.isFinite(paymentTimeoutMs) || paymentTimeoutMs <= 0) throw new Error("\u652F\u4ED8\u8D85\u65F6\u65F6\u957F\u5FC5\u987B\u4E3A\u6B63\u6570");
   return {
     id,
     amountFen,
@@ -155,7 +160,7 @@ function createOrder({
     contactPhone,
     productSnapshot,
     status: OrderStatus.PENDING_PAYMENT,
-    payDeadline: createdAt + PAYMENT_TIMEOUT_MS,
+    payDeadline: createdAt + paymentTimeoutMs,
     createdAt,
     updatedAt: createdAt
   };
@@ -356,7 +361,7 @@ function rejectCompletion(order, { rejectedBy, reason }) {
   order.updatedAt = Date.now();
   return order;
 }
-function confirmSettlement(order, { confirmedBy, customerConfirmed }) {
+function confirmSettlement(order, { confirmedBy, customerConfirmed, disputeWindowMs = DISPUTE_WINDOW_MS }) {
   assertIn(order, [OrderStatus.PENDING_CONFIRM], "\u7ED3\u5355");
   if (order.verificationStatus !== "VERIFIED") {
     throw new Error("\u7ED3\u5355\u524D\u5FC5\u987B\u5148\u6838\u5BF9\u5B8C\u6210\u7ED3\u679C");
@@ -364,18 +369,20 @@ function confirmSettlement(order, { confirmedBy, customerConfirmed }) {
   if (customerConfirmed !== true) {
     throw new Error("\u7ED3\u5355\u524D\u5FC5\u987B\u4E0E\u5BA2\u6237\u786E\u8BA4");
   }
+  if (!Number.isFinite(disputeWindowMs) || disputeWindowMs <= 0) throw new Error("\u5F02\u8BAE\u7A97\u53E3\u5FC5\u987B\u4E3A\u6B63\u6570");
   const now = Date.now();
   order.status = OrderStatus.SETTLED;
   order.confirmedBy = confirmedBy;
   order.completedAt = now;
-  order.disputeDeadline = now + DISPUTE_WINDOW_MS;
+  order.disputeDeadline = now + disputeWindowMs;
   order.updatedAt = now;
   return order;
 }
-function reworkOrder(order, { reworkedBy, note }) {
+function reworkOrder(order, { reworkedBy, note, maxReworkCount = DEFAULT_MAX_REWORK }) {
   assertIn(order, [OrderStatus.PENDING_CONFIRM], "\u8865\u5355");
+  if (!Number.isInteger(maxReworkCount) || maxReworkCount < 0) throw new Error("\u8865\u5355\u6B21\u6570\u4E0A\u9650\u5FC5\u987B\u4E3A\u975E\u8D1F\u6574\u6570");
   const reworkCount = order.reworkCount || 0;
-  if (reworkCount >= DEFAULT_MAX_REWORK) {
+  if (reworkCount >= maxReworkCount) {
     throw new Error("\u8865\u5355\u6B21\u6570\u5DF2\u8FBE\u4E0A\u9650");
   }
   order.status = OrderStatus.IN_SERVICE;
@@ -520,6 +527,40 @@ function missingKeys(copy, defaults) {
     if (Array.isArray(value) && value.length === 0) return true;
     return false;
   });
+}
+
+// packages/domain/src/redline.js
+var REDLINE_WORDS = Object.freeze([
+  "\u4EE3\u7EC3",
+  "\u4EE3\u6253",
+  "\u4EE3\u5237",
+  "\u4E0A\u5206",
+  "\u5E26\u7EC3",
+  "\u4E70\u5E01",
+  "\u5356\u5E01",
+  "\u5237\u5E01",
+  "\u4FDD\u5E01",
+  "\u91D1\u5E01\u4EA4\u6613",
+  "\u865A\u62DF\u8D27\u5E01\u4EA4\u6613",
+  "\u6258\u7BA1",
+  "\u8D44\u91D1\u6258\u7BA1",
+  "\u57AB\u8D44",
+  "\u62C5\u4FDD",
+  "\u62C5\u4FDD\u4EA4\u6613",
+  "\u8FD4\u5229",
+  "\u5145\u503C\u8FD4\u5229",
+  "\u535A\u5F69",
+  "\u8D4C\u535A",
+  "\u62BD\u5956\u8FD4\u73B0"
+]);
+function findRedlineWord(text = "") {
+  const value = String(text || "");
+  return REDLINE_WORDS.find((word) => value.includes(word)) || "";
+}
+function assertNoRedline(text = "") {
+  const hit = findRedlineWord(text);
+  if (hit) throw new Error(`\u5546\u54C1\u6587\u6848\u542B\u7981\u7528\u8BCD: ${hit}`);
+  return true;
 }
 
 // packages/domain/src/brand-context.js
@@ -708,6 +749,7 @@ function rejectWithdrawal(wallet, withdrawal) {
   MIN_WITHDRAW_FEN,
   OrderStatus,
   PAYMENT_TIMEOUT_MS,
+  REDLINE_WORDS,
   RefundStatus,
   SUPER_ADMIN_ROLES,
   WithdrawalStatus,
@@ -716,6 +758,7 @@ function rejectWithdrawal(wallet, withdrawal) {
   approveUnstartedCancel,
   approveWithdrawal,
   assertBrandAccess,
+  assertNoRedline,
   assignOrder,
   calculateCommissionRecovery,
   calculateEarnings,
@@ -730,6 +773,7 @@ function rejectWithdrawal(wallet, withdrawal) {
   debitWallet,
   enterOrder,
   failWithdrawalPayment,
+  findRedlineWord,
   grabOrder,
   hasBrandAccess,
   isPaymentExpired,

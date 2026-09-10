@@ -14,10 +14,10 @@ const HOST = process.env.HOST || '127.0.0.1';
 
 // 全量 action 名（与 services.js 导出对齐），据此构建 action -> 处理函数映射。
 const ACTIONS = [
-  'miniLogin', 'oauthExchange', 'authLogin', 'workerLogin', 'changePassword', 'getAccessProfile',
+  'miniLogin', 'oauthExchange', 'authLogin', 'workerLogin', 'changePassword', 'getAccessProfile', 'getRuntimeConfig',
   'getSecurityStatus', 'setupMfa', 'enableMfa', 'verifySecurityChallenge', 'revokeSessions', 'listLoginHistory', 'setAccountStatus', 'refreshSession',
   'listUsers', 'createStaff', 'createWorker', 'updateStaff', 'updateWorker', 'listUserBrandRoles', 'saveUserBrandRoles', 'listAuditLogs', 'freezeWallet', 'listWorkers',
-  'listProducts', 'getProduct', 'saveProduct', 'updateProductStatus',
+  'listProducts', 'getProduct', 'listManagedProducts', 'getManagedProduct', 'saveProduct', 'updateProductStatus',
   'listDicts', 'saveDict', 'getConfigs', 'updateConfigs',
   'addVip', 'removeVip', 'listVips',
   'getBrandConfig', 'listBrands', 'saveBrandConfig',
@@ -293,7 +293,7 @@ function seedDb(db) {
   const product = services.saveProduct(db, { title: '峡谷陪玩一小时', game: 'lol', serviceType: 'companion', tierName: '轻松局', guaranteedOutput: 10, outputUnit: '局', priceFen: 10000, images: ['/static/reference-assets/product-card-1.png'], description: '一对一沟通需求，按约定时间提供陪玩服务，全程可查看订单进度。', status: 'ON', sort: 0, brandId: 'demo-a', commission: { type: 'percent', valuePercent: 20 } }, { userId: admin._id, role: 'ADMIN' });
   const demoProducts = [
     { title: '双排默契进阶套餐', game: 'lol', serviceType: 'companion', tierName: '热门', guaranteedOutput: 5, outputUnit: '局', priceFen: 12800, images: ['/static/reference-assets/product-card-2.png'], sort: 9 },
-    { title: '王者上分协作服务', game: 'wangzhe', serviceType: 'team', tierName: '推荐', guaranteedOutput: 6, outputUnit: '局', priceFen: 15800, images: ['/static/reference-assets/category-product-1.png'], sort: 8 },
+    { title: '王者排位协作服务', game: 'wangzhe', serviceType: 'team', tierName: '推荐', guaranteedOutput: 6, outputUnit: '局', priceFen: 15800, images: ['/static/reference-assets/category-product-1.png'], sort: 8 },
     { title: '新手一对一教学指导', game: 'wangzhe', serviceType: 'training', tierName: '新客', guaranteedOutput: 1, outputUnit: '小时', priceFen: 8800, images: ['/static/reference-assets/category-product-2.png'], sort: 7 },
     { title: '三角洲组队协作套餐', game: 'delta', serviceType: 'team', tierName: '精选', guaranteedOutput: 4, outputUnit: '局', priceFen: 16800, images: ['/static/reference-assets/category-product-3.png'], sort: 6 },
     { title: '无畏契约战术教学', game: 'valorant', serviceType: 'training', tierName: '进阶', guaranteedOutput: 1, outputUnit: '小时', priceFen: 19800, images: ['/static/reference-assets/category-product-4.png'], sort: 5 },

@@ -115,6 +115,7 @@ export function logout() {
   uni.removeStorageSync('token');
   uni.removeStorageSync('user');
   uni.removeStorageSync('accessProfile');
+  uni.removeStorageSync('mustChangePwd');
   uni.removeStorageSync('__workbench_active_brand__');
   uni.reLaunch({ url: '/pages/login/index' });
 }

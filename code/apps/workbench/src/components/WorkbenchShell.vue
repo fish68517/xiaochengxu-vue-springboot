@@ -16,7 +16,7 @@
 <script setup>
 import { computed } from 'vue'; import { go,logout } from '../common.js'; import { maskPhone } from '../utils/display.js';
 const props=defineProps({role:{type:String,default:'worker'},active:{type:String,required:true},title:{type:String,required:true},subtitle:{type:String,default:''}});
-const csMenu=[{key:'dashboard',label:'工作台',url:'/pages/cs/workbench'},{key:'orders',label:'订单管理',short:'订单',url:'/pages/cs/orders'},{key:'pool',label:'抢单池',url:'/pages/cs/pool'},{key:'approvals',label:'审批中心',short:'审批',url:'/pages/cs/approvals'}];
+const csMenu=[{key:'dashboard',label:'工作台',url:'/pages/cs/workbench'},{key:'orders',label:'订单管理',short:'订单',url:'/pages/cs/orders'},{key:'pool',label:'抢单池',url:'/pages/cs/pool'},{key:'approvals',label:'审批中心',short:'审批',url:'/pages/cs/approvals'},{key:'security',label:'安全中心',short:'安全',url:'/pages/security/index'}];
 const workerMenu=[{key:'pool',label:'订单池',url:'/pages/worker/hall'},{key:'orders',label:'我的订单',short:'订单',url:'/pages/worker/orders'},{key:'wallet',label:'我的钱包',short:'钱包',url:'/pages/worker/wallet'},{key:'profile',label:'个人资料',short:'资料',url:'/pages/worker/profile'}];
 const menu=computed(()=>props.role==='cs'?csMenu:workerMenu);const roleLabel=computed(()=>props.role==='cs'?'客服工作台':'接单工作台');
 const user=computed(()=>{try{return uni.getStorageSync('user')||{};}catch(e){return {};}});const userName=computed(()=>user.value.nickname||(props.role==='cs'?'客服人员':'接单人员'));const userInitial=computed(()=>userName.value.slice(0,1));const maskedPhone=computed(()=>maskPhone(user.value.phone)||'已登录');const today=new Date().toLocaleDateString('zh-CN',{month:'long',day:'numeric',weekday:'short'});

@@ -66,9 +66,9 @@ test('账号：changePassword 后旧密码失效并清除强制改密', () => {
   const db = createMemoryDb();
   const { session } = seedAdmin(db);
   const worker = createWorker(db, { phone: '13800000001', initialPassword: 'worker123' }, session);
-  changePassword(db, { oldPassword: 'worker123', newPassword: 'newpass123' }, { userId: worker._id, role: 'WORKER' });
+  changePassword(db, { oldPassword: 'worker123', newPassword: 'NewPass#12345' }, { userId: worker._id, role: 'WORKER' });
   assert.throws(() => workerLogin(db, { phone: '13800000001', password: 'worker123' }), /手机号或密码错误/);
-  const login = workerLogin(db, { phone: '13800000001', password: 'newpass123' });
+  const login = workerLogin(db, { phone: '13800000001', password: 'NewPass#12345' });
   assert.equal(login.mustChangePwd, false);
 });
 

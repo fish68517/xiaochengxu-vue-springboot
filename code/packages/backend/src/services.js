@@ -72,6 +72,7 @@ import {
   failWithdrawalPayment as failWithdrawalPaymentDomain,
   markWithdrawalPaid as markWithdrawalPaidDomain,
   rejectWithdrawal as rejectWithdrawalDomain,
+  assertNoRedline,
 } from '../../domain/src/index.js';
 
 export { issueH5Token, verifyH5Token, H5_TOKEN_TTL_MS } from './token.js';
@@ -105,7 +106,7 @@ const DEFAULT_CONFIGS = {
   payTimeoutMinutes: 30,       // 支付超时（分钟）
   poolTimeoutMinutes: 30,      // 入池超时打标（分钟）
   assignTimeoutMinutes: 30,    // 指派超时自动拒（分钟）
-  maxActiveOrders: 5,          // 同时进行订单上限
+  maxActiveOrders: 3,          // 同时进行订单上限
   weeklyWithdrawLimit: 3,      // 每周提现次数上限
   maxReworkCount: 1,           // 补单次数上限
   disputeWindowHours: 72,      // 异议窗口（小时）
@@ -113,6 +114,29 @@ const DEFAULT_CONFIGS = {
   pollIntervalSeconds: 10,     // 接单端轮询间隔（秒）
   sessionTimeoutMinutes: 30,   // 会话超时（分钟）
 };
+
+const CONFIG_LIMITS = Object.freeze({
+  payTimeoutMinutes: [1, 1440],
+  poolTimeoutMinutes: [1, 1440],
+  assignTimeoutMinutes: [1, 1440],
+  maxActiveOrders: [1, 100],
+  weeklyWithdrawLimit: [1, 100],
+  maxReworkCount: [0, 20],
+  disputeWindowHours: [1, 720],
+  minWithdrawFen: [1, 100000000],
+  pollIntervalSeconds: [3, 3600],
+  sessionTimeoutMinutes: [5, 1440],
+});
+
+function normalizeConfigValue(key, value) {
+  const limits = CONFIG_LIMITS[key];
+  if (!limits) return undefined;
+  const number = Number(value);
+  if (!Number.isInteger(number) || number < limits[0] || number > limits[1]) {
+    throw new Error(`配置 ${key} 必须为 ${limits[0]}~${limits[1]} 的整数`);
+  }
+  return number;
+}
 
 // 公开 action 白名单（无需会话，T0-01）。
 const PUBLIC_ACTIONS = new Set([
@@ -145,6 +169,7 @@ const ACTION_ROLES = {
   refreshSession: Security.SECURITY_ROLES,
   setAccountStatus: ['ADMIN', 'SUPER_ADMIN'],
   getAccessProfile: ['CUSTOMER', 'WORKER', 'CUSTOMER_SERVICE', 'ADMIN', 'DISPATCHER', 'BRAND_ADMIN', 'FINANCE_REVIEWER', 'ARBITRATOR', 'SUPER_ADMIN'],
+  getRuntimeConfig: ['WORKER', 'CUSTOMER_SERVICE', 'ADMIN', 'DISPATCHER', 'BRAND_ADMIN', 'SUPER_ADMIN'],
   listMyOrders: ['CUSTOMER', 'WORKER'],
   getMyOrder: ['CUSTOMER', 'WORKER'],
   submitDispute: ['CUSTOMER'],
@@ -183,9 +208,9 @@ const ACTION_ROLES = {
   listWorkers: ['CUSTOMER_SERVICE', 'ADMIN', 'DISPATCHER', 'BRAND_ADMIN', 'SUPER_ADMIN'],
   createWorker: ['ADMIN', 'BRAND_ADMIN', 'SUPER_ADMIN'],
   updateWorker: ['ADMIN', 'BRAND_ADMIN', 'SUPER_ADMIN'],
-  createStaff: ['ADMIN', 'SUPER_ADMIN'],
+  createStaff: ['ADMIN', 'BRAND_ADMIN', 'SUPER_ADMIN'],
   listUsers: ['ADMIN', 'BRAND_ADMIN', 'SUPER_ADMIN'],
-  updateStaff: ['ADMIN', 'SUPER_ADMIN'],
+  updateStaff: ['ADMIN', 'BRAND_ADMIN', 'SUPER_ADMIN'],
   listUserBrandRoles: ['ADMIN', 'BRAND_ADMIN', 'SUPER_ADMIN'],
   saveUserBrandRoles: ['ADMIN', 'SUPER_ADMIN'],
   listAuditLogs: ['ADMIN', 'BRAND_ADMIN', 'SUPER_ADMIN'],
@@ -196,6 +221,8 @@ const ACTION_ROLES = {
   listVips: ['ADMIN'],
   saveProduct: ['ADMIN', 'BRAND_ADMIN', 'SUPER_ADMIN'],
   updateProductStatus: ['ADMIN', 'BRAND_ADMIN', 'SUPER_ADMIN'],
+  listManagedProducts: ['ADMIN', 'BRAND_ADMIN', 'SUPER_ADMIN'],
+  getManagedProduct: ['ADMIN', 'BRAND_ADMIN', 'SUPER_ADMIN'],
   listDicts: ['ADMIN'],
   saveDict: ['ADMIN'],
   getConfigs: ['ADMIN'],
@@ -204,8 +231,8 @@ const ACTION_ROLES = {
   rejectWithdrawal: ['ADMIN', 'FINANCE_REVIEWER', 'SUPER_ADMIN'],
   reportOrders: ['ADMIN', 'BRAND_ADMIN', 'FINANCE_REVIEWER', 'SUPER_ADMIN'],
   reportWorkers: ['ADMIN', 'BRAND_ADMIN', 'FINANCE_REVIEWER', 'SUPER_ADMIN'],
-  reportWithdrawals: ['ADMIN', 'FINANCE_REVIEWER', 'SUPER_ADMIN'],
-  reportProfit: ['ADMIN', 'FINANCE_REVIEWER', 'SUPER_ADMIN'],
+  reportWithdrawals: ['ADMIN', 'BRAND_ADMIN', 'FINANCE_REVIEWER', 'SUPER_ADMIN'],
+  reportProfit: ['ADMIN', 'BRAND_ADMIN', 'FINANCE_REVIEWER', 'SUPER_ADMIN'],
   listBrands: ['ADMIN', 'BRAND_ADMIN', 'SUPER_ADMIN'],
   saveBrandConfig: ['ADMIN', 'BRAND_ADMIN', 'SUPER_ADMIN'],
   grabOrder: ['WORKER'],
@@ -376,11 +403,50 @@ function canSessionAccessBrand(session, brandId) {
   return hasBrandAccess(session, brandId);
 }
 
+function assertReportBrand(session, brandId) {
+  if (brandId) assertSessionBrand(session, brandId);
+  return (rowBrandId) => {
+    const resolved = rowBrandId || 'default';
+    return (!brandId || resolved === brandId) && canSessionAccessBrand(session, resolved);
+  };
+}
+
+function relatedBrandId(db, row) {
+  if (row?.brandId) return row.brandId;
+  if (row?.orderId) return getById(db, 'orders', row.orderId)?.brandId || '';
+  if (row?.withdrawalId) return getById(db, 'withdrawals', row.withdrawalId)?.brandId || '';
+  if (row?.refundId) {
+    const refund = getById(db, 'refunds', row.refundId);
+    return refund ? getById(db, 'orders', refund.orderId)?.brandId || '' : '';
+  }
+  const userId = row?.workerId || row?.accountId || row?.ownerId;
+  if (!userId) return '';
+  const scopes = [...new Set(db.user_brand_roles
+    .filter((item) => item.userId === userId && item.status !== 'DISABLED')
+    .map((item) => item.brandId)
+    .filter((item) => item && item !== '*'))];
+  return scopes.length === 1 ? scopes[0] : '';
+}
+
+function assertOrderMessageAccess(db, order, session) {
+  assertSessionBrand(session, order.brandId || 'default');
+  const role = normalizeRole(session?.role);
+  if (role === 'WORKER' && order.workerId !== session.userId) throw new Error('FORBIDDEN:无权访问其他接单人员的订单留言');
+  if (role === 'CUSTOMER' && order.customerId !== session.userId && order.customerId !== session.openid) throw new Error('FORBIDDEN:无权访问其他客户的订单留言');
+  return true;
+}
+
 function userHasBrandScope(db, userId, brandId) {
-  const user = getById(db, 'users', userId);
-  if (user && ['ADMIN', 'SUPER_ADMIN'].includes(user.role)) return true;
   const rows = db.user_brand_roles.filter((row) => row.userId === userId && row.status !== 'DISABLED');
   return rows.length === 0 ? brandId === 'default' : rows.some((row) => row.brandId === '*' || row.brandId === brandId);
+}
+
+function assertUserInSessionScope(db, userId, session) {
+  if (canSessionAccessBrand(session, '*')) return true;
+  const rows = db.user_brand_roles.filter((row) => row.userId === userId && row.status !== 'DISABLED');
+  const scopes = rows.length ? rows.map((row) => row.brandId) : ['default'];
+  if (!scopes.some((brandId) => canSessionAccessBrand(session, brandId))) throw new Error('BRAND_FORBIDDEN');
+  return true;
 }
 
 const ACCESS_MENUS = {
@@ -672,7 +738,7 @@ export function changePassword(db, { oldPassword, newPassword }, session) {
   if (Security.strictSecurity(process.env) || session.sid) return localSecurity(db).changePassword({ oldPassword, newPassword }, session);
   const user = getById(db, 'users', session.userId); if (!user) throw new Error('用户不存在');
   if (!Security.verifyPassword(oldPassword, user.passwordHash).valid) throw new Error('旧密码错误');
-  if (!newPassword || newPassword.length < 6) throw new Error('新密码长度不能少于 6 位');
+  Security.assertPasswordStrength(newPassword);
   user.passwordHash = hashPassword(newPassword); user.mustChangePwd = false; user.updatedAt = Date.now();
   return { ok: true, requiresLogin: false };
 }
@@ -695,16 +761,30 @@ export function getAccessProfile(db, payload, session) {
   return accessProfile(session);
 }
 
+export function getRuntimeConfig(db, payload, session) {
+  authorize('getRuntimeConfig', session);
+  return {
+    maxActiveOrders: Number(getConfig(db, 'maxActiveOrders')),
+    poolTimeoutMinutes: Number(getConfig(db, 'poolTimeoutMinutes')),
+    assignTimeoutMinutes: Number(getConfig(db, 'assignTimeoutMinutes')),
+    pollIntervalSeconds: Number(getConfig(db, 'pollIntervalSeconds')),
+  };
+}
+
 /* ---------------- 账号管理（ADMIN） ---------------- */
 
 // 创建后台员工（ADMIN/CS）；WORKER 请走 createWorker。
 export function createStaff(db, { role, phone, password, nickname, brandId = 'default', requestId = '' }, session) {
   authorize('createStaff', session);
   const normalizedRole = normalizeRole(role);
-  if (!['ADMIN', 'CUSTOMER_SERVICE', 'DISPATCHER', 'BRAND_ADMIN', 'FINANCE_REVIEWER', 'ARBITRATOR', 'SUPER_ADMIN'].includes(normalizedRole)) {
+  if (!['WORKER', 'ADMIN', 'CUSTOMER_SERVICE', 'DISPATCHER', 'BRAND_ADMIN', 'FINANCE_REVIEWER', 'ARBITRATOR', 'SUPER_ADMIN'].includes(normalizedRole)) {
     throw new Error('后台员工角色不在允许范围');
   }
   if (!phone || !password) throw new Error('手机号和密码不能为空');
+  assertSessionBrand(session, brandId);
+  if (normalizeRole(session.role) === 'BRAND_ADMIN' && !['WORKER', 'CUSTOMER_SERVICE'].includes(normalizedRole)) {
+    throw new Error('品牌管理员仅可创建接单人员或客服');
+  }
   if (Security.strictSecurity(process.env)) Security.assertPasswordStrength(password);
   if (existsBy(db, 'users', (u) => u.phone === phone)) throw new Error('手机号已存在');
   const created = insert(db, 'users', {
@@ -712,6 +792,8 @@ export function createStaff(db, { role, phone, password, nickname, brandId = 'de
     phone,
     passwordHash: hashPassword(password),
     nickname: nickname || phone,
+    acceptEnabled: normalizedRole === 'WORKER' ? true : undefined,
+    mustChangePwd: true,
     status: 'ACTIVE',
     securityVersion: 0,
     createdAt: Date.now(),
@@ -722,6 +804,7 @@ export function createStaff(db, { role, phone, password, nickname, brandId = 'de
       userId: created._id, brandId, roles: [normalizedRole], permissions: [], status: 'ACTIVE', createdAt: Date.now(), updatedAt: Date.now(),
     });
   }
+  if (normalizedRole === 'WORKER') ensureWallet(db, created._id);
   appendAudit(db, { brandId, action: 'createStaff', resourceType: 'user', resourceId: created._id, after: publicUser(created), requestId }, session);
   return publicUser(created);
 }
@@ -729,9 +812,17 @@ export function createStaff(db, { role, phone, password, nickname, brandId = 'de
 // 账号列表（管理端）。
 export function listUsers(db, { brandId } = {}, session) {
   authorize('listUsers', session);
+  if (brandId) assertSessionBrand(session, brandId);
   return db.users
-    .filter((user) => !brandId || userHasBrandScope(db, user._id, brandId))
-    .map(publicUser);
+    .filter((user) => {
+      if (brandId) return userHasBrandScope(db, user._id, brandId);
+      if (canSessionAccessBrand(session, '*')) return true;
+      return (session.brandScopes || []).some((scope) => scope !== '*' && userHasBrandScope(db, user._id, scope));
+    })
+    .map((user) => {
+      const profile = user.role === 'WORKER' ? db.worker_profiles.find((row) => row.workerId === user._id) : null;
+      return { ...publicUser(user), realnameStatus: profile?.realnameStatus || '', realnameRejectReason: profile?.realnameRejectReason || '' };
+    });
 }
 
 // 启用/停用账号、开启/关闭接单权限。
@@ -739,6 +830,8 @@ export function updateStaff(db, { userId, status, acceptEnabled, requestId = '' 
   authorize('updateStaff', session);
   const user = getById(db, 'users', userId);
   if (!user) throw new Error('用户不存在');
+  assertUserInSessionScope(db, userId, session);
+  if (status !== undefined && !['ACTIVE', 'DISABLED'].includes(status)) throw new Error('账号状态必须为 ACTIVE/DISABLED');
   const before = publicUser({ ...user });
   if (status !== undefined) user.status = status;
   if (acceptEnabled !== undefined && user.role === 'WORKER') user.acceptEnabled = acceptEnabled;
@@ -804,6 +897,7 @@ export function freezeWallet(db, { workerId, scope }, session) {
 // 创建接单人员：强制首次改密，自动建钱包。
 export function createWorker(db, { phone, initialPassword, nickname, brandId = 'default' }, session) {
   authorize('createWorker', session);
+  assertSessionBrand(session, brandId);
   if (!phone || !initialPassword) throw new Error('手机号和初始密码不能为空');
   if (Security.strictSecurity(process.env)) Security.assertPasswordStrength(initialPassword);
   if (existsBy(db, 'users', (u) => u.phone === phone)) throw new Error('手机号已存在');
@@ -825,7 +919,7 @@ export function createWorker(db, { phone, initialPassword, nickname, brandId = '
 }
 
 // 更新接单人员（实名状态/启用停用；枚举与管理端 3c 定案一致）。
-export function updateWorker(db, { workerId, realnameStatus, status }, session) {
+export function updateWorker(db, { workerId, realnameStatus, realnameRejectReason = '', status }, session) {
   authorize('updateWorker', session);
   if (status !== undefined && !['ACTIVE', 'DISABLED'].includes(status)) {
     throw new Error('账号状态必须为 ACTIVE/DISABLED');
@@ -833,8 +927,10 @@ export function updateWorker(db, { workerId, realnameStatus, status }, session) 
   if (realnameStatus !== undefined && !['APPROVED', 'PENDING', 'REJECTED'].includes(realnameStatus)) {
     throw new Error('实名状态必须为 APPROVED/PENDING/REJECTED');
   }
+  if (realnameStatus === 'REJECTED' && !String(realnameRejectReason).trim()) throw new Error('实名驳回原因不能为空');
   const user = getById(db, 'users', workerId);
   if (!user || user.role !== 'WORKER') throw new Error('接单人员不存在');
+  assertUserInSessionScope(db, workerId, session);
   if (status !== undefined) user.status = status;
   user.updatedAt = Date.now();
   let profile = findOne(db, 'worker_profiles', (p) => p.workerId === workerId);
@@ -843,9 +939,10 @@ export function updateWorker(db, { workerId, realnameStatus, status }, session) 
       profile = insert(db, 'worker_profiles', { workerId, createdAt: Date.now(), updatedAt: Date.now() });
     }
     profile.realnameStatus = realnameStatus;
+    profile.realnameRejectReason = realnameStatus === 'REJECTED' ? String(realnameRejectReason).trim() : '';
     profile.updatedAt = Date.now();
   }
-  return publicUser(user);
+  return { ...publicUser(user), realnameStatus: profile?.realnameStatus || '', realnameRejectReason: profile?.realnameRejectReason || '' };
 }
 
 // 接单人员列表（ADMIN）。
@@ -878,17 +975,33 @@ export function listProducts(db, { game, brandId, brandCode, appId } = {}) {
 // 商品详情。
 export function getProduct(db, { productId, brandId, brandCode, appId }) {
   const product = getById(db, 'products', productId);
+  if (!product || product.status !== 'ON') throw new Error('商品已下架或不存在');
   if (product && product.brandId) {
     const context = resolveRequestBrand(db, { brandId, brandCode, appId }, { allowDefault: true });
     if (product.brandId !== context.brandId) throw new Error('BRAND_FORBIDDEN');
   }
-  return product ? { ...product, id: product._id } : null;
+  return { ...product, id: product._id };
+}
+
+export function listManagedProducts(db, { brandId = '' } = {}, session) {
+  authorize('listManagedProducts', session);
+  if (brandId) assertSessionBrand(session, brandId);
+  return db.products.filter((product) => canSessionAccessBrand(session, product.brandId || 'default')).filter((product) => !brandId || (product.brandId || 'default') === brandId).sort((a, b) => (a.sort || 0) - (b.sort || 0));
+}
+
+export function getManagedProduct(db, { productId }, session) {
+  authorize('getManagedProduct', session);
+  const product = getById(db, 'products', productId);
+  if (!product) throw new Error('商品不存在');
+  assertSessionBrand(session, product.brandId || 'default');
+  return product;
 }
 
 // 保存商品（新增/编辑，id 幂等 upsert）。
 export function saveProduct(db, { id, game, serviceType, tierName, guaranteedOutput, outputUnit, priceFen, commission, commissionRuleId = '', images = [], assetIds = [], status = 'ON', sort = 0, title, formSchema = {}, brandId = 'default', requestId = '', idempotencyKey = '' }, session) {
   authorize('saveProduct', session);
   assertSessionBrand(session, brandId);
+  assertNoRedline([title, game, serviceType, tierName].filter(Boolean).join(' '));
   if (!title) throw new Error('商品名不能为空');
   if (!Number.isInteger(priceFen) || priceFen <= 0) throw new Error('商品价格必须为正整数（分）');
   if (!commission) throw new Error('缺少抽成配置');
@@ -960,15 +1073,17 @@ export function listDicts(db, { type }, session) {
 }
 
 // 保存字典（type+code 唯一）。
-export function saveDict(db, { type, code, name, sort = 0 }, session) {
+export function saveDict(db, { type, code, name, sort = 0, status = 'ACTIVE' }, session) {
   authorize('saveDict', session);
   if (!type || !code || !name) throw new Error('字典类型/编码/名称不能为空');
+  if (!['ACTIVE', 'DISABLED'].includes(status)) throw new Error('字典状态必须为 ACTIVE/DISABLED');
+  assertNoRedline(name);
   const existed = findOne(db, 'dicts', (d) => d.type === type && d.code === code);
   if (existed) {
-    Object.assign(existed, { name, sort, updatedAt: Date.now() });
+    Object.assign(existed, { name, sort, status, updatedAt: Date.now() });
     return existed;
   }
-  return insert(db, 'dicts', { type, code, name, sort, status: 'ON', createdAt: Date.now(), updatedAt: Date.now() });
+  return insert(db, 'dicts', { type, code, name, sort, status, createdAt: Date.now(), updatedAt: Date.now() });
 }
 
 // 读取配置（cfgKey 唯一，camelCase 键；未覆盖项回落默认值）。
@@ -984,12 +1099,14 @@ export function updateConfigs(db, { configs }, session) {
   authorize('updateConfigs', session);
   if (!configs || typeof configs !== 'object') throw new Error('缺少配置对象');
   for (const [key, value] of Object.entries(configs)) {
+    const normalized = normalizeConfigValue(key, value);
+    if (normalized === undefined) continue;
     const existed = findOne(db, 'configs', (c) => c.cfgKey === key);
     if (existed) {
-      existed.cfgValue = value;
+      existed.cfgValue = normalized;
       existed.updatedAt = Date.now();
     } else {
-      insert(db, 'configs', { cfgKey: key, cfgValue: value, createdAt: Date.now(), updatedAt: Date.now() });
+      insert(db, 'configs', { cfgKey: key, cfgValue: normalized, createdAt: Date.now(), updatedAt: Date.now() });
     }
   }
   return getConfigs(db, {}, session);
@@ -1004,10 +1121,13 @@ export function addVip(db, { matchKey, matchType, note = '' }, session) {
 }
 
 // 移除 VIP。
-export function removeVip(db, { matchKey, matchType }, session) {
+export function removeVip(db, { vipId }, session) {
   authorize('removeVip', session);
-  const removed = removeWhere(db, 'vip_list', (v) => v.matchKey === matchKey && v.matchType === matchType);
-  return { ok: removed > 0 };
+  const vip = getById(db, 'vip_list', vipId);
+  if (!vip) throw new Error('VIP 记录不存在');
+  vip.status = 'INACTIVE';
+  vip.updatedAt = Date.now();
+  return vip;
 }
 
 // VIP 列表。
@@ -1080,6 +1200,7 @@ export function createOrderFromH5(db, payload = {}) {
     customerId: openid,
     contactWechat,
     contactPhone,
+    paymentTimeoutMs: Number(getConfig(db, 'payTimeoutMinutes')) * 60 * 1000,
     productSnapshot: {
       title: product.title,
       coverImage: (product.images && product.images[0]) || '',
@@ -1424,11 +1545,13 @@ export function getOrder(db, { orderId }, session) {
 // 客服录入完成：待受理 -> 待抢单（进池）；可选修正联系方式（变更留 order_logs）。
 export function enterOrder(db, { orderId, game, region, serviceType, customerUid, customerNickname, expectStartAt, requirementNote, sessionNote, internalNote, contactWechat, contactPhone }, session) {
   authorize('enterOrder', session);
+  assertNoRedline([requirementNote, sessionNote, internalNote].filter(Boolean).join(' '));
   const order = getById(db, 'orders', orderId);
   if (!order) throw new Error('订单不存在');
   const from = order.status;
   transaction(db, () => {
     enterOrderDomain(order, { game, region, serviceType, customerUid, customerNickname, expectStartAt, requirementNote, sessionNote, internalNote });
+    order.poolTimeoutMs = Number(getConfig(db, 'poolTimeoutMinutes')) * 60 * 1000;
     // K-05：客服可修正联系方式，变更留痕。
     const changed = [];
     if (contactWechat !== undefined && contactWechat !== order.contactWechat) {
@@ -1481,6 +1604,7 @@ export function assignOrder(db, { orderId, workerId, requestId = '', idempotency
   const before = { ...order };
   transaction(db, () => {
     assignOrderDomain(order, workerId, { assignedBy: session.userId });
+    order.assignmentTimeoutMs = Number(getConfig(db, 'assignTimeoutMinutes')) * 60 * 1000;
     recordAssignment(db, order, { type: 'ASSIGN', workerId, operatorId: session.userId, requestId: requestId || idempotencyKey });
     writeOrderLog(db, order, {
       action: 'assign', fromStatus: from, toStatus: order.status, operatorType: session.role === 'ADMIN' ? 'admin' : 'cs',
@@ -1673,7 +1797,11 @@ function settleVerifiedOrder(db, order, { customerConfirmed, requestId = '' }, s
     const wallet = ensureWallet(db, workerId);
     const rule = order.commissionRuleSnapshot?.rule || order.commission;
     const earnings = calculateEarnings({ amountFen: order.amountFen, commission: rule });
-    confirmSettlementDomain(order, { confirmedBy: session.userId, customerConfirmed });
+    confirmSettlementDomain(order, {
+      confirmedBy: session.userId,
+      customerConfirmed,
+      disputeWindowMs: Number(getConfig(db, 'disputeWindowHours')) * 60 * 60 * 1000,
+    });
     creditWallet(wallet, earnings);
     wallet.version += 1;
     wallet.updatedAt = Date.now();
@@ -1707,8 +1835,9 @@ export function reworkOrder(db, { orderId, note = '' }, session) {
   const order = getById(db, 'orders', orderId);
   if (!order) throw new Error('订单不存在');
   const from = order.status;
+  const maxReworkCount = Number(getConfig(db, 'maxReworkCount'));
   transaction(db, () => {
-    reworkOrderDomain(order, { reworkedBy: session.userId, note });
+    reworkOrderDomain(order, { reworkedBy: session.userId, note, maxReworkCount });
     writeOrderLog(db, order, { action: 'rework', fromStatus: from, toStatus: order.status, operatorType: session.role === 'ADMIN' ? 'admin' : 'cs', operatorId: session.userId, remark: note });
   });
   return order;
@@ -1822,6 +1951,8 @@ export function sendOrderMessage(db, { orderId, content }, session) {
   if (!content) throw new Error('留言内容不能为空');
   const order = getById(db, 'orders', orderId);
   if (!order) throw new Error('订单不存在');
+  assertOrderMessageAccess(db, order, session);
+  assertNoRedline(content);
   return insert(db, 'order_messages', {
     brandId: order.brandId || 'default',
     orderId,
@@ -1835,6 +1966,9 @@ export function sendOrderMessage(db, { orderId, content }, session) {
 // 订单留言列表。
 export function listOrderMessages(db, { orderId }, session) {
   authorize('listOrderMessages', session);
+  const order = getById(db, 'orders', orderId);
+  if (!order) throw new Error('订单不存在');
+  assertOrderMessageAccess(db, order, session);
   return db.order_messages.filter((m) => m.orderId === orderId);
 }
 
@@ -2213,18 +2347,24 @@ export function rejectWithdrawal(db, { withdrawalId, reason = '' }, session) {
 /* ---------------- 报表（ADMIN） ---------------- */
 
 // 订单流水报表（按状态聚合）。
-export function reportOrders(db, { from, to } = {}, session) {
+export function reportOrders(db, { from, to, brandId = '' } = {}, session) {
   authorize('reportOrders', session);
-  const rows = db.orders.filter((o) => (from == null || o.createdAt >= from) && (to == null || o.createdAt <= to));
+  const visibleBrand = assertReportBrand(session, brandId);
+  const rows = db.orders
+    .filter((o) => visibleBrand(o.brandId || 'default'))
+    .filter((o) => (from == null || o.createdAt >= from) && (to == null || o.createdAt <= to));
   const byStatus = {};
   for (const o of rows) byStatus[o.status] = (byStatus[o.status] || 0) + 1;
-  return { total: rows.length, byStatus };
+  return { total: rows.length, byStatus, list: rows };
 }
 
 // 接单人员业绩报表（按完成订单数与佣金）。
-export function reportWorkers(db, { from, to } = {}, session) {
+export function reportWorkers(db, { from, to, brandId = '' } = {}, session) {
   authorize('reportWorkers', session);
-  const rows = db.orders.filter((o) => o.status === OrderStatus.SETTLED && (from == null || o.completedAt >= from) && (to == null || o.completedAt <= to));
+  const visibleBrand = assertReportBrand(session, brandId);
+  const rows = db.orders
+    .filter((o) => visibleBrand(o.brandId || 'default'))
+    .filter((o) => o.status === OrderStatus.SETTLED && (from == null || o.completedAt >= from) && (to == null || o.completedAt <= to));
   const map = {};
   for (const o of rows) {
     map[o.workerId] = map[o.workerId] || { workerId: o.workerId, orders: 0, earningsFen: 0 };
@@ -2235,9 +2375,12 @@ export function reportWorkers(db, { from, to } = {}, session) {
 }
 
 // 提现报表（按接单人员聚合）。
-export function reportWithdrawals(db, { from, to } = {}, session) {
+export function reportWithdrawals(db, { from, to, brandId = '' } = {}, session) {
   authorize('reportWithdrawals', session);
-  const rows = db.withdrawals.filter((w) => (from == null || w.createdAt >= from) && (to == null || w.createdAt <= to));
+  const visibleBrand = assertReportBrand(session, brandId);
+  const rows = db.withdrawals
+    .filter((w) => visibleBrand(relatedBrandId(db, w)))
+    .filter((w) => (from == null || w.createdAt >= from) && (to == null || w.createdAt <= to));
   const map = {};
   for (const w of rows) {
     map[w.workerId] = map[w.workerId] || { workerId: w.workerId, count: 0, amountFen: 0, paidFen: 0 };
@@ -2249,19 +2392,27 @@ export function reportWithdrawals(db, { from, to } = {}, session) {
 }
 
 // 对账汇总：钱包可用余额合计 / 钱包总额（可用+冻结+已提现）合计。
-function reconciliationSummary(db) {
-  const totalWalletBalanceFen = db.wallets.reduce((s, w) => s + (w.availableFen || 0), 0);
-  const walletBalanceSumFen = db.wallets.reduce(
-    (s, w) => s + (w.availableFen || 0) + (w.pendingWithdrawFen || 0) + (w.withdrawnFen || 0),
-    0,
-  );
+function reconciliationSummary(db, visibleBrand = () => true) {
+  const scopedTransactions = db.wallet_transactions.filter((row) => visibleBrand(relatedBrandId(db, row)) && row.status !== 'REVERSED');
+  const scopedWalletIds = new Set(scopedTransactions.map((row) => row.walletId));
+  const scopedWallets = db.wallets.filter((wallet) => scopedWalletIds.has(wallet._id) || visibleBrand(relatedBrandId(db, wallet)));
+  const totalWalletBalanceFen = scopedTransactions.length
+    ? scopedTransactions.reduce((sum, row) => sum + (row.amountFen || 0), 0)
+    : scopedWallets.reduce((sum, wallet) => sum + (wallet.availableFen || 0), 0);
+  const pendingWithdrawFen = db.withdrawals
+    .filter((row) => visibleBrand(relatedBrandId(db, row)) && !['PAID', 'REJECTED'].includes(row.status))
+    .reduce((sum, row) => sum + (row.amountFen || 0), 0);
+  const walletBalanceSumFen = totalWalletBalanceFen + pendingWithdrawFen;
   return { totalWalletBalanceFen, walletBalanceSumFen };
 }
 
 // 利润报表（佣金入账 - 追回佣金）+ 对账卡片（reconciliationFen = profit - 钱包可用余额合计）。
-export function reportProfit(db, { from, to } = {}, session) {
+export function reportProfit(db, { from, to, brandId = '' } = {}, session) {
   authorize('reportProfit', session);
-  const rows = db.wallet_transactions.filter((t) => (t.type === 'ORDER_EARNINGS' || t.type === 'COMMISSION_REVERSAL' || t.type === 'REFUND_CLAWBACK') && (from == null || t.createdAt >= from) && (to == null || t.createdAt <= to));
+  const visibleBrand = assertReportBrand(session, brandId);
+  const rows = db.wallet_transactions
+    .filter((t) => visibleBrand(relatedBrandId(db, t)))
+    .filter((t) => (t.type === 'ORDER_EARNINGS' || t.type === 'COMMISSION_REVERSAL' || t.type === 'REFUND_CLAWBACK') && (from == null || t.createdAt >= from) && (to == null || t.createdAt <= to));
   let earningsFen = 0;
   let reversalFen = 0;
   for (const t of rows) {
@@ -2269,7 +2420,7 @@ export function reportProfit(db, { from, to } = {}, session) {
     else reversalFen += -t.amountFen;
   }
   const profitFen = earningsFen - reversalFen;
-  const { totalWalletBalanceFen, walletBalanceSumFen } = reconciliationSummary(db);
+  const { totalWalletBalanceFen, walletBalanceSumFen } = reconciliationSummary(db, visibleBrand);
   return { earningsFen, reversalFen, profitFen, totalWalletBalanceFen, walletBalanceSumFen, reconciliationFen: profitFen - totalWalletBalanceFen };
 }
 
@@ -2437,7 +2588,7 @@ export function timeoutCloseUnpaidOrders(db, { now = Date.now() } = {}, session)
 export function timeoutMarkPool(db, { now = Date.now() } = {}, session) {
   authorize('timeoutMarkPool', session);
   const poolTimeout = getConfig(db, 'poolTimeoutMinutes') * 60 * 1000;
-  const marked = updateWhere(db, 'orders', (o) => o.status === OrderStatus.PENDING_GRAB && (o.pooledAt || 0) + poolTimeout < now, { poolTimedOut: true });
+  const marked = updateWhere(db, 'orders', (o) => o.status === OrderStatus.PENDING_GRAB && (o.pooledAt || 0) + (o.poolTimeoutMs || poolTimeout) < now, { poolTimedOut: true });
   return { marked };
 }
 
@@ -2447,7 +2598,7 @@ export function timeoutRejectAssignments(db, { now = Date.now() } = {}, session)
   const assignTimeout = getConfig(db, 'assignTimeoutMinutes') * 60 * 1000;
   let rejected = 0;
   for (const order of db.orders) {
-    if (order.status === OrderStatus.ASSIGN_PENDING && (order.assignedAt || 0) + assignTimeout < now) {
+    if (order.status === OrderStatus.ASSIGN_PENDING && (order.assignedAt || 0) + (order.assignmentTimeoutMs || assignTimeout) < now) {
       const from = order.status;
       rejectAssignmentDomain(order, order.workerId, { reason: '指派超时自动拒绝' });
       writeOrderLog(db, order, { action: 'timeout-reject-assign', fromStatus: from, toStatus: order.status, operatorType: 'system' });
@@ -2471,14 +2622,19 @@ export function dashboard(db, payload, session) {
     const order = getById(db, 'orders', refund.orderId);
     return order && canSessionAccessBrand(session, order.brandId || 'default') && (!requestedBrand || (order.brandId || 'default') === requestedBrand);
   });
-  const visibleWorkerIds = new Set(db.user_brand_roles
-    .filter((row) => row.status !== 'DISABLED' && (!requestedBrand || row.brandId === requestedBrand) && canSessionAccessBrand(session, row.brandId))
-    .map((row) => row.userId));
+  const visibleWorkerIds = new Set(db.users
+    .filter((user) => user.role === 'WORKER')
+    .filter((user) => {
+      const rows = db.user_brand_roles.filter((row) => row.userId === user._id && row.status !== 'DISABLED');
+      const scopes = rows.length ? rows.map((row) => row.brandId) : ['default'];
+      return scopes.some((scope) => (!requestedBrand || scope === requestedBrand) && canSessionAccessBrand(session, scope));
+    })
+    .map((user) => user._id));
   return {
     totalOrders: orders.length,
     pendingAcceptOrders: orders.filter((o) => o.status === OrderStatus.PENDING_ACCEPT).length,
     inServiceOrders: orders.filter((o) => o.status === OrderStatus.IN_SERVICE).length,
-    workers: db.users.filter((u) => u.role === 'WORKER' && (!requestedBrand || visibleWorkerIds.has(u._id))).length,
+    workers: visibleWorkerIds.size,
     pendingConfirmOrders: orders.filter((o) => o.status === OrderStatus.PENDING_CONFIRM).length,
     pendingRefunds: refunds.filter((r) => r.status === 'PENDING_APPROVAL').length,
     pendingWithdrawals: db.withdrawals.filter((w) => ['PENDING_REVIEW', 'SUBMITTED', 'REVIEWING', 'APPROVED', 'PAYING', 'PAY_FAILED'].includes(w.status) && canSessionAccessBrand(session, w.brandId || 'default') && (!requestedBrand || (w.brandId || 'default') === requestedBrand)).length,
@@ -2560,11 +2716,11 @@ export function compensatePayments(db, payload = {}, session) {
 
 // action 名 -> 处理函数（供 dispatch 与 api-server 统一入口使用）。
 const ACTION_MAP = {
-  miniLogin, oauthExchange, authLogin, workerLogin, changePassword, getAccessProfile,
+  miniLogin, oauthExchange, authLogin, workerLogin, changePassword, getAccessProfile, getRuntimeConfig,
   getSecurityStatus, setupMfa, enableMfa, verifySecurityChallenge, revokeSessions, listLoginHistory, setAccountStatus, refreshSession,
   createStaff, listUsers, updateStaff, listUserBrandRoles, saveUserBrandRoles, listAuditLogs,
   freezeWallet, createWorker, updateWorker, listWorkers,
-  listProducts, getProduct, saveProduct, updateProductStatus,
+  listProducts, getProduct, listManagedProducts, getManagedProduct, saveProduct, updateProductStatus,
   listDicts, saveDict, getConfigs, updateConfigs,
   addVip, removeVip, listVips,
   getBrandConfig, listBrands, saveBrandConfig,

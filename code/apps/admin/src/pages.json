@@ -13,6 +13,12 @@
       }
     },
     {
+      "path": "pages/security/index",
+      "style": {
+        "navigationBarTitleText": "安全中心"
+      }
+    },
+    {
       "path": "pages/accounts/index",
       "style": {
         "navigationBarTitleText": "账号管理"

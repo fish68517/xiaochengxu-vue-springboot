@@ -7,7 +7,7 @@
     </template>
     <view v-if="error" class="error-box"><view><text class="error-title">待办加载失败</text><text class="error-text">{{ error }}</text></view><button class="retry-btn" @click="load">重新加载</button></view>
     <view class="todo-grid"><view v-for="(item,index) in todoCards" :key="item.key" class="todo-card" @click="go(item.url)"><view class="todo-top"><view class="todo-icon" :class="`tone-${index}`"><view class="todo-shape"/></view><text class="todo-arrow">›</text></view><text class="todo-count">{{ item.count }}</text><text class="todo-label">{{ item.label }}</text><text class="todo-action">查看待办</text></view></view>
-    <view class="overview-grid"><view class="recent-panel"><view class="panel-head"><view><text class="panel-title">处理建议</text><text class="panel-subtitle">按优先级开始今天的工作</text></view><text class="refresh-time">{{ lastRefresh }}</text></view><view class="recommendation"><view class="recommend-mark urgent"/><view><text>优先处理待受理与超时订单</text><text>减少客户等待时间，必要时及时指派服务人员。</text></view></view><view class="recommendation"><view class="recommend-mark"/><view><text>及时核对完成凭证</text><text>确认服务结果后完成结单或进入售后流程。</text></view></view></view><view class="status-panel"><text class="panel-title">今日状态</text><view class="status-ring"><view><text>{{ total }}</text><text>全部待办</text></view></view><text class="status-note">数据每 10 秒自动刷新</text></view></view>
+    <view class="overview-grid"><view class="recent-panel"><view class="panel-head"><view><text class="panel-title">处理建议</text><text class="panel-subtitle">按优先级开始今天的工作</text></view><text class="refresh-time">{{ lastRefresh }}</text></view><view class="recommendation"><view class="recommend-mark urgent"/><view><text>优先处理待受理与超时订单</text><text>减少客户等待时间，必要时及时指派服务人员。</text></view></view><view class="recommendation"><view class="recommend-mark"/><view><text>及时核对完成凭证</text><text>确认服务结果后完成结单或进入售后流程。</text></view></view></view><view class="status-panel"><text class="panel-title">今日状态</text><view class="status-ring"><view><text>{{ total }}</text><text>全部待办</text></view></view><text class="status-note">数据每 {{ pollSeconds }} 秒自动刷新</text></view></view>
   </WorkbenchShell>
 </template>
 
@@ -24,6 +24,7 @@ const brandOptions = ref([{ brandId: '', name: '全部授权品牌' }]);
 const brandIndex = ref(0);
 let stop = null;
 const lastRefresh = ref('等待首次刷新');
+const pollSeconds = ref(10);
 
 const todoCards = computed(() => [
   { key: 'pendingAccept', label: '待受理', count: todos.pendingAccept, url: '/pages/cs/orders?status=PENDING_ACCEPT' },
@@ -40,15 +41,14 @@ async function load() {
   error.value = '';
   const before = total.value;
   try {
-  const [orders, withdrawals] = await Promise.all([api.listOrders({}), api.listWithdrawals().catch(() => [])]);
-  const next = { pendingAccept: 0, pendingConfirm: 0, disputing: 0, pendingRefund: 0, pendingWithdrawal: 0 };
-  (orders || []).forEach((o) => {
-    if (o.status === 'PENDING_ACCEPT') next.pendingAccept += 1;
-    else if (o.status === 'PENDING_CONFIRM') next.pendingConfirm += 1;
-    else if (o.status === 'DISPUTING') next.disputing += 1;
-    else if (o.status === 'REFUNDING') next.pendingRefund += 1;
-  });
-  next.pendingWithdrawal = (withdrawals || []).filter((w) => w.status === 'PENDING_REVIEW').length;
+  const summary = await api.dashboard();
+  const next = {
+    pendingAccept: Number(summary.pendingAcceptOrders || 0),
+    pendingConfirm: Number(summary.pendingConfirmOrders || 0),
+    disputing: Number(summary.pendingDisputes || 0),
+    pendingRefund: Number(summary.pendingRefunds || 0),
+    pendingWithdrawal: Number(summary.pendingWithdrawals || 0),
+  };
   Object.assign(todos, next);
   if (total.value > before) playBeep();
   lastRefresh.value = `最近刷新 ${new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' })}`;
@@ -71,10 +71,14 @@ function switchBrand(event) {
   load();
 }
 
-onLoad(() => {
+onLoad(async () => {
   if (!guard(['CS'])) return;
   initBrandSwitcher();
-  stop = startPoll(load, 10000);
+  try {
+    const config = await api.getRuntimeConfig();
+    pollSeconds.value = Number(config.pollIntervalSeconds) || 10;
+  } catch (_error) { /* 配置不可用时使用安全默认值；业务统计仍由后端负责 */ }
+  stop = startPoll(load, pollSeconds.value * 1000);
 });
 
 onUnload(() => { if (stop) stop(); });
