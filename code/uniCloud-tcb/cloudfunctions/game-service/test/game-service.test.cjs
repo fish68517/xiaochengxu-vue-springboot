@@ -171,6 +171,23 @@ test('多品牌权限矩阵：品牌管理员只能访问授权品牌，停用�
   assert.deepEqual(new Set(all.map((item) => item.brandId)), new Set(['demo-a', 'demo-b']));
 });
 
+test('商品保存：brandId 与素材附件 ID 分离校验，允许将历史商品迁移到有效品牌', async () => {
+  const { call, repo, tokens } = await setup();
+  await repo.insert('brands', { _id: 'brand-a', brandId: 'demo-a', code: 'demo-a', appId: 'wx-a', name: 'A', status: 'ON' });
+
+  const missingBrand = await call('saveProduct', { title: '错误品牌商品', priceFen: 100, commission: { type: 'fixed', valueFen: 10 } }, tokens.admin);
+  assert.equal(missingBrand.ok, false);
+  assert.match(missingBrand.message, /所属品牌不存在/);
+
+  const mistakenAsset = await call('saveProduct', { title: '素材误填品牌', priceFen: 100, commission: { type: 'fixed', valueFen: 10 }, brandId: 'demo-a', assetIds: ['demo-a'] }, tokens.admin);
+  assert.equal(mistakenAsset.ok, false);
+  assert.match(mistakenAsset.message, /素材附件不存在/);
+
+  const product = await call('saveProduct', { title: '正确商品', priceFen: 100, commission: { type: 'fixed', valueFen: 10 }, brandId: 'demo-a', assetIds: [] }, tokens.admin);
+  assert.equal(product.brandId, 'demo-a');
+  assert.deepEqual(product.assetIds, []);
+});
+
 test('登录与角色矩阵:worker/admin 登录,CS 可 listWorkers', async () => {
   const { call, tokens, users } = await setup();
   const wl = await call('workerLogin', { phone: '13800000001', password: 'worker123' });

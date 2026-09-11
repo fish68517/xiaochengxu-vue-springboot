@@ -1001,6 +1001,11 @@ export function getManagedProduct(db, { productId }, session) {
 export function saveProduct(db, { id, game, serviceType, tierName, guaranteedOutput, outputUnit, priceFen, commission, commissionRuleId = '', images = [], assetIds = [], status = 'ON', sort = 0, title, formSchema = {}, brandId = 'default', requestId = '', idempotencyKey = '' }, session) {
   authorize('saveProduct', session);
   assertSessionBrand(session, brandId);
+  if (db.brands.length) {
+    const targetBrand = db.brands.find((item) => item.brandId === brandId);
+    if (!targetBrand) throw new Error('商品所属品牌不存在，请在“所属品牌”中选择有效品牌');
+    if (!['ON', 'ACTIVE'].includes(targetBrand.status)) throw new Error('商品所属品牌已停用，不能保存商品');
+  }
   assertNoRedline([title, game, serviceType, tierName].filter(Boolean).join(' '));
   if (!title) throw new Error('商品名不能为空');
   if (!Number.isInteger(priceFen) || priceFen <= 0) throw new Error('商品价格必须为正整数（分）');
@@ -1009,7 +1014,8 @@ export function saveProduct(db, { id, game, serviceType, tierName, guaranteedOut
   if (!Number.isInteger(sort)) throw new Error('商品排序必须为整数');
   for (const assetId of assetIds) {
     const asset = getById(db, 'attachments', assetId);
-    if (!asset || (asset.brandId || 'default') !== brandId) throw new Error('商品资产不存在或不属于当前品牌');
+    if (!asset) throw new Error(`商品素材附件不存在：${assetId}；没有素材请将素材附件 ID 留空`);
+    if ((asset.brandId || 'default') !== brandId) throw new Error(`商品素材附件与所属品牌不匹配：${assetId}`);
   }
   if (commissionRuleId) {
     const rule = getById(db, 'commission_rules', commissionRuleId);

@@ -1751,6 +1751,12 @@ const services = {
 
   async saveProduct(repo, { id, title, game, serviceType, tierName, guaranteedOutput, outputUnit, priceFen, commission, images = [], assetIds = [], formSchema = [], commissionRuleId = '', status = 'ON', sort = 0, brandId = 'default', description = '', requestId = '', idempotencyKey = '' }, session) {
     assertBrandAccess(session, brandId);
+    const configuredBrands = await repo.find('brands', {});
+    if (configuredBrands.length) {
+      const targetBrand = configuredBrands.find((item) => item.brandId === brandId);
+      if (!targetBrand) throw new Error('商品所属品牌不存在，请在“所属品牌”中选择有效品牌');
+      if (!['ON', 'ACTIVE'].includes(targetBrand.status)) throw new Error('商品所属品牌已停用，不能保存商品');
+    }
     const textForCheck = [title, game, serviceType, tierName, description].filter(Boolean).join(' ');
     D.assertNoRedline(textForCheck);
     if (!title && !tierName) throw new Error('商品名/档位名不能为空');
@@ -1760,7 +1766,8 @@ const services = {
     if (!Number.isFinite(Number(sort))) throw new Error('商品排序必须为数字');
     for (const assetId of assetIds) {
       const attachment = await repo.getById('attachments', assetId);
-      if (!attachment || (attachment.brandId || 'default') !== brandId) throw new Error('商品素材不存在或品牌不匹配');
+      if (!attachment) throw new Error(`商品素材附件不存在：${assetId}；没有素材请将素材附件 ID 留空`);
+      if ((attachment.brandId || 'default') !== brandId) throw new Error(`商品素材附件与所属品牌不匹配：${assetId}`);
     }
     if (commissionRuleId) {
       const rule = await repo.getById('commission_rules', commissionRuleId);

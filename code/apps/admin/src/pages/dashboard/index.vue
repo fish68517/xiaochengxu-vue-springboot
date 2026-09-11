@@ -2,7 +2,7 @@
   <AdminShell title="管理概览">
   <view class="page">
     <PageHeader eyebrow="OPERATIONS OVERVIEW" title="管理概览" description="实时掌握订单履约、待办事项与品牌运营状态">
-      <picker v-if="brandOptions.length > 2" :range="brandOptions" range-key="name" :value="brandIndex" @change="switchBrand">
+      <picker v-if="brandOptions.length > 1" :range="brandOptions" range-key="name" :value="brandIndex" @change="switchBrand">
         <view class="brand-switch">当前品牌：{{ brandOptions[brandIndex]?.name || '全部授权品牌' }} ▾</view>
       </picker>
     </PageHeader>

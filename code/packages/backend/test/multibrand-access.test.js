@@ -28,6 +28,20 @@ test('多品牌：公开商品按 BrandContext 隔离，H5 token 绑定客户品
   assert.throws(() => h5Token(db, { productId: b._id }, customerA), /BRAND_FORBIDDEN/);
 });
 
+test('商品保存：品牌 ID 不能写入素材附件 ID', () => {
+  const db = createMemoryDb();
+  const { session } = seedAdmin(db);
+  seedBrands(db, session);
+  assert.throws(
+    () => saveProduct(db, { title: '错误素材', priceFen: 1000, commission: { type: 'fixed', valueFen: 100 }, brandId: 'brand-a', assetIds: ['brand-a'] }, session),
+    /素材附件不存在/,
+  );
+  assert.throws(
+    () => saveProduct(db, { title: '缺少品牌', priceFen: 1000, commission: { type: 'fixed', valueFen: 100 } }, session),
+    /所属品牌不存在/,
+  );
+});
+
 test('多品牌：品牌管理员 profile/列表/写操作受 scope 约束，越权由统一门禁拒绝', () => {
   const db = createMemoryDb();
   const { session: adminSession } = seedAdmin(db);

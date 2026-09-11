@@ -8,7 +8,7 @@ const SESSION_TTL_MS = 30 * 60e3;
 const SETUP_ACTIONS = new Set(['getSecurityStatus', 'setupMfa', 'enableMfa', 'changePassword', 'revokeSessions', 'getAccessProfile', 'listLoginHistory']);
 const SECURITY_ROLES = ['WORKER', 'CUSTOMER_SERVICE', 'CS', 'ADMIN', 'DISPATCHER', 'BRAND_ADMIN', 'FINANCE_REVIEWER', 'ARBITRATOR', 'SUPER_ADMIN'];
 const HIGH_ROLES = new Set(['ADMIN', 'SUPER_ADMIN', 'BRAND_ADMIN', 'FINANCE_REVIEWER', 'CS', 'CUSTOMER_SERVICE', 'DISPATCHER']);
-const SIMPLE_ADMIN_ROLES = new Set(['ADMIN', 'SUPER_ADMIN', 'BRAND_ADMIN', 'FINANCE_REVIEWER', 'ARBITRATOR']);
+const SIMPLE_ADMIN_ROLES = new Set(['ADMIN', 'SUPER_ADMIN', 'BRAND_ADMIN', 'FINANCE_REVIEWER', 'ARBITRATOR', 'CS', 'DISPATCHER']);
 const SENSITIVE_ACTIONS = new Set(['approveRefund', 'rejectRefund', 'adjustWallet', 'freezeWallet', 'approveWithdrawal', 'markWithdrawalPaid', 'startWithdrawalPayment', 'failWithdrawalPayment', 'rejectWithdrawal', 'createStaff', 'updateStaff', 'saveUserBrandRoles', 'updateConfigs', 'saveBrandConfig', 'setAccountStatus', 'viewSensitiveInformation', 'processDataRightsRequest', 'updateLaunchPolicy', 'exportReconciliation', 'closeReconciliationIssue']);
 const hash = (value) => createHash('sha256').update(String(value)).digest('hex');
 const id = () => randomBytes(20).toString('hex');
@@ -256,7 +256,7 @@ function createAccountSecurity({ repo, env = process.env, now = Date.now, async:
     const user = yield* validateSession(session, 'getSecurityStatus');
     const security = yield op('getById', 'account_security', user._id);
     const all = yield op('find', 'auth_sessions', { userId: user._id });
-    return { mfaEnabled: !!security?.mfaEnabled, mfaRequired: strictSecurity(env) && [user.role, ...(session.roles || [])].some((r) => HIGH_ROLES.has(r)), mustChangePwd: !!user.mustChangePwd, activeSessions: all.filter((x) => !x.revokedAt && x.expiresAt > now() && x.securityVersion === (user.securityVersion || 0)).length, passwordAlgorithm: 'scrypt', strict: strictSecurity(env) };
+    return { mfaEnabled: !!security?.mfaEnabled, mfaRequired: strictSecurity(env) && !simpleAdminLogin(env, user.role) && [user.role, ...(session.roles || [])].some((r) => HIGH_ROLES.has(r)), mustChangePwd: !!user.mustChangePwd, activeSessions: all.filter((x) => !x.revokedAt && x.expiresAt > now() && x.securityVersion === (user.securityVersion || 0)).length, passwordAlgorithm: 'scrypt', strict: strictSecurity(env) };
   }
   function* setupMfa(payload, session) {
     const user = yield* validateSession(session, 'setupMfa');

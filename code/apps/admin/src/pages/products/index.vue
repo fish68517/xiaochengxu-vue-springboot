@@ -21,6 +21,14 @@
       <text class="section-title">{{ editingId ? '编辑商品' : '新增商品' }}</text>
 
       <view class="field">
+        <text class="label">所属品牌</text>
+        <picker :range="brandOptions" range-key="name" :value="brandPickerIndex" @change="onBrandChange">
+          <view class="input picker-input" :class="{ invalid: !selectedBrandValid }">{{ selectedBrandLabel }}</view>
+        </picker>
+        <text class="field-hint">品牌 ID 应在这里选择；商品保存后只会展示在该品牌客户端。</text>
+      </view>
+
+      <view class="field">
         <text class="label">游戏</text>
         <input v-model="form.game" class="input" placeholder="游戏名（来自字典）" />
       </view>
@@ -60,8 +68,9 @@
         <textarea v-model="form.imagesText" class="textarea" placeholder="https://..." />
       </view>
       <view class="field">
-        <text class="label">品牌附件 ID（每行一个）</text>
-        <textarea v-model="form.assetIdsText" class="textarea" placeholder="attachment-id" />
+        <text class="label">商品素材附件 ID（每行一个）</text>
+        <textarea v-model="form.assetIdsText" class="textarea" placeholder="填写上传素材后返回的 attachment-id；没有素材请留空" />
+        <text class="field-hint warning">这里不是品牌 ID，请勿填写 demo-a；没有上传素材时保持为空。</text>
       </view>
       <view class="field">
         <text class="label">下单动态表单 JSON Schema</text>
@@ -84,9 +93,9 @@
 </template>
 
 <script setup>
-import { ref } from 'vue';
+import { computed, ref } from 'vue';
 import { onLoad } from '@dcloudio/uni-app';
-import { api } from '../../api.js';
+import { api, getActiveBrandId } from '../../api.js';
 import { findRedline } from '../../utils/redline.js';
 import { gameText, serviceText } from '../../utils/display.js';
 
@@ -94,16 +103,35 @@ const products = ref([]);
 const error = ref('');
 const saving = ref(false);
 const editingId = ref('');
+const brandOptions = ref([]);
+const form = ref(emptyForm());
+
+const selectedBrandValid = computed(() => brandOptions.value.some((brand) => brand.brandId === form.value.brandId));
+const brandPickerIndex = computed(() => {
+  const index = brandOptions.value.findIndex((brand) => brand.brandId === form.value.brandId);
+  return index >= 0 ? index : 0;
+});
+const selectedBrandLabel = computed(() => {
+  const selected = brandOptions.value.find((brand) => brand.brandId === form.value.brandId);
+  if (selected) return `${selected.name || selected.brandId}（${selected.brandId}）`;
+  if (form.value.brandId) return `当前 ${form.value.brandId} 无有效品牌配置，请重新选择`;
+  return brandOptions.value.length ? '请选择所属品牌' : '暂无可用品牌，请先配置品牌';
+});
+
+function defaultBrandId() {
+  const active = getActiveBrandId();
+  if (active && brandOptions.value.some((brand) => brand.brandId === active)) return active;
+  return brandOptions.value.length === 1 ? brandOptions.value[0].brandId : '';
+}
 
 function emptyForm() {
   return {
+    brandId: defaultBrandId(),
     game: '', serviceType: '', tierName: '', guaranteedOutput: '', outputUnit: '',
     priceYuan: '', commission: { type: 'fixed' }, commissionValue: '', imagesText: '', assetIdsText: '', formSchemaText: '{\n  "required": [],\n  "properties": {}\n}',
     sort: '', status: 'ON',
   };
 }
-const form = ref(emptyForm());
-
 // 主键兼容：统一 _id 后以 _id 为准，兼容旧 id。
 function idOf(p) { return p._id || p.id; }
 
@@ -113,8 +141,10 @@ onLoad(load);
 async function load() {
   error.value = '';
   try {
-    const list = await api.listManagedProducts({});
+    const [list, brands] = await Promise.all([api.listManagedProducts({}), api.listBrands()]);
     products.value = Array.isArray(list) ? list : [];
+    brandOptions.value = (Array.isArray(brands) ? brands : []).filter((brand) => brand && ['ON', 'ACTIVE'].includes(brand.status));
+    if (!editingId.value && !selectedBrandValid.value) form.value.brandId = defaultBrandId();
   } catch (e) {
     error.value = e.message || '商品列表加载失败';
   }
@@ -141,7 +171,9 @@ async function toggle(p) {
 
 function edit(p) {
   editingId.value = idOf(p);
+  const productBrandId = p.brandId || '';
   form.value = {
+    brandId: brandOptions.value.some((brand) => brand.brandId === productBrandId) ? productBrandId : defaultBrandId(),
     game: p.game || '',
     serviceType: p.serviceType || '',
     tierName: p.tierName || '',
@@ -166,6 +198,10 @@ function newProduct() {
 }
 
 function onCommissionType(e) { form.value.commission.type = e.detail.value; }
+function onBrandChange(e) {
+  const selected = brandOptions.value[Number(e.detail.value) || 0];
+  form.value.brandId = selected ? selected.brandId : '';
+}
 
 // 文案红线校验：档位名/服务类型禁止出现禁用词，命中即拦截并提示。
 function validateRedline() {
@@ -186,6 +222,7 @@ function buildPayload() {
   const assetIds = form.value.assetIdsText.split('\n').map((s) => s.trim()).filter(Boolean);
   const formSchema = JSON.parse(form.value.formSchemaText || '{}');
   return {
+    brandId: form.value.brandId,
     title: form.value.tierName.trim(),
     game: form.value.game.trim(),
     serviceType: form.value.serviceType.trim(),
@@ -204,14 +241,19 @@ function buildPayload() {
 
 // 保存商品：真实调 saveProduct，成功后以服务端返回替换/新增本地行。
 async function save() {
+  if (!selectedBrandValid.value) { uni.showToast({ title: '请先选择有效的所属品牌', icon: 'none' }); return; }
   if (!form.value.game) { uni.showToast({ title: '游戏不能为空', icon: 'none' }); return; }
   if (!form.value.serviceType) { uni.showToast({ title: '服务类型不能为空', icon: 'none' }); return; }
   if (!form.value.tierName) { uni.showToast({ title: '档位名不能为空', icon: 'none' }); return; }
   if (!validateRedline()) return;
   const guaranteedOutput = Number(form.value.guaranteedOutput);
   const priceFen = Math.round(parseFloat(form.value.priceYuan) * 100);
+  const assetIds = form.value.assetIdsText.split('\n').map((s) => s.trim()).filter(Boolean);
   if (!(guaranteedOutput > 0)) { uni.showToast({ title: '保底产出量需大于 0', icon: 'none' }); return; }
   if (!(priceFen > 0)) { uni.showToast({ title: '价格需大于 0', icon: 'none' }); return; }
+  if (assetIds.some((assetId) => brandOptions.value.some((brand) => brand.brandId === assetId))) {
+    uni.showToast({ title: '素材附件 ID 不能填写品牌 ID；没有素材请留空', icon: 'none' }); return;
+  }
 
   saving.value = true;
   try {
@@ -248,6 +290,7 @@ async function save() {
 .field { margin-bottom: 14px; }
 .label { display: block; font-size: 12px; color: #344054; margin-bottom: 6px;font-weight:600 }
 .input { height: 40px; padding: 0 12px; background: #fff; border: 1px solid var(--es-border); border-radius: 8px; color: var(--es-text); }
+.picker-input{display:flex;align-items:center}.picker-input.invalid{color:var(--es-danger);border-color:#fda29b;background:#fff6f5}.field-hint{display:block;margin-top:6px;color:var(--es-text-soft);font-size:11px;line-height:1.55}.field-hint.warning{color:#b54708}
 .textarea { width: 100%; min-height: 90px; padding: 10px 12px; background: #fff; border: 1px solid var(--es-border); border-radius: 8px; color: var(--es-text); }
 .schema-input { min-height: 220rpx; font-family: monospace; }
 .radio-row { display: flex; gap: 32rpx; margin-bottom: 20rpx; }

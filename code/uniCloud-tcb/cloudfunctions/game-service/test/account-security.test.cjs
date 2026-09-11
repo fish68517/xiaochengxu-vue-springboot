@@ -29,7 +29,7 @@ test('legacy successful login migrates hash, setup-restricted session cannot per
   await engine.revokeSessions({}, claims);
   await assert.rejects(engine.validateSession(claims, 'getSecurityStatus'), /会话/);
 });
-test('ADMIN_SIMPLE_LOGIN：管理账号只需账号密码，不强制 MFA 或敏感操作二次验证', async () => {
+test('ADMIN_SIMPLE_LOGIN：管理和客服账号只需账号密码，不强制 MFA 或敏感操作二次验证', async () => {
   const simpleEnv = { ...env, ADMIN_SIMPLE_LOGIN: 'true' };
   const { repo, engine } = await fixture(simpleEnv);
   await repo.insert('account_security', { _id: 'admin', mfaEnabled: true, mfaSecret: { encrypted: 'unused-in-simple-mode' } });
@@ -38,6 +38,15 @@ test('ADMIN_SIMPLE_LOGIN：管理账号只需账号密码，不强制 MFA 或敏
   assert.equal(session.scope, 'full');
   await engine.validateSession(session, 'approveRefund');
   assert.doesNotThrow(() => S.assertSensitiveAction('approveRefund', session, '', simpleEnv));
+  assert.equal((await engine.getSecurityStatus({}, session)).mfaRequired, false);
+
+  await repo.insert('users', { _id: 'cs', role: 'CUSTOMER_SERVICE', phone: '13900000000', passwordHash: S.hashPassword('Valid-Password-456'), status: 'ACTIVE' });
+  await repo.insert('account_security', { _id: 'cs', mfaEnabled: true, mfaSecret: { encrypted: 'unused-in-simple-mode' } });
+  const csUser = await engine.login({ phone: '13900000000', password: 'Valid-Password-456', roles: ['CS'] });
+  const csSession = await engine.createSession(csUser, { roles: ['CS'] });
+  assert.equal(csSession.scope, 'full');
+  await engine.validateSession(csSession, 'listOrders');
+  assert.equal((await engine.getSecurityStatus({}, csSession)).mfaRequired, false);
 });
 test('persistent account, IP and device limits survive a new service instance', async () => {
   const { repo, engine } = await fixture();
