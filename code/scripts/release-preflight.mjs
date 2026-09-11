@@ -79,6 +79,7 @@ export function validateReleaseEnvironment(environment, source = process.env) {
     if (!Number.isInteger(coolingDays) || coolingDays < 1 || coolingDays > 90) errors.push('ACCOUNT_CLOSURE_COOLING_DAYS 必须为 1～90 天');
   }
   if (environment === 'production') {
+    if (source.ADMIN_SIMPLE_LOGIN === 'true') errors.push('production 禁止启用 ADMIN_SIMPLE_LOGIN；正式环境应使用 MFA 与二次验证');
     if (source.RELEASE_APPROVED !== 'true') errors.push('production 需要 RELEASE_APPROVED=true');
     if (!source.DB_BACKUP_ID) errors.push('production 需要 DB_BACKUP_ID');
     if (!source.ROLLBACK_BUNDLE_PATH) errors.push('production 需要 ROLLBACK_BUNDLE_PATH');

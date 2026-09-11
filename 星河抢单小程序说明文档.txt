@@ -6,6 +6,13 @@
 | 客服 | `13800000002` | `cs123` |
 | 接单员 | `13800000001` | `worker123` |
 
+
+管理员新密码
+Customer@@123456789
+
+客服
+Customer@@123456789
+
 unicloud 相关  15071469547@163.com  320435Yhw
 https://unicloud.dcloud.net.cn/
 

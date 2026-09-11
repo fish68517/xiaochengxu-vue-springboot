@@ -8,6 +8,7 @@ const SESSION_TTL_MS = 30 * 60e3;
 const SETUP_ACTIONS = new Set(['getSecurityStatus', 'setupMfa', 'enableMfa', 'changePassword', 'revokeSessions', 'getAccessProfile', 'listLoginHistory']);
 const SECURITY_ROLES = ['WORKER', 'CUSTOMER_SERVICE', 'CS', 'ADMIN', 'DISPATCHER', 'BRAND_ADMIN', 'FINANCE_REVIEWER', 'ARBITRATOR', 'SUPER_ADMIN'];
 const HIGH_ROLES = new Set(['ADMIN', 'SUPER_ADMIN', 'BRAND_ADMIN', 'FINANCE_REVIEWER', 'CS', 'CUSTOMER_SERVICE', 'DISPATCHER']);
+const SIMPLE_ADMIN_ROLES = new Set(['ADMIN', 'SUPER_ADMIN', 'BRAND_ADMIN', 'FINANCE_REVIEWER', 'ARBITRATOR']);
 const SENSITIVE_ACTIONS = new Set(['approveRefund', 'rejectRefund', 'adjustWallet', 'freezeWallet', 'approveWithdrawal', 'markWithdrawalPaid', 'startWithdrawalPayment', 'failWithdrawalPayment', 'rejectWithdrawal', 'createStaff', 'updateStaff', 'saveUserBrandRoles', 'updateConfigs', 'saveBrandConfig', 'setAccountStatus', 'viewSensitiveInformation', 'processDataRightsRequest', 'updateLaunchPolicy', 'exportReconciliation', 'closeReconciliationIssue']);
 const hash = (value) => createHash('sha256').update(String(value)).digest('hex');
 const id = () => randomBytes(20).toString('hex');
@@ -18,6 +19,10 @@ const equal = (a, b) => {
 };
 function strictSecurity(env = process.env) {
   return ['staging', 'production'].includes(env.APP_ENV) || env.ACCOUNT_SECURITY_ENFORCE === 'true';
+}
+function simpleAdminLogin(env = process.env, role = '') {
+  const normalized = role === 'CUSTOMER_SERVICE' ? 'CS' : String(role || '');
+  return env.ADMIN_SIMPLE_LOGIN === 'true' && SIMPLE_ADMIN_ROLES.has(normalized);
 }
 function assertPasswordStrength(password) {
   const text = String(password || '');
@@ -103,7 +108,7 @@ function verifyStepUpToken(token, session, env = process.env, now = Date.now()) 
   } catch { throw fail('请先在安全中心完成二次验证', 'STEP_UP_REQUIRED'); }
 }
 function assertSensitiveAction(action, session, token, env = process.env, now = Date.now()) {
-  if (strictSecurity(env) && SENSITIVE_ACTIONS.has(action)) verifyStepUpToken(token, session, env, now);
+  if (strictSecurity(env) && SENSITIVE_ACTIONS.has(action) && !simpleAdminLogin(env, session?.role)) verifyStepUpToken(token, session, env, now);
 }
 const op = (method, ...args) => ({ method, args });
 function runSync(iterator, repo) {
@@ -197,8 +202,9 @@ function createAccountSecurity({ repo, env = process.env, now = Date.now, async:
     if (!user || !verified.valid || (user.status && user.status !== 'ACTIVE') || (roles.length && !roles.includes(role))) return yield* failedLogin(state, user, context);
     if (user.lockedUntil > now()) throw fail('登录失败次数过多，已锁定，请稍后再试', 'RATE_LIMITED');
     const security = yield op('getById', 'account_security', user._id);
-    const mfaVerified = security?.mfaEnabled ? yield* consumeMfa(user._id, payload) : false;
-    if (security?.mfaEnabled && !mfaVerified) return yield* failedLogin(state, user, context);
+    const skipAdminMfa = simpleAdminLogin(env, role);
+    const mfaVerified = security?.mfaEnabled && !skipAdminMfa ? yield* consumeMfa(user._id, payload) : false;
+    if (security?.mfaEnabled && !skipAdminMfa && !mfaVerified) return yield* failedLogin(state, user, context);
     const patch = { loginFailCount: 0, lockedUntil: 0, updatedAt: now() };
     if (verified.legacy) patch.passwordHash = hashPassword(payload.password);
     try { assertPasswordStrength(payload.password); } catch { if (strictSecurity(env)) patch.mustChangePwd = true; }
@@ -211,7 +217,7 @@ function createAccountSecurity({ repo, env = process.env, now = Date.now, async:
     const security = yield op('getById', 'account_security', user._id);
     const roles = access.roles || [user.role];
     const mfaRequired = roles.some((role) => HIGH_ROLES.has(role));
-    const claims = { userId: user._id, role: user.role, ...access, securityVersion: user.securityVersion || 0, sid: id(), iat: now(), exp: now() + SESSION_TTL_MS, mfaAt: user._authentication?.mfaAt || 0, scope: strictSecurity(env) && ((mfaRequired && !security?.mfaEnabled) || user.mustChangePwd) ? 'security-setup' : 'full' };
+    const claims = { userId: user._id, role: user.role, ...access, securityVersion: user.securityVersion || 0, sid: id(), iat: now(), exp: now() + SESSION_TTL_MS, mfaAt: user._authentication?.mfaAt || 0, scope: strictSecurity(env) && ((!simpleAdminLogin(env, user.role) && mfaRequired && !security?.mfaEnabled) || user.mustChangePwd) ? 'security-setup' : 'full' };
     yield op('insert', 'auth_sessions', { _id: claims.sid, userId: user._id, securityVersion: claims.securityVersion, createdAt: now(), expiresAt: claims.exp, revokedAt: 0 });
     return claims;
   }
@@ -226,7 +232,7 @@ function createAccountSecurity({ repo, env = process.env, now = Date.now, async:
     if (strictSecurity(env) && !SETUP_ACTIONS.has(action)) {
       if (user.mustChangePwd) throw fail('请先在安全中心修改初始或弱密码', 'PASSWORD_CHANGE_REQUIRED');
       const roles = [user.role, ...(session.roles || [])];
-      if (roles.some((role) => HIGH_ROLES.has(role))) {
+      if (!simpleAdminLogin(env, user.role) && roles.some((role) => HIGH_ROLES.has(role))) {
         const security = yield op('getById', 'account_security', user._id);
         if (!security?.mfaEnabled || !session.mfaAt || session.scope === 'security-setup') throw fail('请先在安全中心绑定 MFA 并重新登录', 'MFA_REQUIRED');
       }
@@ -303,7 +309,7 @@ function createAccountSecurity({ repo, env = process.env, now = Date.now, async:
     assertPasswordStrength(payload.newPassword);
     if (verifyPassword(payload.newPassword, user.passwordHash).valid) throw fail('新密码不能与旧密码相同', 'WEAK_PASSWORD');
     const security = yield op('getById', 'account_security', user._id);
-    if (security?.mfaEnabled) verifyStepUpToken(payload.stepUpToken, session, env, now());
+    if (security?.mfaEnabled && !simpleAdminLogin(env, user.role)) verifyStepUpToken(payload.stepUpToken, session, env, now());
     yield op('updateById', 'users', user._id, { passwordHash: hashPassword(payload.newPassword), mustChangePwd: false, passwordChangedAt: now() });
     yield* bumpVersion(user._id); yield* audit('changePassword', user._id, session);
     return { ok: true, requiresLogin: true };
@@ -332,4 +338,4 @@ function createAccountSecurity({ repo, env = process.env, now = Date.now, async:
   }
   return Object.fromEntries(Object.entries({ login, createSession, validateSession, getSecurityStatus, setupMfa, enableMfa, verifySecurityChallenge, revokeSessions, changePassword, listLoginHistory, setAccountStatus, refreshSession }).map(([name, fn]) => [name, (...args) => run(fn(...args))]));
 }
-module.exports = { createAccountSecurity, hashPassword, verifyPassword, assertPasswordStrength, publicUser, totp, strictSecurity, assertSensitiveAction, verifyStepUpToken, signed, SECURITY_ROLES, SENSITIVE_ACTIONS, SESSION_TTL_MS };
+module.exports = { createAccountSecurity, hashPassword, verifyPassword, assertPasswordStrength, publicUser, totp, strictSecurity, simpleAdminLogin, assertSensitiveAction, verifyStepUpToken, signed, SECURITY_ROLES, SENSITIVE_ACTIONS, SESSION_TTL_MS };

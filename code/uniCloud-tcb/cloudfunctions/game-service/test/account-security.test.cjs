@@ -5,10 +5,10 @@ const crypto = require('node:crypto');
 const S = require('../lib/account-security.cjs');
 const { createMemoryRepository } = require('../lib/repository.cjs');
 const env = { SESSION_SECRET: 'session-secret-for-commercial-tests-only-32', MFA_ENCRYPTION_KEY: Buffer.alloc(32, 41).toString('base64'), APP_ENV: 'staging' };
-async function fixture() {
+async function fixture(customEnv = env) {
   const repo = createMemoryRepository();
   await repo.insert('users', { _id: 'admin', role: 'ADMIN', phone: '13800000000', passwordHash: crypto.createHash('sha256').update('Valid-Password-123').digest('hex'), status: 'ACTIVE' });
-  return { repo, engine: S.createAccountSecurity({ repo, env, async: true }) };
+  return { repo, engine: S.createAccountSecurity({ repo, env: customEnv, async: true }) };
 }
 test('scrypt uses random salts, bounds work factors and rejects wrong/oversized passwords', () => {
   const a = S.hashPassword('Valid-Password-123');
@@ -28,6 +28,16 @@ test('legacy successful login migrates hash, setup-restricted session cannot per
   await assert.rejects(engine.validateSession(claims, 'approveRefund'), /MFA/);
   await engine.revokeSessions({}, claims);
   await assert.rejects(engine.validateSession(claims, 'getSecurityStatus'), /会话/);
+});
+test('ADMIN_SIMPLE_LOGIN：管理账号只需账号密码，不强制 MFA 或敏感操作二次验证', async () => {
+  const simpleEnv = { ...env, ADMIN_SIMPLE_LOGIN: 'true' };
+  const { repo, engine } = await fixture(simpleEnv);
+  await repo.insert('account_security', { _id: 'admin', mfaEnabled: true, mfaSecret: { encrypted: 'unused-in-simple-mode' } });
+  const user = await engine.login({ phone: '13800000000', password: 'Valid-Password-123', roles: ['ADMIN'] });
+  const session = await engine.createSession(user, { roles: ['ADMIN'] });
+  assert.equal(session.scope, 'full');
+  await engine.validateSession(session, 'approveRefund');
+  assert.doesNotThrow(() => S.assertSensitiveAction('approveRefund', session, '', simpleEnv));
 });
 test('persistent account, IP and device limits survive a new service instance', async () => {
   const { repo, engine } = await fixture();
