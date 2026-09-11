@@ -1,0 +1,53 @@
+code/apps/client/src/pages/mine/index.vue
+  s_c6f0a82ffef8e9::t_647607bf4d04c0 16,36
+code/apps/client/src/pages/product/detail.vue
+  s_c6f0a82ffef8e9::t_6c84678165bc42 22,26
+code/apps/client/uniCloud-aliyun/cloudfunctions/bootstrap-seed/lib/auth.cjs
+  s_c6f0a82ffef8e9::t_67c8d39515e4c2 188
+code/docs/debug/MP_WEIXIN_WEBVIEW_WHITE_SCREEN_AUDIT.md
+  s_c6f0a82ffef8e9::t_127e301c8194f8 1-229
+code/uniCloud-tcb/cloudfunctions/game-service/lib/services.cjs
+  s_c6f0a82ffef8e9::t_4990395c75eb2d 558
+code/apps/client/src/api.js
+  s_c6f0a82ffef8e9::t_6c84678165bc42 39-41,197-209
+code/uniCloud-tcb/cloudfunctions/game-service/lib/auth.cjs
+  s_c6f0a82ffef8e9::t_67c8d39515e4c2 191
+code/apps/client/uniCloud-aliyun/cloudfunctions/game-service/lib/auth.cjs
+  s_c6f0a82ffef8e9::t_67c8d39515e4c2 191
+code/apps/client/uniCloud-aliyun/cloudfunctions/game-service/lib/services.cjs
+  s_c6f0a82ffef8e9::t_4990395c75eb2d 558
+doc/客户端bug分析解决.md
+  s_c6f0a82ffef8e9::t_49f8fb104f69ff 1-263
+code/uniCloud-tcb/cloudfunctions/game-service/test/game-service.test.cjs
+  s_c6f0a82ffef8e9::t_f2c0f4ef3319b6 104-121
+code/apps/client/src/pages/order/detail.vue
+  s_c6f0a82ffef8e9::t_6c84678165bc42 22,35
+code/docs/debug/WECHAT_WEBVIEW_DOMAIN_CHECK.md
+  s_c6f0a82ffef8e9::t_127e301c8194f8 1-33
+code/docs/debug/MP_WEIXIN_ORDER_LOGIN_AUDIT.md
+  s_c6f0a82ffef8e9::t_2bde462142400d 1-353
+code/apps/client/uniCloud/cloudfunctions/game-service/lib/services.cjs
+  s_c6f0a82ffef8e9::t_4990395c75eb2d 493
+code/apps/client/uniCloud-aliyun/cloudfunctions/bootstrap-seed/lib/services.cjs
+  s_c6f0a82ffef8e9::t_4990395c75eb2d 493
+code/apps/client/uniCloud/cloudfunctions/game-service/lib/auth.cjs
+  s_c6f0a82ffef8e9::t_67c8d39515e4c2 188
+code/uniCloud-tcb/cloudfunctions/game-service/test/auth.test.cjs
+  s_c6f0a82ffef8e9::t_f2c0f4ef3319b6 33-40
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "a5dbc910ae80278862059b67beaa0c2e6b7009aa",
+  "prompts": {},
+  "sessions": {
+    "s_c6f0a82ffef8e9": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a0525b-3152-7f70-8eab-bf6495370f2f",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "yuhongwen <Hongwen_Yu.sgmwh@saic-gm.com>"
+    }
+  }
+}
