@@ -1,0 +1,12 @@
+现在出现的问题是：在微信开发者工具中，点击立即下单，直接提示：
+{"success":true,"data":{"ok":false,"code":"UNAUTHORIZED","message":"会话已失效，请重新登录"},"header":{"x-serverless-request-id":"ac1cc31a1789111878123129380","x-serverless-runtime-version":"2.1.3","date":"Fri, 11 Sep 2026 07:31:18 GMT","x-fc-invocation-function-version":"LATEST","content-length":"229","x-fc-instance-id":"c-6aa3a203-18accb48-9376567754c8","x-fc-invocation-duration":"52","x-fc-request-id":"1-6aa3ae46-18dae670-17c05a7132f4","content-type":"application/octet-stream","x-fc-max-memory-usage":"37.54","access-control-expose-headers":"Date,x-fc-request-id,x-fc-error-type,x-fc-code-checksum,x-fc-invocation-duration,x-fc-max-memory-usage,x-fc-log-result,x-fc-invocation-code-version,x-fc-instance-id","x-fc-code-checksum":"3373688905125190371","x-serverless-http-status":"200"}}
+
+请求信息是：
+{method: "serverless.function.runtime.invoke",…}
+method: "serverless.function.runtime.invoke"
+params: "{"functionTarget":"game-service","functionArgs":{"action":"h5Token","payload":{"productId":"product-1789094460649-10q91pk"},"token":"eyJ1c2VySWQiOiJjdXN0b21lci0xNzg5MTEwODQwOTMyLTJmd2NzMmIiLCJyb2xlcyI6WyJDVVNUT01FUiJdLCJicmFuZFNjb3BlcyI6WyJkZW1vLWEiXSwicGVybWlzc2lvbnMiOltdLCJzZWN1cml0eVZlcnNpb24iOjAsImlhdCI6MTc4OTExMTUzMDM1OSwiZXhwIjoxNzg5MTEzMzMwMzU5fQ.fBMWZ2lvD3-ULiDI9JBBFEhEP9IKcNotiZB4y-ujhnI","clientInfo":{"PLATFORM":"mp-weixin","OS":"devtools","APPID":"__UNI__80260AB","DEVICEID":"17891115281092532835","scene":-1,"appId":"__UNI__80260AB","appName":"游戏服务客户小程序","appVersion":"0.1.0","appVersionCode":"100","appLanguage":"zh-Hans","hostVersion":"8.0.5","hostName":"WeChat","uniPlatform":"mp-weixin","uniCompilerVersion":"5.24","uniRuntimeVersion":"5.24","deviceId":"17891115281092532835","deviceType":"phone","deviceBrand":"devtools","deviceModel":"iPhone 12/13 (Pro)","osName":"devtools","osVersion":"10.0.1","locale":"zh-Hans","LOCALE":"zh-Hans"}}}"
+spaceId: "mp-d55868c9-2e64-41c5-baf6-ecbb16b511be"
+timestamp: 1789111877656
+token: "38006820-4f9b-4f63-9a59-a7eee029513d"
+
+问题是：确认微信小程序点击“立即下单”后，为什么调用了 action = h5Token，正确链路到底应该是 miniLogin、h5Token，还是两者组合。请帮我给出分析

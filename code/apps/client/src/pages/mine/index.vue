@@ -13,7 +13,7 @@
     </view>
     <view class="service-panel">
       <text class="section-title">常用服务</text>
-      <button class="service-row" open-type="contact" session-from='{"source":"mine"}' @click="showH5Contact"><view class="row-icon"><image src="/static/icons/headset.svg" mode="aspectFit"/></view><view class="row-copy"><text>联系客服</text><text>服务咨询与订单问题</text></view><text class="arrow">›</text></button>
+      <button class="service-row" open-type="contact" :session-from="contactSession" @click="showH5Contact"><view class="row-icon"><image src="/static/icons/headset.svg" mode="aspectFit"/></view><view class="row-copy"><text>联系客服</text><text>服务咨询与订单问题</text></view><text class="arrow">›</text></button>
       <view class="service-row" @click="showRules"><view class="row-icon"><image src="/static/icons/shield.svg" mode="aspectFit"/></view><view class="row-copy"><text>服务保障</text><text>了解服务流程与售后规则</text></view><text class="arrow">›</text></view>
       <view class="service-row" @click="showPrivacy"><view class="row-icon"><image src="/static/icons/order-active.svg" mode="aspectFit"/></view><view class="row-copy"><text>隐私与协议</text><text>查看平台使用说明</text></view><text class="arrow">›</text></view>
     </view>
@@ -33,6 +33,7 @@ const brandName=computed(()=>(brandState.brand&&brandState.brand.name)||'星河�
 const user=computed(()=>{try{return uni.getStorageSync('user')||{};}catch(e){return {};}});
 const displayName=computed(()=>user.value.nickname||'个人中心');
 const identityText=computed(()=>user.value.phone?`用户 ${maskPhone(user.value.phone)}`:'登录后可查看完整订单进度');
+const contactSession=JSON.stringify({source:'mine'});
 const orderEntries=[{key:'PENDING_PAYMENT',label:'待支付',tone:'blue'},{key:'IN_SERVICE',label:'服务中',tone:'green'},{key:'PENDING_CONFIRM',label:'待确认',tone:'orange'},{key:'REFUNDING',label:'售后',tone:'purple'}];
 function openOrders(status){uni.navigateTo({url:`/pages/order/list?status=${encodeURIComponent(status)}`});}
 function showH5Contact(){

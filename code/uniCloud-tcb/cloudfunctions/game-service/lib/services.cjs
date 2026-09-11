@@ -555,7 +555,7 @@ const services = {
     } else if (customer.brandId !== brand.brandId) {
       customer = await repo.updateById('customers', customer._id, { brandId: brand.brandId, updatedAt: Date.now() });
     }
-    const { token } = auth.issueSession(customer, { roles: ['CUSTOMER'], brandScopes: [brand.brandId], permissions: [] });
+    const { token } = auth.issueSession({ ...customer, role: 'CUSTOMER' }, { roles: ['CUSTOMER'], brandScopes: [brand.brandId], permissions: [] });
     return { token, customerId: customer._id, isVip: !!customer.isVip, brandId: brand.brandId };
   },
 

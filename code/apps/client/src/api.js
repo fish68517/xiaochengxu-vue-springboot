@@ -36,6 +36,9 @@ export function getSession() {
 export function setSession(session) {
   try { uni.setStorageSync(SESSION_KEY, session); } catch (e) { /* 写入失败忽略 */ }
 }
+export function clearSession() {
+  try { uni.removeStorageSync(SESSION_KEY); } catch (e) { /* 清理失败忽略 */ }
+}
 
 function cloudAvailable() {
   return typeof uniCloud !== 'undefined' && !!uniCloud && typeof uniCloud.callFunction === 'function';
@@ -191,3 +194,16 @@ export const api = {
   requestSubscribe: (data) => call('requestSubscribe', data, { write: true }),
   getBrandConfig: (context = {}) => call('getBrandConfig', typeof context === 'string' ? { appId: context, brandCode: BRAND_CODE } : { brandCode: BRAND_CODE, ...context }),
 };
+
+// 获取小程序到 H5 下单页的桥接 token；服务端判定会话失效时仅强制登录并重试一次。
+export async function getH5OrderToken(productId) {
+  await ensureSession();
+  try {
+    return await api.h5Token(productId);
+  } catch (error) {
+    if (!error || error.code !== 'UNAUTHORIZED') throw error;
+    clearSession();
+    await ensureSession(true);
+    return api.h5Token(productId);
+  }
+}

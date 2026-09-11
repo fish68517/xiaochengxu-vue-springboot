@@ -101,6 +101,24 @@ test('H5 token 撤销：管理员撤销后公开 H5 查询立即失效', async (
   assert.match(denied.message, /已失效/);
 });
 
+test('小程序登录：CUSTOMER token 包含主角色并可直接申请 h5Token', async () => {
+  const { call, repo, tokens } = await setup({ withCustomer: false });
+  await repo.insert('brands', { _id: 'brand-demo-a', brandId: 'demo-a', code: 'demo-a', appId: 'wx-a', name: 'A', status: 'ON' });
+  const product = await call('saveProduct', { title: '小程序下单商品', priceFen: 100, status: 'ON', commission: { type: 'fixed', valueFen: 10 }, brandId: 'demo-a' }, tokens.admin);
+  globalThis.__OAUTH_CLIENT__ = { miniLogin: async () => ({ openid: 'openid-mini-login' }) };
+  try {
+    const login = await call('miniLogin', { code: 'wx-code', brandCode: 'demo-a' });
+    const claims = createAuth({ env: process.env }).verify(login.token);
+    assert.equal(claims.role, 'CUSTOMER');
+    assert.deepEqual(claims.roles, ['CUSTOMER']);
+    assert.deepEqual(claims.brandScopes, ['demo-a']);
+    const h5 = await call('h5Token', { productId: product._id }, login.token);
+    assert.ok(h5.token);
+  } finally {
+    delete globalThis.__OAUTH_CLIENT__;
+  }
+});
+
 test('第二阶段云函数：Mock 支付、验收结单、七态提现与五态异议闭环', async () => {
   const previousMode = process.env.PAYMENT_MODE;
   process.env.PAYMENT_MODE = 'mock';

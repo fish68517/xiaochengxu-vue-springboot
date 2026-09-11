@@ -188,6 +188,7 @@ function createAuth({ env = process.env, now = () => Date.now() } = {}) {
   // 签发会话:payload { userId, role, iat, exp }。
   function issueSession(user, access = {}) {
     const role = normalizeRole(user.role);
+    if (!role) throw new Error('会话主角色不能为空');
     const payload = {
       userId: user._id,
       role,

@@ -30,6 +30,14 @@ test('角色矩阵:合法角色放行,越权拒绝,坏 token 拒绝', async () =
   await assert.rejects(() => auth.require(repo, 'grabOrder', {}), /缺少会话 token/);
 });
 
+test('会话签发：缺少主角色时拒绝生成不完整 token', () => {
+  const auth = createAuth({ env: { SESSION_SECRET: 'test-secret' } });
+  assert.throws(
+    () => auth.issueSession({ _id: 'c1' }, { roles: ['CUSTOMER'], brandScopes: ['demo-a'] }),
+    /会话主角色不能为空/,
+  );
+});
+
 test('owner 校验:拒绝 payload 把身份字段当主体传入', () => {
   const auth = createAuth({ env: { SESSION_SECRET: 'test-secret' } });
   assert.throws(() => auth.rejectIdentityOverride({ openid: 'o1' }, 'CUSTOMER'), /身份字段/);

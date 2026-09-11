@@ -19,7 +19,7 @@
 <script setup>
 import { computed, ref } from 'vue';
 import { onLoad, onShow } from '@dcloudio/uni-app';
-import { api, ensureSession } from '../../api.js';
+import { api, ensureSession, getH5OrderToken } from '../../api.js';
 import { brandState } from '../../brand.js';
 import { brandContact } from '../../brand-assets.js';
 import { requestSubscribeMessage } from '../../subscribe.js';
@@ -32,7 +32,7 @@ const currentStage=computed(()=>stageMap[order.value&&order.value.status]??0); c
 const allowed=computed(()=>order.value&&Array.isArray(order.value.allowedActions)?order.value.allowedActions:[]); const canPay=computed(()=>allowed.value.includes('PAY')||(order.value&&order.value.status==='PENDING_PAYMENT')); const canDispute=computed(()=>allowed.value.includes('SUBMIT_DISPUTE')||(order.value&&order.value.status==='SETTLED')); const contactSession=computed(()=>order.value?`{"orderNo":"${order.value.orderNo}"}`:'{"source":"order"}');
 onLoad((query)=>{orderId.value=(query&&query.id)||'';loadOrder();}); onShow(()=>{try{uni.setNavigationBarTitle({title:(brandState.brand&&brandState.brand.name)||'订单详情'});}catch(e){/* 忽略 */}});
 async function loadOrder(){loading.value=true;errorMsg.value='';try{await ensureSession();const data=await api.getMyOrder(orderId.value);if(!data||!(data.id||data.orderId||data._id))throw new Error('订单不存在');order.value=data;}catch(error){order.value=null;errorMsg.value=(error&&error.message)||'订单加载失败';}finally{loading.value=false;}}
-async function continuePay(){try{await ensureSession();const product=order.value.product||{};const res=await api.h5Token(product.id||product._id);if(!res||!res.token)throw new Error('支付链接生成失败');const id=order.value.id||order.value.orderId||order.value._id;uni.navigateTo({url:`/pages/order/webview-shell?token=${encodeURIComponent(res.token)}&orderId=${encodeURIComponent(id)}`});}catch(error){uni.showToast({title:(error&&error.message)||'操作失败',icon:'none'});}}
+async function continuePay(){try{const product=order.value.product||{};const res=await getH5OrderToken(product.id||product._id);if(!res||!res.token)throw new Error('支付链接生成失败');const id=order.value.id||order.value.orderId||order.value._id;uni.navigateTo({url:`/pages/order/webview-shell?token=${encodeURIComponent(res.token)}&orderId=${encodeURIComponent(id)}`});}catch(error){uni.showToast({title:(error&&error.message)||'操作失败',icon:'none'});}}
 function copyOrderNo(){uni.setClipboardData({data:order.value.orderNo,success:()=>uni.showToast({title:'订单号已复制',icon:'success'})});}
 async function onSubscribe(){const ok=await requestSubscribeMessage(order.value.id||order.value.orderId||order.value._id);uni.showToast({title:ok?'已订阅通知':'已跳过',icon:'none'});}
 async function submitDispute(){const content=(disputeContent.value||'').trim();if(!content){uni.showToast({title:'请填写异议描述',icon:'none'});return;}disputeSubmitting.value=true;try{await api.submitDispute({orderId:order.value.id||order.value.orderId||order.value._id,content,attachmentIds:[]});uni.showToast({title:'异议已提交',icon:'success'});showDispute.value=false;disputeContent.value='';await loadOrder();}catch(error){uni.showToast({title:(error&&error.message)||'提交失败',icon:'none'});}finally{disputeSubmitting.value=false;}}
