@@ -1,0 +1,56 @@
+code/uniCloud-tcb/cloudfunctions/game-service/test/game-service.test.cjs
+  s_c6f0a82ffef8e9::t_2d9f4fc3f66d5b 174-190
+code/apps/admin/src/pages/dashboard/index.vue
+  s_c6f0a82ffef8e9::t_144461231cee80 5
+code/apps/client/uniCloud-aliyun/cloudfunctions/bootstrap-seed/lib/account-security.cjs
+  s_c6f0a82ffef8e9::t_90a7fbbd499c0d 11,259
+code/.env.example
+  s_c6f0a82ffef8e9::t_90a7fbbd499c0d 42
+code/apps/client/uniCloud-aliyun/cloudfunctions/game-service/lib/services.cjs
+  s_c6f0a82ffef8e9::t_99dd489d917917 1754-1759,1769-1770
+code/packages/backend/test/multibrand-access.test.js
+  s_c6f0a82ffef8e9::t_2d9f4fc3f66d5b 31-44
+code/apps/client/uniCloud/cloudfunctions/game-service/lib/services.cjs
+  s_c6f0a82ffef8e9::t_99dd489d917917 1636-1641,1652-1653
+code/uniCloud-tcb/cloudfunctions/game-service/lib/services.cjs
+  s_c6f0a82ffef8e9::t_99dd489d917917 1754-1759,1769-1770
+code/packages/backend/src/services.js
+  s_c6f0a82ffef8e9::t_99dd489d917917 1004-1008,1017-1018
+code/uniCloud-tcb/cloudfunctions/game-service/lib/account-security.cjs
+  s_c6f0a82ffef8e9::t_90a7fbbd499c0d 11,259
+code/apps/client/uniCloud/cloudfunctions/game-service/lib/account-security.cjs
+  s_c6f0a82ffef8e9::t_90a7fbbd499c0d 11,259
+doc/项目流程分析.md
+  s_c6f0a82ffef8e9::t_282f0985383b24 17,111,113-271,273-275,300,324,343,353,386,398,404
+  s_c6f0a82ffef8e9::t_02eb62166a7a18 1-16,18-110,112,276-299,301-323,325-342,344-352,354-385,387-397,399-403,405-406
+  s_c6f0a82ffef8e9::t_d066edbfa3dd33 272
+  s_c6f0a82ffef8e9::t_6812160d7ae18e 502
+  s_c6f0a82ffef8e9::t_dd9a2d053736f1 513
+  s_c6f0a82ffef8e9::t_38751998b4f972 407-501,503-512
+code/uniCloud-tcb/cloudfunctions/game-service/test/account-security.test.cjs
+  s_c6f0a82ffef8e9::t_90a7fbbd499c0d 32,41-49
+code/apps/client/uniCloud-aliyun/cloudfunctions/game-service/lib/account-security.cjs
+  s_c6f0a82ffef8e9::t_90a7fbbd499c0d 11,259
+code/apps/admin/src/pages/products/index.vue
+  s_c6f0a82ffef8e9::t_144461231cee80 24-30,71-73,96,98,106,108-125,129,144,146-147,201-204,225,244,251,254-256,293
+  s_c6f0a82ffef8e9::t_2c198d412a0ef2 107,174,176
+  s_c6f0a82ffef8e9::t_eece3a41178db8 23
+code/apps/client/uniCloud-aliyun/cloudfunctions/bootstrap-seed/lib/services.cjs
+  s_c6f0a82ffef8e9::t_99dd489d917917 1636-1641,1652-1653
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "b3fd595ef5f5debbcbd8f5fc7303a90d42d5f127",
+  "prompts": {},
+  "sessions": {
+    "s_c6f0a82ffef8e9": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a0525b-3152-7f70-8eab-bf6495370f2f",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "yuhongwen <Hongwen_Yu.sgmwh@saic-gm.com>"
+    }
+  }
+}
