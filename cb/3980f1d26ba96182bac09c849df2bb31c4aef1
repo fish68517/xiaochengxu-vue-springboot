@@ -1,0 +1,39 @@
+doc/文件读取支付.md
+  s_c6f0a82ffef8e9::t_ab9aa981f5e0ef 1-178
+code/apps/client/uniCloud-aliyun/cloudfunctions/game-service/lib/payment-config.cjs
+  s_c6f0a82ffef8e9::t_195c0fdd118718 2-14,38
+doc/微信支付接入资料填写清单.md
+  s_c6f0a82ffef8e9::t_aa2f4f2ddb71b6 81-110
+  s_c6f0a82ffef8e9::t_ac0268ba60eadf 162,200-225
+  s_c6f0a82ffef8e9::t_b6ca780ece05e1 111-120,122-126,128-130
+  s_c6f0a82ffef8e9::t_9c0b3e469eb90b 1-5,7-14,16-36,41-43,147-161,163-199
+  s_c6f0a82ffef8e9::t_01ff7759412117 38-39,48,52-53,55-56,134,141-142
+  s_c6f0a82ffef8e9::t_1b7787b6457636 6,40,45,47,54,58,60-80,121,127,133,144
+  s_c6f0a82ffef8e9::t_6121884d067b4d 15,37,44,46,49-51,57,59,131-132,135-140,143,145-146
+code/apps/client/uniCloud-aliyun/cloudfunctions/game-service/lib/services.cjs
+  s_c6f0a82ffef8e9::t_f3e3ceaa9a3fe3 469,480,482
+  s_c6f0a82ffef8e9::t_195c0fdd118718 467-468,470,472-474,476-479,481,2133
+code/apps/admin/src/pages/brands/index.vue
+  s_c6f0a82ffef8e9::t_195c0fdd118718 121-122,188,219,242-243,262
+code/apps/client/uniCloud-aliyun/cloudfunctions/game-service/test/payment-brand-config.test.cjs
+  s_c6f0a82ffef8e9::t_33688fec27e242 1-26,28-38,57-60
+  s_c6f0a82ffef8e9::t_66c23b8db6e90f 27,39-56
+流程--不要发给客户/微信支付接入资料填写清单.md
+  s_c6f0a82ffef8e9::t_bc2bb989b57baa 1-225
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "cb3980f1d26ba96182bac09c849df2bb31c4aef1",
+  "prompts": {},
+  "sessions": {
+    "s_c6f0a82ffef8e9": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a0525b-3152-7f70-8eab-bf6495370f2f",
+        "model": "gpt-6-astra"
+      },
+      "human_author": "yuhongwen <Hongwen_Yu.sgmwh@saic-gm.com>"
+    }
+  }
+}
