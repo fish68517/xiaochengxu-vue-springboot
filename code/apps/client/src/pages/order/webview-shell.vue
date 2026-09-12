@@ -1,31 +1,61 @@
 <template>
-  <view class="shell">
-    <!-- 拿到 token 前展示加载态;token 就绪后渲染 web-view(其自带加载指示) -->
-    <view v-if="!url" class="loading"><text>加载中…</text></view>
-    <web-view v-else :src="url" />
-  </view>
+  <web-view
+    :src="url"
+    @load="handleWebViewLoad"
+    @error="handleWebViewError"
+  />
 </template>
 
 <script setup>
-// 小程序端下单壳页:详情页先 h5Token 换取 token,再经 web-view 打开 H5 下单页(带 token 与加载态)。
-// 小程序端零支付:下单/支付/支付成功均在 H5 页内完成,本页仅承载 web-view。
 import { ref } from 'vue';
-import { onLoad } from '@dcloudio/uni-app';
+import { onLoad, onUnload } from '@dcloudio/uni-app';
 import { H5_ORDER_BASE_URL } from '../../api.js';
 
 const url = ref('');
+const safeUrl = () => url.value.replace(/([?&](?:token|h5Token|code)=)[^&#]*/gi, '$1<REDACTED>');
+
+function handleWebViewLoad(event) {
+  console.log('================ [WebView DEBUG] LOAD SUCCESS ================');
+  console.log('[WebView DEBUG] event type =', event?.type || 'load');
+  console.log('[WebView DEBUG] final url =', safeUrl());
+}
+
+function handleWebViewError(event) {
+  console.error('================ [WebView DEBUG] LOAD ERROR ==================');
+  console.error('[WebView DEBUG] error code =', event?.detail?.errCode || 'unknown');
+  console.error('[WebView DEBUG] final url =', safeUrl());
+}
 
 onLoad((query) => {
-  const token = (query && query.token) || '';
-  const orderId = (query && query.orderId) || '';
+  console.log('[WebView DEBUG] PAGE ONLOAD');
+
+  const token = query?.token || '';
+  const orderId = query?.orderId || '';
+
+  console.log('[WebView DEBUG] token present =', !!token);
+  console.log('[WebView DEBUG] orderId =', orderId);
+
   if (!token && !orderId) {
-    uni.showToast({ title: '下单链接无效', icon: 'none' });
+    console.error('[WebView DEBUG] token/orderId both empty');
     return;
   }
-  // H5 为 hash 路由,下单页真实路径 /#/pages/h5-order/index?token=...;继续支付带 orderId。
-  let params = token ? `token=${encodeURIComponent(token)}` : '';
-  if (orderId) params += (params ? '&' : '') + `orderId=${encodeURIComponent(orderId)}`;
-  url.value = `${H5_ORDER_BASE_URL}/#/pages/h5-order/index?${params}`;
+
+  let params = token
+    ? `token=${encodeURIComponent(token)}`
+    : '';
+
+  if (orderId) {
+    params += `${params ? '&' : ''}orderId=${encodeURIComponent(orderId)}`;
+  }
+
+  url.value =
+    `${H5_ORDER_BASE_URL.replace(/\/+$/, '')}/?webview_rev=${Date.now()}#/pages/h5-order/index?${params}`;
+
+  console.log('[WebView DEBUG] final url =', safeUrl());
+});
+
+onUnload(() => {
+  console.log('[WebView DEBUG] PAGE UNLOAD');
 });
 </script>
 

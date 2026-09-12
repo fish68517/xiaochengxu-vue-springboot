@@ -97,8 +97,18 @@ function createOperationsServices({ env = process.env, verifyStepUp } = {}) {
 }
 async function enforceLaunchPolicy(repo, { brandId, userId, amountFen, orderId = '' }, env = process.env) {
   if (env.APP_ENV !== 'production') return;
+  // production 表示运行环境；是否灰度由独立开关决定，不能把生产环境永久等同于白名单模式。
+  const mode = String(env.COMMERCIAL_LAUNCH_MODE || 'gray').trim().toLowerCase();
+  const reject = (code, message) => { const error = new Error(message); error.code = code; throw error; };
+  if (!['gray', 'public', 'closed'].includes(mode)) reject('LAUNCH_MODE_INVALID', '服务配置异常，请联系客服');
+  if (mode === 'closed') reject('LAUNCH_CLOSED', '服务暂未开放，请联系客服');
   const policy = (await repo.findOne('configs', { cfgKey: 'COMMERCIAL_LAUNCH_POLICY' }))?.cfgValue;
-  if (!policy?.approved || policy.paused || !policy.brands?.includes(brandId) || !policy.userIds?.includes(userId)) throw new Error('当前暂未开放灰度服务');
+  // 公开模式仍遵守已设置的紧急暂停开关；不要求灰度品牌/用户白名单。
+  if (policy?.paused) reject('LAUNCH_PAUSED', '服务暂时暂停，请稍后重试');
+  if (mode === 'public') return;
+  if (!policy?.approved) reject('LAUNCH_NOT_APPROVED', '服务暂未开放，请联系客服');
+  if (!policy.brands?.includes(brandId)) reject('LAUNCH_BRAND_NOT_ALLOWED', '当前品牌暂未开放服务，请联系客服');
+  if (!policy.userIds?.includes(userId)) reject('LAUNCH_USER_NOT_ALLOWED', '当前账号暂未获得试用资格，请联系客服');
   if (!Number.isSafeInteger(amountFen) || amountFen <= 0 || amountFen > policy.maxPaymentFen) throw new Error('超过灰度单笔限额');
   const start = new Date(); start.setHours(0, 0, 0, 0);
   const todayFen = (await repo.find('orders', { brandId })).filter((row) => row._id !== orderId && row.grayUserId === userId && row.createdAt >= start.getTime() && !['CANCELLED', 'CLOSED', 'REFUNDED'].includes(row.status)).reduce((sum, row) => sum + (Number.isSafeInteger(row.amountFen) ? row.amountFen : 0), 0);

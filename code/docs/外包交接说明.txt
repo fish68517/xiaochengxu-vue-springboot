@@ -55,8 +55,8 @@
 
 | 环境变量 | 用途 | 出处（实查 file:line） |
 | --- | --- | --- |
-| `WECHAT_OFFICIAL_APPID` | 认证服务号 AppID（网页授权 oauthExchange，snsapi_base） | `uniCloud-tcb/cloudfunctions/game-service/lib/oauth.cjs:26` |
-| `WECHAT_OFFICIAL_SECRET` | 认证服务号 Secret | `oauth.cjs:27` |
+| `OAUTH_APPID` | 认证服务号 AppID（网页授权 oauthExchange，snsapi_base）；前端对应 `VITE_OAUTH_APPID` | `uniCloud-tcb/cloudfunctions/game-service/lib/oauth.cjs:26` |
+| `OAUTH_SECRET` | 认证服务号 AppSecret，只保存在云函数服务端 | `oauth.cjs:27` |
 | `WECHAT_MP_APPID` | 小程序 AppID（miniLogin code2Session） | `oauth.cjs:38`、`lib/subscribe.cjs:46`、`wechat-callback/index.js:45` |
 | `WECHAT_MP_SECRET` | 小程序 Secret | `oauth.cjs:39`、`lib/subscribe.cjs:46`、`wechat-callback/index.js:46` |
 | `WECHAT_MP_KF_TOKEN` | 微信客服回调 token（验签） | `uniCloud-tcb/cloudfunctions/wechat-callback/index.js:10` |

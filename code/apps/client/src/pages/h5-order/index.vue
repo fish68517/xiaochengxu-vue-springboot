@@ -1,7 +1,7 @@
 <template>
   <view class="page-shell" :style="brandState.vars"><view class="h5-order">
     <view class="checkout-steps"><view class="active"><text>1</text><text>填写信息</text></view><view class="step-line"/><view :class="{active:phase!=='form'}"><text>2</text><text>确认支付</text></view><view class="step-line"/><view :class="{active:phase==='success'}"><text>3</text><text>完成</text></view></view>
-    <view v-if="loading" class="state-box"><view class="loader"/><text class="state-title">正在准备订单</text><text class="state-desc">请稍候，不要关闭页面</text></view>
+    <view v-if="loading" class="state-box"><view class="loader"/><text class="state-title">正在准备订单</text><text class="state-desc">请稍候，不要关闭页面。。。</text></view>
     <view v-else-if="errorMsg" class="state-box"><image class="state-illustration" src="/static/empty-state.svg" mode="aspectFit"/><text class="state-title">下单页暂不可用</text><text class="state-desc">{{ errorMsg }}</text><button class="primary-btn" @click="retry">重新加载</button></view>
     <view v-else-if="phase==='success'" class="success-box"><view class="success-mark"><view class="success-check"/></view><text class="success-title">支付成功</text><text class="state-desc">订单已创建，客服将尽快为您安排服务</text><view class="order-number"><text>订单号</text><text>{{ paidOrderNo }}</text></view><button class="primary-btn" @click="copyOrderNo">复制订单号</button><button class="ghost-btn" @click="contactSupport">联系客服（自动携带订单号）</button><button class="ghost-btn" @click="goMiniProgram">返回小程序查看订单</button><text class="hint">咨询时请核对订单号，客服不会索要支付密码或验证码</text></view>
     <view v-else-if="['processing','unknown','failed'].includes(phase)" class="state-box"><view class="loader" :class="{stopped:phase==='failed'}"/><text class="state-title">{{ phase==='processing'?'支付处理中':phase==='unknown'?'支付结果确认中':'支付未完成' }}</text><text class="state-desc">{{ paymentMessage }}</text><button v-if="pendingPaymentId" class="primary-btn" @click="refreshPaymentStatus">查询支付结果</button><button v-if="phase==='failed'" class="ghost-btn" @click="continuePay">重新支付</button></view>
@@ -38,10 +38,36 @@ const continueOrderId = ref('');
 const continueOrderNo = ref('');
 const pendingPaymentId = ref('');
 const paymentMessage = ref('');
+const PREPARE_TIMEOUT_MS = 20000;
+const ORDER_PAGE_REVISION = '20260912-order-diagnostics-1';
+function orderLog(stage, fields = {}) {
+  // 仅由本页传入阶段、布尔值、耗时和错误码；禁止传入请求/响应、token、code 或 openid。
+  console.info('[H5Order]', JSON.stringify({ revision: ORDER_PAGE_REVISION, stage, ...fields }));
+}
+orderLog('setup');
+
+function withPrepareTimeout(promise, message, stage) {
+  let timer;
+  const startedAt = Date.now();
+  orderLog(`${stage}:start`);
+  return Promise.race([
+    promise,
+    new Promise((_, reject) => {
+      timer = setTimeout(() => reject(new ApiError(message, { code: 'H5_ORDER_PREPARE_TIMEOUT', isNetwork: true })), PREPARE_TIMEOUT_MS);
+    }),
+  ]).then((result) => {
+    orderLog(`${stage}:success`, { elapsedMs: Date.now() - startedAt });
+    return result;
+  }, (error) => {
+    orderLog(`${stage}:error`, { elapsedMs: Date.now() - startedAt, errorCode: error && error.code || 'UNKNOWN' });
+    throw error;
+  }).finally(() => clearTimeout(timer));
+}
 
 onLoad(async (query) => {
   // 1) 恢复 token:URL 优先,其次 sessionStorage(网页授权回调后 URL 已变)。
   const t = (query && query.token) || sessionGet('h5_token') || '';
+  orderLog('onLoad', { hasToken: !!t, inWechat: isInWechat(), inMiniProgram: isMiniProgramWebview() });
   // 继续支付:订单已存在,直接进入支付分支(不新建订单)。
   const cid = (query && query.orderId) || '';
   if (cid) {
@@ -65,11 +91,18 @@ onLoad(async (query) => {
   const code = (query && query.code) || getQueryCode();
   if (code && isInWechat()) {
     try {
-      const res = await api.oauthExchange(code);
-      if (res && res.openid) sessionSet('h5_openid', res.openid);
+      const res = await withPrepareTimeout(api.oauthExchange(code), '网页授权请求超时，请稍后重试', 'oauthExchange');
+      if (!res || !res.openid) throw new ApiError('网页授权未返回 openid');
+      sessionSet('h5_openid', res.openid);
       cleanUrlQuery();
     } catch (e) {
-      // 换 openid 失败不致命:提交时若仍缺 openid 会引导重授权
+      // 授权失败不能继续自动跳转，否则缺配置时会形成 OAuth 重定向循环。
+      console.error('[OAuth DEBUG] oauthExchange failed:', (e && e.code) || 'UNKNOWN');
+      loading.value = false;
+      errorMsg.value = e && e.code === 'H5_ORDER_PREPARE_TIMEOUT'
+        ? e.message
+        : '网页授权失败，请联系管理员检查服务号配置';
+      return;
     }
   }
 
@@ -90,18 +123,23 @@ async function loadProduct() {
   loading.value = true;
   errorMsg.value = '';
   try {
-    const res = await api.getH5Product(token.value);
+    const res = await withPrepareTimeout(api.getH5Product(token.value), '商品加载超时，请检查网络或联系管理员', 'getH5Product');
     const p = (res && res.product) || res;
     if (!p || !p.id) throw new ApiError('商品信息不存在');
     product.value = p;
     buildDynamicFields(p);
     // 微信内 web-view 且无 openid:先网页授权(snsapi_base 静默,回来后页面重载)。
     if (isMiniProgramWebview() && !sessionGet('h5_openid')) {
-      redirectToOauth();
+      if (!redirectToOauth()) {
+        loading.value = false;
+        errorMsg.value = '未配置服务号网页授权，请联系管理员';
+      }
       return;
     }
     loading.value = false;
+    orderLog('form:ready');
   } catch (e) {
+    orderLog('prepare:error', { errorCode: e && e.code || 'UNKNOWN' });
     loading.value = false;
     errorMsg.value = (e && e.message) || '商品信息加载失败';
   }
@@ -139,6 +177,8 @@ async function submitOrder() {
     const orderId = order.orderId || order.id;
     const orderNo = order.orderNo;
     if (!orderId) throw new ApiError('订单创建失败');
+    continueOrderId.value = orderId;
+    continueOrderNo.value = orderNo || '';
 
     if (isInWechat()) {
       if (isMiniProgramWebview()) {
@@ -194,7 +234,7 @@ async function payInWechatWebview(orderId, orderNo) {
     redirectToOauth();
     throw new ApiError('正在前往授权,请稍后重新提交');
   }
-  const params = await api.getPaymentParams(orderId, { payType: 'JSAPI', openid });
+  const params = await api.getPaymentParams(orderId, { payType: 'JSAPI', openid, h5Token: token.value });
   if (params && params.paymentMode === 'mock') return completeMockPayment(params, orderNo);
   if (!params || params.payType !== 'JSAPI') throw new ApiError('支付参数异常,请重试');
   try {
@@ -210,7 +250,7 @@ async function payInWechatWebview(orderId, orderNo) {
 
 // 微信外:H5 支付(mweb)跳转。
 async function payOutsideWechat(orderId, orderNo) {
-  const params = await api.getPaymentParams(orderId, { payType: 'MWEB' });
+  const params = await api.getPaymentParams(orderId, { payType: 'MWEB', h5Token: token.value });
   if (params && params.paymentMode === 'mock') return completeMockPayment(params, orderNo);
   const mwebUrl = params && (params.mwebUrl || params.h5Url);
   if (!mwebUrl) throw new ApiError('支付参数异常,请重试');
@@ -221,6 +261,11 @@ async function payOutsideWechat(orderId, orderNo) {
 }
 
 async function completeMockPayment(params, orderNo) {
+  // 线上 H5 没有模拟确认所需的小程序 CUSTOMER 会话；正式页面不能自动确认模拟付款。
+  if (import.meta.env.PROD) {
+    orderLog('payment:configuration-error', { errorCode: 'PAYMENT_MOCK_NOT_ALLOWED' });
+    throw new ApiError('支付服务尚未正确配置，请联系客服', { code: 'PAYMENT_MOCK_NOT_ALLOWED' });
+  }
   pendingPaymentId.value = params.paymentId;
   phase.value = 'processing';
   paymentMessage.value = '正在确认模拟支付结果…';
@@ -322,12 +367,25 @@ function showGuide() {
 
 // 服务号网页授权(snsapi_base):跳转 open.weixin.qq.com,回调回本页带 code。
 function redirectToOauth() {
+  orderLog('oauthRedirect:start', { hasAppId: !!OAUTH_APPID });
+  console.log('[OAuth DEBUG] OAUTH_APPID =', OAUTH_APPID);
+  // URL 中包含 H5 下单 token；调试日志保留路径，但必须遮蔽敏感查询参数。
+  console.log('[OAuth DEBUG] current href =', location.href.replace(/([?&](?:token|h5Token|code|state)=)[^&#]*/gi, '$1<REDACTED>'));
   if (!OAUTH_APPID) {
-    uni.showToast({ title: '未配置服务号网页授权', icon: 'none' });
-    return;
+    uni.showToast({ title: '未配置服务号网页授权11', icon: 'none' });
+    return false;
   }
-  const redirectUri = `${location.origin}${location.pathname}#/pages/h5-order/index`;
+  const redirectUri = `${location.origin}${location.pathname}?webview_rev=${Date.now()}#/pages/h5-order/index`;
   location.href = `https://open.weixin.qq.com/connect/oauth2/authorize?appid=${OAUTH_APPID}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&scope=snsapi_base&state=order#wechat_redirect`;
+  // 若微信容器未完成跳转，原页面仍可见时给出明确反馈，不让“正在准备订单”无限旋转。
+  setTimeout(() => {
+    if (loading.value && !errorMsg.value && typeof document !== 'undefined' && !document.hidden) {
+      loading.value = false;
+      orderLog('oauthRedirect:timeout');
+      errorMsg.value = '微信网页授权跳转超时，请返回小程序后重试';
+    }
+  }, PREPARE_TIMEOUT_MS);
+  return true;
 }
 
 function retry() {
@@ -353,9 +411,22 @@ function getQueryCode() {
   return m ? decodeURIComponent(m[1]) : '';
 }
 function cleanUrlQuery() {
-  if (typeof history !== 'undefined' && history.replaceState) {
-    history.replaceState(null, '', location.pathname + location.hash);
+  if (typeof history === 'undefined' || !history.replaceState || typeof location === 'undefined') return;
+  const url = new URL(location.href);
+  url.searchParams.delete('code');
+  url.searchParams.delete('state');
+  // 微信可能将回调参数追加在 Hash 路由后；两种位置都需清理，避免刷新时重复兑换一次性 code。
+  const hash = url.hash.slice(1);
+  const questionAt = hash.indexOf('?');
+  if (questionAt >= 0) {
+    const route = hash.slice(0, questionAt);
+    const params = new URLSearchParams(hash.slice(questionAt + 1));
+    params.delete('code');
+    params.delete('state');
+    const remaining = params.toString();
+    url.hash = `#${route}${remaining ? `?${remaining}` : ''}`;
   }
+  history.replaceState(null, '', url.pathname + url.search + url.hash);
 }
 
 // sessionStorage 兜底封装(H5 可用,小程序构建下不引用)。

@@ -13,11 +13,16 @@ Customer@@123456789
 
 客服
 13800000002
-Customer@@123456789
+Customer123@@1234567890
 
 接单人：小张
 13800000001
 Worker@@123456789abc
+
+
+OAUTH_APPID=wxc2da39cc9c2d35da
+OAUTH_SECRET=1595a6a80ef65c8c38f910defc8c8627
+
 
 unicloud 相关  15071469547@163.com  320435Yhw
 https://unicloud.dcloud.net.cn/

@@ -81,12 +81,25 @@ async function seedProductOrder(call, tokens) {
 
 test('新增商用 action 后，云函数与本地镜像 action 清单一致', () => {
   assert.ok(Object.keys(services).length >= 105);
-  const apiServerSource = readFileSync(resolve(__dirname, '../../../../scripts/api-server.mjs'), 'utf8');
+  const apiServerSource = readFileSync(resolve(__dirname, '../../../../../../scripts/api-server.mjs'), 'utf8');
   const actionBlock = apiServerSource.match(/const ACTIONS = \[([\s\S]*?)\];/);
   assert.ok(actionBlock, '本地 API action 清单不存在');
   const localActions = [...actionBlock[1].matchAll(/'([^']+)'/g)].map((match) => match[1]).sort();
   assert.deepEqual(localActions, Object.keys(services).sort());
   for (const name of ['queryOrderByNo', 'freezeWallet', 'getProfile', 'getAccessProfile', 'listUserBrandRoles', 'saveUserBrandRoles', 'listAuditLogs', 'updateProfile', 'listUsers', 'createStaff', 'updateStaff', 'markRead']) assert.ok(services[name], `${name} 缺失`);
+});
+
+test('生产环境拒绝模拟支付确认', async () => {
+  const previousMode = process.env.PAYMENT_MODE;
+  const previousEnv = process.env.APP_ENV;
+  try {
+    process.env.PAYMENT_MODE = 'mock';
+    process.env.APP_ENV = 'production';
+    await assert.rejects(() => services.confirmMockPayment(null, { paymentId: 'test' }, {}), { code: 'PAYMENT_MOCK_NOT_ALLOWED' });
+  } finally {
+    if (previousMode === undefined) delete process.env.PAYMENT_MODE; else process.env.PAYMENT_MODE = previousMode;
+    if (previousEnv === undefined) delete process.env.APP_ENV; else process.env.APP_ENV = previousEnv;
+  }
 });
 
 test('H5 token 撤销：管理员撤销后公开 H5 查询立即失效', async () => {

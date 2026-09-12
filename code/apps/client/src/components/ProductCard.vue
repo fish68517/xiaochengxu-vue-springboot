@@ -1,5 +1,5 @@
 <template>
-  <view class="product-card" @click="$emit('select', item)">
+  <view class="product-card" @click="selectProduct">
     <view class="cover-wrap">
       <image class="product-image" :src="cover" mode="aspectFill" @error="onImageError" />
       <text v-if="item.tierName" class="tier-badge">{{ item.tierName }}</text>
@@ -23,7 +23,11 @@ import { ref, watch } from 'vue';
 import { fenToYuan, gameText, serviceTypeText } from '../client-utils.js';
 import { productCover } from '../brand-assets.js';
 const props = defineProps({ item: { type: Object, required: true } });
-defineEmits(['select']);
+const emit = defineEmits(['select']);
+function selectProduct() {
+  console.info('[ClientUI] product:tap');
+  emit('select', props.item);
+}
 const cover = ref(productCover(props.item));
 watch(() => props.item, (value) => { cover.value = productCover(value); });
 function onImageError() { cover.value = '/static/default-product.svg'; }

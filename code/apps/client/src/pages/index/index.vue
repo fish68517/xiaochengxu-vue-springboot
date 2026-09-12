@@ -67,8 +67,22 @@ async function retryBrand() { try { await retryBrandConfig(); banners.value = he
 async function loadProducts() { loading.value = true; errorMsg.value = ''; try { banners.value = heroBanners(); const list = await api.listProducts(); const onList = (Array.isArray(list) ? list : []).filter((item) => item && item.status === 'ON'); products.value = onList; games.value = [...new Set(onList.map((item) => item.game).filter(Boolean))]; } catch (error) { products.value = []; errorMsg.value = (error && error.message) || '暂时无法获取服务，请稍后重试'; } finally { loading.value = false; } }
 function useFallbackBanner(index) { banners.value[index] = '/static/default-banner.svg'; }
 function clearFilter() { keyword.value = ''; selectedGame.value = ''; }
-function openCategory() { uni.navigateTo({ url: '/pages/category/index' }); }
-function goProduct(item) { const id = item && (item.id || item._id); if (id) uni.navigateTo({ url: `/pages/product/detail?id=${encodeURIComponent(id)}` }); }
+function openCategory() { navigate('/pages/category/index'); }
+function goProduct(item) {
+  const id = item && (item.id || item._id);
+  if (!id) { uni.showToast({ title: '商品信息不完整，请刷新后重试', icon: 'none' }); return; }
+  navigate(`/pages/product/detail?id=${encodeURIComponent(id)}`);
+}
+function navigate(url) {
+  console.info('[ClientUI] navigate:start', url.split('?')[0]);
+  uni.navigateTo({ url,
+    success: () => console.info('[ClientUI] navigate:success'),
+    fail: (error) => {
+      console.error('[ClientUI] navigate:fail', error && error.errMsg);
+      uni.showToast({ title: '页面打开失败，请返回首页重试', icon: 'none' });
+    },
+  });
+}
 </script>
 
 <style lang="scss" scoped>

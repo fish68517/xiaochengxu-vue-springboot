@@ -19,7 +19,14 @@ const tabs = [
 
 function open(tab) {
   if (tab.key === props.active) return;
-  uni.reLaunch({ url: tab.url });
+  console.info('[ClientUI] tab:tap', tab.key);
+  uni.reLaunch({
+    url: tab.url,
+    fail: (error) => {
+      console.error('[ClientUI] tab:fail', error && error.errMsg);
+      uni.showToast({ title: '页面打开失败，请重新进入小程序', icon: 'none' });
+    },
+  });
 }
 </script>
 

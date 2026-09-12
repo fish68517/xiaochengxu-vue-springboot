@@ -6,8 +6,10 @@
     { "path": "pages/product/detail", "style": { "navigationBarTitleText": "商品详情" } },
     { "path": "pages/order/list", "style": { "navigationBarTitleText": "我的订单" } },
     { "path": "pages/order/detail", "style": { "navigationBarTitleText": "订单详情" } },
-    { "path": "pages/order/webview-shell", "style": { "navigationBarTitleText": "下单" } },
-    { "path": "pages/h5-order/index", "style": { "navigationBarTitleText": "下单" } }
+    // #ifdef H5
+    { "path": "pages/h5-order/index", "style": { "navigationBarTitleText": "下单" } },
+    // #endif
+    { "path": "pages/order/webview-shell", "style": { "navigationBarTitleText": "下单" } }
   ],
   "globalStyle": {
     "navigationBarBackgroundColor": "#151f27",

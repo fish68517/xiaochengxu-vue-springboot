@@ -23,8 +23,8 @@ function getJson(url) {
 function createOAuth({ env = process.env, request = getJson } = {}) {
   // 服务号网页授权(snsapi_base):code 换服务号 openid,供 H5 页 JSAPI 对商户支付。
   async function oauthExchange(code) {
-    const appid = env.WECHAT_OFFICIAL_APPID;
-    const secret = env.WECHAT_OFFICIAL_SECRET;
+    const appid = env.OAUTH_APPID;
+    const secret = env.OAUTH_SECRET;
     if (!appid || !secret) throw new Error('服务号网页授权未配置(fail-closed)');
     if (!code) throw new Error('缺少网页授权 code');
     const url = `${OAUTH_API}?appid=${appid}&secret=${secret}&code=${encodeURIComponent(code)}&grant_type=authorization_code`;

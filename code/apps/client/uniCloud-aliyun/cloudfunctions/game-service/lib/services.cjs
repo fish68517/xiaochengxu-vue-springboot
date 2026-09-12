@@ -451,6 +451,11 @@ function staffAllowedActions(order, session) {
 function paymentMode() {
   const mode = String(process.env.PAYMENT_MODE || 'wechat').toLowerCase();
   if (!['mock', 'wechat'].includes(mode)) throw new Error('PAYMENT_MODE 必须为 mock/wechat');
+  if (mode === 'mock' && (process.env.APP_ENV || 'development') !== 'development') {
+    const error = new Error('支付服务配置异常，请联系客服');
+    error.code = 'PAYMENT_MOCK_NOT_ALLOWED';
+    throw error;
+  }
   return mode;
 }
 

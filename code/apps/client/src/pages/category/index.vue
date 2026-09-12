@@ -39,7 +39,14 @@ const shownProducts=computed(()=>{ const rows=products.value.filter((item)=>(!se
 onLoad(loadProducts);
 async function loadProducts(){loading.value=true;errorMsg.value='';try{const list=await api.listProducts();const rows=(Array.isArray(list)?list:[]).filter((item)=>item&&item.status==='ON');products.value=rows;games.value=[...new Set(rows.map((item)=>item.game).filter(Boolean))];}catch(error){products.value=[];errorMsg.value=(error&&error.message)||'暂时无法获取服务';}finally{loading.value=false;}}
 function clearFilter(){selectedGame.value='';keyword.value='';sortKey.value='default';}
-function goProduct(item){const id=item&&(item.id||item._id);if(id)uni.navigateTo({url:`/pages/product/detail?id=${encodeURIComponent(id)}`});}
+function goProduct(item){
+  const id=item&&(item.id||item._id);
+  if(!id){uni.showToast({title:'商品信息不完整，请刷新后重试',icon:'none'});return;}
+  uni.navigateTo({url:`/pages/product/detail?id=${encodeURIComponent(id)}`,fail:(error)=>{
+    console.error('[ClientUI] navigate:fail',error&&error.errMsg);
+    uni.showToast({title:'页面打开失败，请返回首页重试',icon:'none'});
+  }});
+}
 </script>
 
 <style lang="scss" scoped>
