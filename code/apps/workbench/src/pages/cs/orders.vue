@@ -1,6 +1,8 @@
 <template>
   <WorkbenchShell role="cs" active="orders" title="订单管理" subtitle="查看客户订单，按状态处理录入、指派、结单与售后">
     <view class="filter-panel">
+      <picker :range="brandOptions" range-key="label" :value="brandIndex" @change="changeBrand"><view class="filter-value">{{ brandOptions[brandIndex]?.label || '全部授权品牌' }} ▾</view></picker><text>{{ scopeHint }}</text>
+      <text v-if="loading">正在加载订单…</text>
       <view class="primary-filters"><view class="search-field"><view class="search-icon"/><input v-model="keyword" class="filter-input" placeholder="搜索订单号或联系方式" @confirm="search"/></view><picker class="filter" mode="selector" :range="statusOptions" range-key="label" @change="onStatusChange"><view class="filter-value">{{ statusLabel }} ▾</view></picker><button class="search-btn" @click="search">查询</button><button class="more-btn" @click="moreOpen=!moreOpen">{{ moreOpen?'收起':'更多筛选' }}</button></view>
       <view v-if="moreOpen" class="more-filters"><input v-model="game" class="filter-input" placeholder="游戏名称"/><input v-model="serviceType" class="filter-input" placeholder="服务类型"/><picker mode="date" :value="fromDate" @change="fromDate=$event.detail.value"><view class="date-picker">{{ fromDate||'开始日期' }} ▾</view></picker><picker mode="date" :value="toDate" @change="toDate=$event.detail.value"><view class="date-picker">{{ toDate||'结束日期' }} ▾</view></picker><button class="reset-btn" @click="reset">重置</button></view>
     </view>
@@ -19,16 +21,23 @@
 </template>
 
 <script setup>
-import { computed,ref } from 'vue'; import { onLoad } from '@dcloudio/uni-app'; import { api } from '../../api.js'; import { guard,oid,fenToYuan,orderStatusText } from '../../common.js'; import { gameText,serviceTypeText,formatDateTime } from '../../utils/display.js'; import WorkbenchShell from '../../components/WorkbenchShell.vue';
-const statusOptions=[{value:'',label:'全部状态'},{value:'PENDING_PAYMENT',label:'待支付'},{value:'PENDING_ACCEPT',label:'待受理'},{value:'PENDING_GRAB',label:'待抢单'},{value:'ASSIGN_PENDING',label:'指派待确认'},{value:'IN_SERVICE',label:'服务中'},{value:'PENDING_CONFIRM',label:'待确认'},{value:'SETTLED',label:'已结单'},{value:'DISPUTING',label:'异议中'},{value:'CANCELLED',label:'已取消'},{value:'REFUNDING',label:'退款中'},{value:'REFUNDED',label:'已退款'},{value:'CLOSED',label:'已关闭'}];
+import { sessionStore } from '../../session.js';
+import { computed,ref } from 'vue'; import { onLoad, onShow } from '@dcloudio/uni-app'; import { api, getActiveBrandId, setActiveBrandId } from '../../api.js'; import { guard,oid,fenToYuan,orderStatusText } from '../../common.js'; import { gameText,serviceTypeText,formatDateTime } from '../../utils/display.js'; import WorkbenchShell from '../../components/WorkbenchShell.vue';
+const statusOptions=[{value:'',label:'全部状态'},{value:'PENDING_PAYMENT',label:'待支付'},{value:'PENDING_ACCEPT',label:'待受理'},{value:'PENDING_GRAB',label:'待抢单'},{value:'ASSIGN_PENDING',label:'待指派确认'},{value:'IN_SERVICE',label:'服务中'},{value:'PENDING_CONFIRM',label:'待验收'},{value:'SETTLED',label:'已结单'},{value:'DISPUTING',label:'异议中'},{value:'CANCELLED',label:'已取消'},{value:'REFUNDING',label:'退款中'},{value:'REFUNDED',label:'已退款'},{value:'CLOSED',label:'已关闭'}];
+const profile=ref({});const brandIndex=ref(0);const loading=ref(false);
+const brandOptions=computed(()=>[{brandId:'',label:'全部授权品牌'},...(profile.value.brands||[]).map(b=>({...b,label:`${b.name}（${b.brandId}）`}))]);
+const scopeHint=computed(()=>profile.value.scopeHint || `授权范围：${(profile.value.brandScopes||[]).includes('*')?'所有品牌':(profile.value.brandScopes||[]).join('、')||'仅历史 default'}`);
+async function changeBrand(e){brandIndex.value=Number(e.detail.value);setActiveBrandId(brandOptions.value[brandIndex.value]?.brandId||'');await search();}
 const status=ref('');const game=ref('');const serviceType=ref('');const keyword=ref('');const fromDate=ref('');const toDate=ref('');const orders=ref([]);const error=ref('');const moreOpen=ref(false);const statusLabel=computed(()=>statusOptions.find((item)=>item.value===status.value)?.label||'全部状态');
 function productName(order){const snap=order.productSnapshot||{};return snap.title||snap.name||'服务订单';}function onStatusChange(event){status.value=statusOptions[Number(event.detail.value)].value;search();}
 function buildFilters(){const value={};if(status.value)value.status=status.value;if(game.value)value.game=game.value;if(serviceType.value)value.serviceType=serviceType.value;if(keyword.value)value.keyword=keyword.value.trim();if(fromDate.value)value.from=new Date(`${fromDate.value}T00:00:00`).getTime();if(toDate.value)value.to=new Date(`${toDate.value}T23:59:59`).getTime();return value;}
-async function search(){error.value='';try{const list=await api.listOrders(buildFilters());orders.value=Array.isArray(list)?list:[];}catch(e){error.value=e.message||'订单加载失败';orders.value=[];}}
+let searchVersion=0;
+async function search(){const version=++searchVersion;loading.value=true;error.value='';try{const list=await api.listOrders(buildFilters());if(!Array.isArray(list))throw new Error('订单接口返回格式异常，请更新 game-service 后重试');if(version===searchVersion)orders.value=list;}catch(e){if(version===searchVersion){error.value=e.message||'订单加载失败';orders.value=[];}}finally{if(version===searchVersion)loading.value=false;}}
 function reset(){status.value='';game.value='';serviceType.value='';keyword.value='';fromDate.value='';toDate.value='';search();}
 function statusTone(value){if(['SETTLED'].includes(value))return'success';if(['REFUNDING','DISPUTING'].includes(value))return'warning';if(['CANCELLED','REFUNDED','CLOSED'].includes(value))return'muted';return'active';}
 function openDetail(order){uni.navigateTo({url:`/pages/cs/order-detail?orderId=${encodeURIComponent(oid(order))}`});}
-onLoad((query)=>{if(!guard(['CS']))return;if(query&&query.status)status.value=query.status;search();});
+onLoad((query)=>{if(query&&query.status)status.value=query.status;});
+onShow(async()=>{if(!guard(['CS']))return;try{profile.value=await api.getAccessProfile();sessionStore.set('accessProfile',profile.value);brandIndex.value=Math.max(0,brandOptions.value.findIndex(b=>b.brandId===getActiveBrandId()));setActiveBrandId(brandOptions.value[brandIndex.value].brandId);await search();}catch(e){error.value=e.message||'权限信息加载失败';}});
 </script>
 
 <style lang="scss" scoped>

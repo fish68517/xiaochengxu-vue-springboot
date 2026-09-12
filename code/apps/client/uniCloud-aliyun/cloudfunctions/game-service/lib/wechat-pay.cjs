@@ -87,7 +87,7 @@ function createClient({ env = process.env, request = defaultRequest, now = () =>
     const timestamp = Math.floor(now() / 1000).toString();
     const nonce = crypto.randomBytes(16).toString('hex');
     const authorization = buildAuthorization({ method, url, body, mchid, serialNo, privateKey, timestamp, nonce });
-    return { Authorization: authorization };
+    return { Authorization: authorization, ...(env.WECHAT_PAY_PUBLIC_KEY_ID ? { 'Wechatpay-Serial': env.WECHAT_PAY_PUBLIC_KEY_ID } : {}) };
   }
 
   async function api(method, path, body) {
@@ -97,14 +97,14 @@ function createClient({ env = process.env, request = defaultRequest, now = () =>
     if (res.status < 200 || res.status >= 300) {
       const code = res.data && res.data.code ? res.data.code : res.status;
       const message = res.data && res.data.message ? `: ${res.data.message}` : '';
-      throw new Error(`微信支付接口错误 ${code}${message}`);
+      throw Object.assign(new Error(`微信支付接口错误 ${code}${message}`), { code: String(code) });
     }
     if (strict) await verifySignedBody(res.headers, res.rawBody);
     return res.data;
   }
 
   // JSAPI 下单:appid/openid 参数化,默认 appid=服务号 appid(WECHAT_PAY_APPID)。
-  // 部署要求:商户号需与认证服务号关联,openid 为服务号网页授权(oauthExchange)得到的 openid,而非小程序 openid。
+  // 网页使用服务号AppID/OpenID；原生小程序使用小程序AppID/OpenID，两者必须成对且已关联商户。
   async function jsapiPrepay({ outTradeNo, amountFen, description, openid, appid: appId }) {
     assertConfigured();
     if (!openid) throw new Error('JSAPI 支付缺少 openid');

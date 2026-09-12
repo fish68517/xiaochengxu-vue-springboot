@@ -1,0 +1,13 @@
+{
+  "production": {
+    "REPLACE_BRAND_CODE": {
+      "entityId": "REPLACE_ENTITY_ID",
+      "secretRef": "secret://xinghe/wechat-pay/production",
+      "envPrefix": "PAY_XINGHE",
+      "appId": "wxc2da39cc9c2d35da",
+      "mchid": "1116677386",
+      "boundAppIds": ["wxc2da39cc9c2d35da"],
+      "h5Enabled": false
+    }
+  }
+}

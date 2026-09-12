@@ -49,7 +49,7 @@ onLoad((query) => {
   }
 
   url.value =
-    `${H5_ORDER_BASE_URL.replace(/\/+$/, '')}/?webview_rev=${Date.now()}#/pages/h5-order/index?${params}`;
+    `${H5_ORDER_BASE_URL.replace(/\/+$/, '')}/?webview_rev=${Date.now()}#/pages/h5-order/index?${params}&paymentScene=miniprogram`;
 
   console.log('[WebView DEBUG] final url =', safeUrl());
 });

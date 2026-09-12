@@ -83,6 +83,11 @@ function protectRepository(repo, env = process.env) {
   if (repo.__privacyProtected) return repo;
   const wrapped = {
     ...repo, __privacyProtected: true,
+    ...(typeof repo.queryPage === 'function' ? { async queryPage(name, options = {}) {
+      // 工作流仅按品牌/状态/归属分页；仍需解密记录，不能绕过隐私仓储。
+      const page = await repo.queryPage(name, options);
+      return { ...page, items: page.items.map(row => decryptRecord(name, row, env)) };
+    } } : {}),
     async getById(name, id) { return decryptRecord(name, await repo.getById(name, id), env); },
     async find(name, where = {}) {
       const rewritten = {}; let changed = false;

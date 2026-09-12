@@ -46,6 +46,13 @@ function cloudAvailable() {
 
 function cloudTransportError(err) {
   const raw = (err && (err.errMsg || err.message)) || '';
+  // 平台域名校验失败属于部署配置问题，重试不会解决，也不是 H5 CORS。
+  if (/url not in domain list|不在.*合法域名/i.test(raw)) {
+    return new ApiError('小程序请求域名未授权，请管理员配置 request 合法域名后重试', {
+      code: 'MINIPROGRAM_REQUEST_DOMAIN_NOT_ALLOWED',
+      isNetwork: false,
+    });
+  }
   const isH5Production = import.meta.env.PROD && typeof window !== 'undefined' && !!window.location;
   // 浏览器会把 uniCloud 网关的 CORS 拒绝折叠成 request:fail，前端无法读取响应正文。
   // 给客户展示可理解的提示，同时保留错误码和控制台诊断信息供部署人员定位。
@@ -184,6 +191,8 @@ export const api = {
   getPaymentParams: (orderId, extra = {}) => call('getPaymentParams', { orderId, ...extra }, { write: true }),
   confirmMockPayment: (paymentId) => call('confirmMockPayment', { paymentId }, { write: true }),
   getPaymentStatus: (data) => call('getPaymentStatus', data),
+  getMiniPaymentParams: (orderId) => call('getMiniPaymentParams', { orderId }, { write: true }),
+  getMiniPaymentStatus: (orderId) => call('getMiniPaymentStatus', { orderId }),
   // 服务号网页授权 code 换 openid(H5 微信内 JSAPI 支付)
   oauthExchange: (code) => call('oauthExchange', { code }),
   listMyOrders: (query = {}) => call('listMyOrders', query),

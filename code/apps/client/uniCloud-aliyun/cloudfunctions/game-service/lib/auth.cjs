@@ -4,6 +4,7 @@
 const { createHmac, timingSafeEqual } = require('node:crypto');
 const { verifyInternalRequest } = require('./internal-auth.cjs');
 const Security = require('./account-security.cjs');
+const StaffBrands = require('./staff-brand-access.cjs');
 const { hashPassword } = Security;
 
 const SESSION_TTL_MS = 30 * 60 * 1000;    // 会话超时 30 分钟(V1.1 §11.1)
@@ -58,6 +59,8 @@ const ROLE_MATRIX = {
   closeReconciliationCase: ['ADMIN', 'SUPER_ADMIN', 'FINANCE_REVIEWER'],
   exportFinancialReconciliation: ['ADMIN', 'SUPER_ADMIN', 'FINANCE_REVIEWER'],
   h5Token: ['CUSTOMER'],                          // 主链路:小程序端申请,绑定小程序 openid
+  getMiniPaymentParams: ['CUSTOMER'],
+  getMiniPaymentStatus: ['CUSTOMER'],
   revokeH5Token: ['CS', 'ADMIN', 'BRAND_ADMIN', 'SUPER_ADMIN'],
   sendCustomerServiceLink: ['CS', 'ADMIN'],       // 兜底渠道:客服发链接(token 无 openid)
   changePassword: ['WORKER', 'CS', 'ADMIN', 'DISPATCHER', 'BRAND_ADMIN', 'FINANCE_REVIEWER', 'ARBITRATOR', 'SUPER_ADMIN'],
@@ -210,7 +213,7 @@ function createAuth({ env = process.env, now = () => Date.now() } = {}) {
     const legacyAdmin = ['ADMIN', 'SUPER_ADMIN'].includes(role);
     const access = {
       roles: [...new Set([role, ...roleRows.flatMap((row) => row.roles || []), ...(legacyAdmin ? ['SUPER_ADMIN'] : [])])],
-      brandScopes: legacyAdmin ? ['*'] : [...new Set(roleRows.map((row) => row.brandId).filter(Boolean))],
+      brandScopes: legacyAdmin ? ['*'] : StaffBrands.effectiveScopes(user, roleRows.map((row) => row.brandId)),
       permissions: [...new Set(roleRows.flatMap((row) => row.permissions || []))],
     };
     const claims = await security(repo).createSession({ ...user, role }, access);
@@ -240,16 +243,28 @@ function createAuth({ env = process.env, now = () => Date.now() } = {}) {
     const roles = [...new Set([role, ...(Array.isArray(payload.roles) ? payload.roles.map(normalizeRole) : [])])];
     const allowed = ROLE_MATRIX[action];
     if (!allowed) throw new Error(`action 未注册角色矩阵: ${action}`);
-    if (!roles.some((item) => allowed.includes(item))) throw new Error('无权执行该操作');
+    if (!roles.some((item) => allowed.includes(item))) {
+      const error = new Error(action === 'enterOrder'
+        ? '当前登录身份没有客服录入权限，请使用客服或管理员账号；全品牌授权不包含其他角色的操作权限'
+        : '当前登录身份无权执行该操作，请检查是否切换了账号');
+      error.code = 'ROLE_FORBIDDEN';
+      throw error;
+    }
     if (role === 'CUSTOMER') {
       // 客户会话主体在 customers 集合,附带回 openid 供订单归属过滤。
       const customer = await repo.getById('customers', payload.userId);
       if (!customer) throw new Error('客户身份不存在');
       return { mode: 'session', session: { userId: payload.userId, role, roles, brandScopes: payload.brandScopes || (customer.brandId ? [customer.brandId] : []), permissions: payload.permissions || [], openid: customer.openid } };
     }
-    await security(repo).validateSession(payload, action);
+    const user = await security(repo).validateSession(payload, action);
     Security.assertSensitiveAction(action, payload, ctx.payload?.stepUpToken, env, now());
-    return { mode: 'session', session: { ...payload, role, roles, brandScopes: payload.brandScopes || [], permissions: payload.permissions || [] } };
+    let brandScopes = payload.brandScopes || [];
+    if (StaffBrands.isStaff(user.role) && StaffBrands.isStaff(role)) {
+      // 对已有有效会话也生效。关闭联调策略时重读持久授权，不信任旧 token 中的 *。
+      const rows = StaffBrands.STAFF_ALL_BRANDS ? [] : await repo.find('user_brand_roles', { userId: user._id, status: 'ACTIVE' });
+      brandScopes = StaffBrands.effectiveScopes(user, rows.map(row => row.brandId));
+    }
+    return { mode: 'session', session: { ...payload, role, roles, brandScopes, permissions: payload.permissions || [] } };
   }
 
   // 拒绝把身份字段当作主体传入:CUSTOMER 拒绝 openid/customerId,WORKER 拒绝 workerId。

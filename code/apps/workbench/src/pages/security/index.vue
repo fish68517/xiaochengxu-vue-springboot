@@ -18,6 +18,7 @@
 </template>
 
 <script setup>
+import { sessionStore } from '../../session.js';
 import { computed, ref } from 'vue';
 import { onLoad } from '@dcloudio/uni-app';
 import { api } from '../../api.js';
@@ -56,7 +57,7 @@ async function submit() {
   submitting.value = true;
   try {
     await api.changePassword({ oldPassword: oldPassword.value, newPassword: newPassword.value });
-    uni.removeStorageSync('mustChangePwd');
+    sessionStore.remove('mustChangePwd');
     uni.showModal({
       title: '密码修改成功',
       content: '为保护账号安全，请使用新密码重新登录。',
@@ -72,7 +73,7 @@ async function submit() {
 
 onLoad((query) => {
   if (!guard(['CS'])) return;
-  required.value = query?.required === '1' || !!uni.getStorageSync('mustChangePwd');
+  required.value = query?.required === '1' || !!sessionStore.get('mustChangePwd');
 });
 </script>
 

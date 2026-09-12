@@ -104,17 +104,32 @@ async function main(event = {}) {
   // URL 化 HTTP 请求:微信支付回调(在 uniCloud 控制台为 game-service 配置 URL 化路径 /pay-notify)。
   if (event && event.httpMethod) {
     const path = (event.path || '').split('?')[0];
-    if (path === '/pay-notify' || path.endsWith('/pay-notify')) {
-      const repo = Privacy.protectRepository(createUniCloudRepository(uniCloud.database()), process.env);
+    // URL 化网关可能剥离已配置的 /pay-notify 前缀，传入根路径 /。
+    // 两种路径都只交给支付通知验签逻辑，不开放通用 action 调用。
+    if (path === '/' || path === '/pay-notify' || path.endsWith('/pay-notify')) {
+      if (event.httpMethod.toUpperCase() !== 'POST') return {
+        mpserverlessComposedResponse: true,
+        statusCode: 405,
+        headers: { 'content-type': 'application/json; charset=utf-8', allow: 'POST' },
+        body: JSON.stringify({ ok: false, code: 'METHOD_NOT_ALLOWED', message: '支付通知仅支持 POST' }),
+      };
       let result;
+      let statusCode = 200;
+      const { paymentLog, failureCode } = require('./lib/payment-log.cjs');
       try {
-        result = await services.payNotify(repo, { headers: event.headers || {}, body: event.body || '' });
+        const repo = Privacy.protectRepository(createUniCloudRepository(uniCloud.database()), process.env);
+        const body = event.isBase64Encoded ? Buffer.from(event.body || '', 'base64').toString('utf8') : (event.body || '');
+        result = await services.payNotify(repo, { headers: event.headers || {}, body });
+        if (result?.code !== 'SUCCESS') throw new Error('支付通知处理未完成');
       } catch (err) {
-        result = toEnvelope(err);
+        // APIv3按HTTP状态确认通知：落库/验签失败绝不能返回200，否则微信可能停止重试。
+        statusCode = 500;
+        result = { code: 'FAIL', message: '支付通知处理未完成，请重试' };
+        paymentLog('notify:http-failed', { httpStatus: statusCode, errorCode: failureCode(err) });
       }
       return {
         mpserverlessComposedResponse: true,
-        statusCode: 200,
+        statusCode,
         headers: { 'content-type': 'application/json; charset=utf-8' },
         body: JSON.stringify(result),
       };
@@ -150,7 +165,7 @@ async function main(event = {}) {
       ({ session, mode: authMode, internal } = await auth.require(repo, action, ctx));
     } catch (err) {
       // 鉴权失败统一封套,不上抛到云函数层。
-      return { ok: false, code: 'UNAUTHORIZED', message: err && err.message ? err.message : String(err) };
+      return { ok: false, code: err?.code === 'ROLE_FORBIDDEN' ? 'ROLE_FORBIDDEN' : 'UNAUTHORIZED', message: err && err.message ? err.message : String(err) };
     }
     const brandId = await enforceResourceBrand(repo, payload, session);
     const resource = ROUTE_AUDIT_ACTIONS.has(action) ? await auditResource(repo, payload) : null;

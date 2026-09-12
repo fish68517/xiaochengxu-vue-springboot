@@ -1,3 +1,4 @@
+import { sessionStore } from './session.js';
 // api.js — 环境化请求层（T0-08）+ §D.2 action 全量映射
 // 传输通道在模块加载时确定性选择：VITE_API_MODE=local 走 HTTP，unicloud 走云函数。
 // 写请求不跨 transport 重试；仅读请求在网络/瞬时错误时重试一次；POST 附加幂等键并做在途去重。
@@ -13,11 +14,11 @@ const CLOUD_NAME = 'game-service';
 const ACTIVE_BRAND_KEY = '__workbench_active_brand__';
 
 export function getActiveBrandId() {
-  try { return uni.getStorageSync(ACTIVE_BRAND_KEY) || ''; } catch (e) { return ''; }
+  try { return sessionStore.get(ACTIVE_BRAND_KEY) || ''; } catch (e) { return ''; }
 }
 
 export function setActiveBrandId(brandId) {
-  try { uni.setStorageSync(ACTIVE_BRAND_KEY, brandId || ''); } catch (e) { /* 忽略本地存储失败 */ }
+  try { sessionStore.set(ACTIVE_BRAND_KEY, brandId || ''); } catch (e) { /* 忽略本地存储失败 */ }
 }
 
 function withActiveBrand(payload = {}) {
@@ -27,7 +28,14 @@ function withActiveBrand(payload = {}) {
 
 // 会话 token 从存储读取并注入两种传输：HTTP 走 Authorization: Bearer，云函数走 data.token（鉴权中间件约定）
 function currentToken() {
-  try { return uni.getStorageSync('token') || ''; } catch (e) { return ''; }
+  try { return sessionStore.get('token') || ''; } catch (e) { return ''; }
+}
+function assertSameSession(token) {
+  if (token !== currentToken()) {
+    const error = new Error('登录账号已切换，请刷新当前页面后重试');
+    error.code = 'SESSION_CHANGED'; error.retryable = false;
+    throw error;
+  }
 }
 
 // 判断当前运行时是否具备 uniCloud 调用能力
@@ -58,7 +66,7 @@ function classifyHttpError(status, body) {
 
 // 判定云函数返回是否为业务错误（契约：错误统一 { code, message }）
 function isCloudError(r) {
-  return r && typeof r === 'object' && !Array.isArray(r) && r.code !== undefined && r.code !== 0 && !!r.message;
+  return r && typeof r === 'object' && !Array.isArray(r) && (r.ok === false || (r.code !== undefined && r.code !== 0 && !!r.message));
 }
 
 // HTTP 传输：走 uni.request，附 Idempotency-Key
@@ -74,6 +82,7 @@ function httpRequest(path, { method = 'GET', data, idemKey } = {}) {
       data,
       header,
       success: (res) => {
+        try { assertSameSession(token); } catch (error) { reject(error); return; }
         if (res.statusCode >= 200 && res.statusCode < 400) {
           resolve(res.data);
         } else {
@@ -96,11 +105,13 @@ function httpRequest(path, { method = 'GET', data, idemKey } = {}) {
 // 云函数传输：单一 action 入口，业务错误转异常
 async function cloudRequest(action, payload) {
   try {
+    const token = currentToken();
     // 仅传 name/data；uniCloud SDK 自行构造并签名 /client 请求体。
     const res = await uniCloud.callFunction({
       name: CLOUD_NAME,
-      data: { action, payload, token: currentToken() },
+      data: { action, payload, token },
     });
+    assertSameSession(token);
     const r = res.result || {};
     if (isCloudError(r)) {
       const e = new Error(r.message || `业务错误 ${r.code}`);
@@ -128,10 +139,10 @@ function nextIdemKey() {
 
 function handleSecurityRedirect(error) {
   if (!error || error.code !== 'PASSWORD_CHANGE_REQUIRED') return;
-  try { uni.setStorageSync('mustChangePwd', true); } catch (_e) { /* 存储失败时仍执行跳转 */ }
+  try { sessionStore.set('mustChangePwd', true); } catch (_e) { /* 存储失败时仍执行跳转 */ }
   const path = globalThis.location?.hash?.replace(/^#\//, '').split('?')[0] || '';
   if (path !== 'pages/security/index' && path !== 'pages/worker/profile') {
-    const user = uni.getStorageSync('user') || {};
+    const user = sessionStore.get('user') || {};
     const target = user.role === 'WORKER' ? '/pages/worker/profile' : '/pages/security/index?required=1';
     uni.reLaunch({ url: target });
   }
@@ -140,7 +151,8 @@ function handleSecurityRedirect(error) {
 // 统一调用：读请求网络错误重试 1 次，写请求不重试且绝不切换传输通道
 async function call(action, payload = {}, { method = 'GET' } = {}) {
   const write = method !== 'GET';
-  const dedupKey = write ? `${action}:${JSON.stringify(payload || {})}` : null;
+  const sessionToken = currentToken();
+  const dedupKey = write ? `${sessionToken}:${action}:${JSON.stringify(payload || {})}` : null;
   if (dedupKey && inFlight.has(dedupKey)) return inFlight.get(dedupKey);
 
   const run = async () => {
@@ -149,6 +161,7 @@ async function call(action, payload = {}, { method = 'GET' } = {}) {
     let lastErr;
     for (let i = 0; i < attempts; i += 1) {
       try {
+        assertSameSession(sessionToken);
         if (TRANSPORT === 'cloud') return await cloudRequest(action, payload);
         return await httpRequest(`/api/${action}`, { method, data: payload, idemKey: write ? nextIdemKey() : undefined });
       } catch (e) {
@@ -171,7 +184,7 @@ async function call(action, payload = {}, { method = 'GET' } = {}) {
 }
 
 // 凭证/身份证上传：HTTP 走 multipart，云函数先传对象存储再登记 attachments
-export function uploadFile(bizType, filePath, fileName) {
+export function uploadFile(bizType, filePath, fileName, bizId = '') {
   return new Promise((resolve, reject) => {
     try { assertTransportReady(); } catch (e) { reject(e); return; }
     if (TRANSPORT === 'cloud' && typeof uniCloud !== 'undefined' && uniCloud.uploadFile) {
@@ -181,7 +194,7 @@ export function uploadFile(bizType, filePath, fileName) {
         filePath,
         success: async (up) => {
           try {
-            resolve(await call('uploadFile', { bizType, fileId: up.fileID, fileName: fileName || 'file' }, { method: 'POST' }));
+            resolve(await call('uploadFile', { bizType, bizId, fileID: up.fileID, fileName: fileName || 'file' }, { method: 'POST' }));
           } catch (e) { reject(e); }
         },
         fail: reject,
@@ -192,7 +205,7 @@ export function uploadFile(bizType, filePath, fileName) {
       url: API_BASE + '/api/uploadFile',
       filePath,
       name: 'file',
-      formData: { bizType },
+      formData: { bizType, bizId },
       header: currentToken() ? { Authorization: `Bearer ${currentToken()}` } : {},
       success: (res) => {
         if (res.statusCode >= 200 && res.statusCode < 400) {
@@ -241,7 +254,7 @@ export const api = {
   reworkOrder: (orderId, note) => call('reworkOrder', { orderId, note }, { method: 'POST' }),
   resolveDispute: (disputeId, result, note) => call('resolveDispute', { disputeId, result, note }, { method: 'POST' }),
   startDisputeReview: (disputeId) => call('startDisputeReview', { disputeId }, { method: 'POST' }),
-  listWorkers: () => call('listWorkers', withActiveBrand({})),
+  listWorkers: (params = {}) => call('listWorkers', withActiveBrand(params)),
   markWithdrawalPaid: (withdrawalId, paidBy, batchNo) => call('markWithdrawalPaid', { withdrawalId, paidBy, batchNo }, { method: 'POST' }),
   rejectWithdrawal: (withdrawalId, reason) => call('rejectWithdrawal', { withdrawalId, reason }, { method: 'POST' }),
   sendOrderMessage: (orderId, content) => call('sendOrderMessage', { orderId, content }, { method: 'POST' }),

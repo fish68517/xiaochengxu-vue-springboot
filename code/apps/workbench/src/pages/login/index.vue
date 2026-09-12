@@ -20,42 +20,46 @@
 </template>
 
 <script setup>
+import { sessionStore, assertLoginIdentity } from '../../session.js';
 import { ref } from 'vue';
 import { api, setActiveBrandId } from '../../api.js';
 import { roleHome } from '../../common.js';
 
-const mode = ref(uni.getStorageSync('lastWorkbenchMode') || 'cs');
+const mode = ref(sessionStore.get('lastWorkbenchMode') || 'cs');
 const phone = ref('');
 const password = ref('');
 const loading = ref(false);
 const errorMsg = ref('');
 const isDev = import.meta.env.DEV;
-function selectMode(value) { mode.value = value; errorMsg.value = ''; uni.setStorageSync('lastWorkbenchMode', value); }
+function selectMode(value) { mode.value = value; errorMsg.value = ''; sessionStore.set('lastWorkbenchMode', value); }
 
 // 双角色登录：客服走 authLogin，接单人员走 workerLogin；初始或弱密码统一强制进入对应安全页面。
 async function login() {
+  if (loading.value) return;
   errorMsg.value = '';
   if (!phone.value || !password.value) {
     errorMsg.value = '请输入手机号和密码';
     return;
   }
   loading.value = true;
+  const loginMode = mode.value;
+  let committedToken = '';
   try {
     const payload = { phone: phone.value, password: password.value };
-    const res = mode.value === 'worker' ? await api.workerLogin(payload) : await api.authLogin(payload);
-    uni.setStorageSync('token', res.token);
-    uni.setStorageSync('user', res.user || { role: res.role });
-    if (res.mustChangePwd) uni.setStorageSync('mustChangePwd', true);
-    else uni.removeStorageSync('mustChangePwd');
+    const res = loginMode === 'worker' ? await api.workerLogin(payload) : await api.authLogin(payload);
+    assertLoginIdentity(res, loginMode);
+    sessionStore.saveLogin(res);
+    committedToken = res.token;
     setActiveBrandId('');
-    uni.setStorageSync('accessProfile', await api.getAccessProfile());
+    sessionStore.set('accessProfile', await api.getAccessProfile());
 
     if (res.mustChangePwd) {
-      uni.redirectTo({ url: mode.value === 'worker' ? '/pages/worker/profile' : '/pages/security/index?required=1' });
+      uni.redirectTo({ url: loginMode === 'worker' ? '/pages/worker/profile' : '/pages/security/index?required=1' });
       return;
     }
     uni.redirectTo({ url: roleHome(res.user ? res.user.role : res.role) });
   } catch (e) {
+    if (committedToken && sessionStore.get('token') === committedToken) sessionStore.clear();
     errorMsg.value = e.message || '登录失败，请检查账号密码';
   } finally {
     loading.value = false;

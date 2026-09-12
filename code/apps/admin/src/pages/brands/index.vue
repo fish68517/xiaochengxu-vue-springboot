@@ -278,8 +278,8 @@ async function save() {
     const idx = brands.value.findIndex((b) => (b.brandId || b.id) === saved.brandId || (saved.id && (b.id === saved.id)));
     if (idx >= 0) brands.value[idx] = saved;
     else brands.value.push(saved);
-    editingBrandId.value = saved.brandId;
-    currentVersion.value = saved.publishedVersion || saved.version || currentVersion.value + 1;
+    // 用服务端规范化后的字段回填，包括历史支付引用别名的迁移结果。
+    editBrand(saved);
     uni.showToast({ title: '已保存', icon: 'success' });
   } catch (e) {
     // 失败不修改本地状态，回滚已输入但未落库的表单仅由用户重试。

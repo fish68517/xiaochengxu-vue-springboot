@@ -12,6 +12,7 @@
 </template>
 
 <script setup>
+import { sessionStore } from '../../session.js';
 import { reactive, ref, computed } from 'vue';
 import { onLoad, onUnload } from '@dcloudio/uni-app';
 import { api, getActiveBrandId, setActiveBrandId } from '../../api.js';
@@ -56,7 +57,7 @@ async function load() {
 }
 
 function initBrandSwitcher() {
-  const profile = uni.getStorageSync('accessProfile') || {};
+  const profile = sessionStore.get('accessProfile') || {};
   const scopes = (profile.brandScopes || []).filter((item) => item && item !== '*');
   brandOptions.value = [{ brandId: '', name: '全部授权品牌' }, ...scopes.map((brandId) => ({ brandId, name: brandId }))];
   const found = brandOptions.value.findIndex((item) => item.brandId === getActiveBrandId());

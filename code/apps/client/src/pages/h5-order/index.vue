@@ -17,13 +17,14 @@
 
 <script setup>
 // H5 下单/支付/支付成功页(一期核心):URL 取 token → getH5Product → 动态表单(联系方式至少一)→ createOrderFromH5 → 支付分流。
-// 微信内 web-view=服务号网页授权→oauthExchange→getPaymentParams(JSAPI)→WeixinJSBridge;微信内非 web-view=引导复制/小程序内打开;微信外=mweb 跳转。
+// 小程序web-view仅承载表单，建单后跳回同一个小程序原生支付页；不在web-view中授权或调起JSAPI。
 import { ref } from 'vue';
 import { onLoad, onShow } from '@dcloudio/uni-app';
-import { api, ApiError, OAUTH_APPID } from '../../api.js';
+import { api, ApiError } from '../../api.js';
 import { brandState } from '../../brand.js';
 import { brandContact } from '../../brand-assets.js';
 import { fenToYuan, gameText, serviceTypeText } from '../../client-utils.js';
+import { openMiniPayment } from '../../mini-payment-bridge.js';
 
 const token = ref('');
 const product = ref(null);
@@ -39,7 +40,8 @@ const continueOrderNo = ref('');
 const pendingPaymentId = ref('');
 const paymentMessage = ref('');
 const PREPARE_TIMEOUT_MS = 20000;
-const ORDER_PAGE_REVISION = '20260912-order-diagnostics-1';
+const miniPaymentScene = ref(false);
+const ORDER_PAGE_REVISION = '20260913-native-payment-1';
 function orderLog(stage, fields = {}) {
   // 仅由本页传入阶段、布尔值、耗时和错误码；禁止传入请求/响应、token、code 或 openid。
   console.info('[H5Order]', JSON.stringify({ revision: ORDER_PAGE_REVISION, stage, ...fields }));
@@ -65,8 +67,13 @@ function withPrepareTimeout(promise, message, stage) {
 }
 
 onLoad(async (query) => {
+  miniPaymentScene.value = query?.paymentScene === 'miniprogram' || isMiniProgramWebview();
   // 1) 恢复 token:URL 优先,其次 sessionStorage(网页授权回调后 URL 已变)。
   const t = (query && query.token) || sessionGet('h5_token') || '';
+  if (t && t !== sessionGet('h5_token')) {
+    sessionRemove('h5_order_key');
+    sessionRemove('h5_pending_payment');
+  }
   orderLog('onLoad', { hasToken: !!t, inWechat: isInWechat(), inMiniProgram: isMiniProgramWebview() });
   // 继续支付:订单已存在,直接进入支付分支(不新建订单)。
   const cid = (query && query.orderId) || '';
@@ -89,7 +96,7 @@ onLoad(async (query) => {
 
   // 2) 网页授权回调:微信内 code 换 openid(JSAPI 对商户支付)。
   const code = (query && query.code) || getQueryCode();
-  if (code && isInWechat()) {
+  if (code && isInWechat() && !miniPaymentScene.value) {
     try {
       const res = await withPrepareTimeout(api.oauthExchange(code), '网页授权请求超时，请稍后重试', 'oauthExchange');
       if (!res || !res.openid) throw new ApiError('网页授权未返回 openid');
@@ -128,14 +135,7 @@ async function loadProduct() {
     if (!p || !p.id) throw new ApiError('商品信息不存在');
     product.value = p;
     buildDynamicFields(p);
-    // 微信内 web-view 且无 openid:先网页授权(snsapi_base 静默,回来后页面重载)。
-    if (isMiniProgramWebview() && !sessionGet('h5_openid')) {
-      if (!redirectToOauth()) {
-        loading.value = false;
-        errorMsg.value = '未配置服务号网页授权，请联系管理员';
-      }
-      return;
-    }
+    // 小程序身份已绑定在下单token中，无需服务号网页授权。
     loading.value = false;
     orderLog('form:ready');
   } catch (e) {
@@ -158,6 +158,8 @@ function buildDynamicFields(p) {
 
 // 提交订单:校验联系方式至少一项,再按环境分流支付。
 async function submitOrder() {
+  if (submitting.value) return;
+  if (continueOrderId.value) return continuePay();
   const contactWechat = (form.value.contactWechat || '').trim();
   const contactPhone = (form.value.contactPhone || '').trim();
   if (!contactWechat && !contactPhone) {
@@ -180,13 +182,12 @@ async function submitOrder() {
     continueOrderId.value = orderId;
     continueOrderNo.value = orderNo || '';
 
-    if (isInWechat()) {
-      if (isMiniProgramWebview()) {
-        await payInWechatWebview(orderId, orderNo);
-      } else {
-        // 微信内非 web-view:引导复制链接到浏览器或在小程序中打开
-        showGuide();
-      }
+    // 先切换到已有订单视图：通信失败重试只能支付，不能再次建单。
+    phase.value = 'continue';
+    if (miniPaymentScene.value || isMiniProgramWebview()) {
+      await openMiniPayment(orderId);
+    } else if (isInWechat()) {
+      showGuide();
     } else {
       await payOutsideWechat(orderId, orderNo);
     }
@@ -203,15 +204,13 @@ async function submitOrder() {
 
 // 继续支付:对已存在订单直接走支付分流(不新建订单)。
 async function continuePay() {
-  if (!continueOrderId.value) return;
+  if (!continueOrderId.value || submitting.value) return;
   submitting.value = true;
   try {
-    if (isInWechat()) {
-      if (isMiniProgramWebview()) {
-        await payInWechatWebview(continueOrderId.value, continueOrderNo.value);
-      } else {
-        showGuide();
-      }
+    if (miniPaymentScene.value || isMiniProgramWebview()) {
+      await openMiniPayment(continueOrderId.value);
+    } else if (isInWechat()) {
+      showGuide();
     } else {
       await payOutsideWechat(continueOrderId.value, continueOrderNo.value);
     }
@@ -223,28 +222,6 @@ async function continuePay() {
     }
   } finally {
     submitting.value = false;
-  }
-}
-
-// 微信内 web-view:JSAPI 对商户支付。
-async function payInWechatWebview(orderId, orderNo) {
-  let openid = sessionGet('h5_openid');
-  if (!openid) {
-    // 未授权则先网页授权,回来后可重新提交。
-    redirectToOauth();
-    throw new ApiError('正在前往授权,请稍后重新提交');
-  }
-  const params = await api.getPaymentParams(orderId, { payType: 'JSAPI', openid, h5Token: token.value });
-  if (params && params.paymentMode === 'mock') return completeMockPayment(params, orderNo);
-  if (!params || params.payType !== 'JSAPI') throw new ApiError('支付参数异常,请重试');
-  try {
-    await invokeJsapi(params.jsapi);
-    showSuccess(orderNo);
-  } catch (e) {
-    // 用户取消/失败:区分后交由上层 toast。
-    const err = e && e.message ? e : new Error('支付未完成');
-    err.isCancelled = /cancel/i.test((e && e.errMsg) || (e && e.message) || '');
-    throw err;
   }
 }
 
@@ -303,28 +280,6 @@ async function refreshPaymentStatus(fallbackOrderNo = '') {
   }
 }
 
-// WeixinJSBridge 拉起收银台。
-function invokeJsapi(jsapi) {
-  return new Promise((resolve, reject) => {
-    if (typeof WeixinJSBridge === 'undefined' || !WeixinJSBridge.invoke) {
-      reject(new Error('当前环境不支持微信支付,请复制链接到浏览器打开'));
-      return;
-    }
-    WeixinJSBridge.invoke('getBrandWCPayRequest', {
-      appId: jsapi.appId,
-      timeStamp: jsapi.timeStamp,
-      nonceStr: jsapi.nonceStr,
-      package: jsapi.package,
-      signType: jsapi.signType || 'RSA',
-      paySign: jsapi.paySign,
-    }, (res) => {
-      if (res && res.err_msg === 'get_brand_wcpay_request:ok') resolve(res);
-      else if (res && res.err_msg === 'get_brand_wcpay_request:cancel') reject(Object.assign(new Error('已取消支付'), { errMsg: 'cancel' }));
-      else reject(new Error((res && res.err_msg) || '支付失败'));
-    });
-  });
-}
-
 // 支付成功视图:展示订单号 + 复制 + 回小程序 + 联系客服引导。
 function showSuccess(orderNo) {
   paidOrderNo.value = orderNo || '';
@@ -363,29 +318,6 @@ function showGuide() {
       }
     },
   });
-}
-
-// 服务号网页授权(snsapi_base):跳转 open.weixin.qq.com,回调回本页带 code。
-function redirectToOauth() {
-  orderLog('oauthRedirect:start', { hasAppId: !!OAUTH_APPID });
-  console.log('[OAuth DEBUG] OAUTH_APPID =', OAUTH_APPID);
-  // URL 中包含 H5 下单 token；调试日志保留路径，但必须遮蔽敏感查询参数。
-  console.log('[OAuth DEBUG] current href =', location.href.replace(/([?&](?:token|h5Token|code|state)=)[^&#]*/gi, '$1<REDACTED>'));
-  if (!OAUTH_APPID) {
-    uni.showToast({ title: '未配置服务号网页授权11', icon: 'none' });
-    return false;
-  }
-  const redirectUri = `${location.origin}${location.pathname}?webview_rev=${Date.now()}#/pages/h5-order/index`;
-  location.href = `https://open.weixin.qq.com/connect/oauth2/authorize?appid=${OAUTH_APPID}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&scope=snsapi_base&state=order#wechat_redirect`;
-  // 若微信容器未完成跳转，原页面仍可见时给出明确反馈，不让“正在准备订单”无限旋转。
-  setTimeout(() => {
-    if (loading.value && !errorMsg.value && typeof document !== 'undefined' && !document.hidden) {
-      loading.value = false;
-      orderLog('oauthRedirect:timeout');
-      errorMsg.value = '微信网页授权跳转超时，请返回小程序后重试';
-    }
-  }, PREPARE_TIMEOUT_MS);
-  return true;
 }
 
 function retry() {

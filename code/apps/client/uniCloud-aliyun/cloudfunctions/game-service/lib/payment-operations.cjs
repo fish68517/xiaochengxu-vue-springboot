@@ -1,14 +1,16 @@
 'use strict';
 const { createHash, randomUUID } = require('node:crypto');
 const Pay = require('./wechat-pay.cjs');
-const { resolvePaymentConfig } = require('./payment-config.cjs');
+const { resolvePaymentConfig, loadPaymentMap } = require('./payment-config.cjs');
 const F = require('./commercial-finance.cjs');
 const D = require('./domain.cjs');
 const { reconcilePaidButClosed } = require('./reconcile.cjs');
-function clientFor(order, secretRef = '') {
+const { paymentLog, failureCode } = require('./payment-log.cjs');
+function clientFor(order, secretRef = '', appId = '') {
   if (globalThis.__PAY_CLIENT__ && !['staging', 'production'].includes(process.env.APP_ENV)) return { client: globalThis.__PAY_CLIENT__, snapshot: {} };
-  if (!process.env.WECHAT_PAY_CONFIG_MAP && !['staging', 'production'].includes(process.env.APP_ENV)) return { client: Pay.createClient(), snapshot: {} };
-  const config = resolvePaymentConfig({ brandCode: order.brandSnapshot?.brandCode || order.brandId || 'default', secretRef });
+  const map = loadPaymentMap();
+  if (!map && !['staging', 'production'].includes(process.env.APP_ENV)) return { client: Pay.createClient(), snapshot: {} };
+  const config = resolvePaymentConfig({ brandCode: order.brandSnapshot?.brandCode || order.brandId || 'default', secretRef, appId, map });
   return { client: Pay.createClient({ env: config.env }), snapshot: config.snapshot };
 }
 async function decodeNotification(payload) {
@@ -16,11 +18,16 @@ async function decodeNotification(payload) {
     if (!globalThis.__PAY_CLIENT__.isConfigured?.()) throw new Error('微信支付未配置');
     return { event: await globalThis.__PAY_CLIENT__.handleNotify(payload), client: globalThis.__PAY_CLIENT__, snapshot: {} };
   }
-  if (!process.env.WECHAT_PAY_CONFIG_MAP && !['staging', 'production'].includes(process.env.APP_ENV)) { const client = Pay.createClient(); if (!client.isConfigured()) throw new Error('微信支付未配置'); return { event: await client.handleNotify(payload), client, snapshot: {} }; }
-  const brands = JSON.parse(process.env.WECHAT_PAY_CONFIG_MAP || '{}')[process.env.APP_ENV] || {};
+  const map = loadPaymentMap();
+  if (!map && !['staging', 'production'].includes(process.env.APP_ENV)) { const client = Pay.createClient(); if (!client.isConfigured()) throw new Error('微信支付未配置'); return { event: await client.handleNotify(payload), client, snapshot: {} }; }
+  const brands = (map || {})[process.env.APP_ENV || 'development'] || {};
   // 不信任URL传入品牌，依次使用获准品牌配置验签/解密；匹配成功后还要校验订单快照。
-  for (const brandCode of Object.keys(brands).slice(0, 50)) {
-    try { const config = resolvePaymentConfig({ brandCode }); const client = Pay.createClient({ env: config.env }); const event = await client.handleNotify(payload); return { event, client, snapshot: config.snapshot }; } catch (_) { /* 换下一个受控商户，禁止输出密文或Secret */ }
+  for (const brandCode of Object.keys(brands)) {
+    const appIds = [...new Set([brands[brandCode].appId, ...(brands[brandCode].boundAppIds || [])])];
+    if (appIds.length > 10) throw new Error('单品牌支付AppID配置过多');
+    for (const appId of appIds) {
+      try { const config = resolvePaymentConfig({ brandCode, appId, map }); const client = Pay.createClient({ env: config.env }); const event = await client.handleNotify(payload); return { event, client, snapshot: config.snapshot }; } catch (_) { /* 每个受控AppID独立验签、解密、校验，不放宽回调身份检查 */ }
+    }
   }
   throw new Error('支付通知验签或品牌校验失败');
 }
@@ -65,6 +72,7 @@ async function applyEvent(repo, { event, client, snapshot }, completePayment) {
   if (event.mchid && payment.configSnapshot?.mchid && event.mchid !== payment.configSnapshot.mchid) throw new Error('支付通知商户不一致');
   if (event.appid && payment.configSnapshot?.appId && event.appid !== payment.configSnapshot.appId) throw new Error('支付通知AppID不一致');
   if (event.eventType === 'TRANSACTION.SUCCESS') {
+    if (payment.channel === 'WECHAT_MINIPROGRAM' && (!event.payerOpenid || event.payerOpenid !== order.customerId)) throw new Error('支付付款人与小程序订单客户不一致');
     if (event.amount?.currency && event.amount.currency !== 'CNY') throw new Error('支付币种不一致');
     if (Number(event.amount?.total) !== payment.amountFen || payment.amountFen !== order.amountFen || payment.brandId !== order.brandId) throw new Error('支付金额不一致或品牌与订单不一致');
     if (order.status === 'CLOSED') {
@@ -81,7 +89,11 @@ async function applyEvent(repo, { event, client, snapshot }, completePayment) {
   return { ignored: true };
 }
 async function payNotify(repo, payload, completePayment) {
-  const decoded = await decodeNotification(payload);
+  paymentLog('notify:received', { hasSignature: !!(payload.headers?.['wechatpay-signature'] || payload.headers?.['Wechatpay-Signature']) });
+  let decoded;
+  try { decoded = await decodeNotification(payload); }
+  catch (error) { paymentLog('notify:verify-failed', { errorCode: failureCode(error) }); throw error; }
+  paymentLog('notify:verified', { orderNo: decoded.event.outTradeNo, eventId: decoded.event.eventId });
   if (decoded.event.eventType === 'IGNORED') return { code: 'SUCCESS', message: '已忽略' };
   const id = createHash('sha256').update(`${decoded.snapshot.mchid || 'dev'}:${decoded.event.eventId || JSON.stringify(decoded.event)}`).digest('hex');
   let record = await repo.getById('payment_events', id);
@@ -90,8 +102,10 @@ async function payNotify(repo, payload, completePayment) {
   try {
     await applyEvent(repo, decoded, completePayment);
     await repo.updateById('payment_events', id, { status: 'DONE', attempts: record.attempts + 1, updatedAt: Date.now() });
+    paymentLog('notify:done', { orderNo: decoded.event.outTradeNo, eventId: decoded.event.eventId });
     return { code: 'SUCCESS', message: '成功' };
   } catch (error) {
+    paymentLog('notify:apply-failed', { orderNo: decoded.event.outTradeNo, eventId: decoded.event.eventId, errorCode: failureCode(error) });
     await repo.updateById('payment_events', id, { status: 'RETRY', attempts: record.attempts + 1, nextRetryAt: Date.now() + 60000, errorCode: 'PAYMENT_APPLY_FAILED', updatedAt: Date.now() });
     throw error;
   }
@@ -136,7 +150,7 @@ async function compensatePayments(repo, { limit = 50 } = {}, session, completePa
     try {
       const order = await repo.getById('orders', payment.orderId); const { client, snapshot } = clientFor(order, payment.secretRef);
       const state = await client.queryTransaction({ outTradeNo: order.orderNo });
-      if (state.trade_state === 'SUCCESS') await applyEvent(repo, { client, snapshot, event: { eventType: 'TRANSACTION.SUCCESS', outTradeNo: state.out_trade_no, transactionId: state.transaction_id, mchid: state.mchid, appid: state.appid, amount: state.amount } }, completePayment);
+      if (state.trade_state === 'SUCCESS') await applyEvent(repo, { client, snapshot, event: { eventType: 'TRANSACTION.SUCCESS', outTradeNo: state.out_trade_no, transactionId: state.transaction_id, mchid: state.mchid, appid: state.appid, amount: state.amount, payerOpenid: state.payer?.openid } }, completePayment);
       else if (['CLOSED', 'REVOKED', 'PAYERROR'].includes(state.trade_state)) await repo.updateById('payments', payment._id, { status: state.trade_state === 'PAYERROR' ? 'FAILED' : 'CLOSED', updatedAt: Date.now() });
       results.push({ paymentId: payment._id, ok: true });
     } catch (_) { results.push({ paymentId: payment._id, ok: false }); }
@@ -147,4 +161,4 @@ async function compensatePayments(repo, { limit = 50 } = {}, session, completePa
   await repo.insert('audit_logs', { _id: randomUUID(), action: 'compensatePayments', operatorRole: 'SYSTEM', operatorId: session.userId, after: { checked: results.length, failed: results.filter((r) => !r.ok).length }, createdAt: Date.now() });
   return { checked: results.length, results };
 }
-module.exports = { clientFor, payNotify, approveRefund, compensatePayments, applyRefundResult };
+module.exports = { clientFor, payNotify, approveRefund, compensatePayments, applyRefundResult, applyEvent };

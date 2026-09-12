@@ -4,6 +4,9 @@
     <PageHeader eyebrow="STAFF ACCOUNTS" title="账号管理" description="统一创建接单服务人员与客服账号，管理实名审核和账号状态" />
 
     <view class="form">
+      <text class="label">{{ staffAllBrands ? '账号归档品牌（不限制当前联调访问范围）' : '品牌（创建账号和授权均使用此选择）' }}</text>
+      <picker :range="brands" range-key="label" :value="brandIndex" @change="brandIndex=Number($event.detail.value)"><view class="input">{{ brands[brandIndex]?.label || '请选择品牌' }}</view></picker>
+      <text class="worker-sub">{{ staffAllBrands ? '联调模式：客服和工作人员默认授权所有品牌，无需逐个点击授权。' : '客服与工作人员必须获授权订单所属品牌，例如 demo-a。' }}</text>
       <text class="section-title">创建员工账号</text>
       <view class="field">
         <text class="label">员工角色</text>
@@ -40,6 +43,8 @@
         <text v-if="w.realnameRejectReason" class="worker-sub">驳回原因：{{ w.realnameRejectReason }}</text>
       </view>
       <view class="worker-actions">
+        <text class="worker-sub">授权品牌：{{ staffAllBrands ? '所有品牌（联调默认）' : (grants[idOf(w)] || []).join('、') || '仅历史 default' }}</text>
+        <button v-if="!staffAllBrands" class="mini-btn" :disabled="grantBusy || !brands[brandIndex]" @click="grantBrand(w)">授权所选品牌</button>
         <button v-if="w.role === 'WORKER' && w.realnameStatus !== 'APPROVED'" class="mini-btn" @click="approveRealname(w)">实名通过</button>
         <button v-if="w.role === 'WORKER' && w.realnameStatus !== 'REJECTED'" class="mini-btn danger" @click="rejectRealname(w)">实名驳回</button>
         <button class="mini-btn" :class="{ danger: w.status !== 'DISABLED' }" @click="toggleStatus(w)">
@@ -58,6 +63,8 @@ import { api } from '../../api.js';
 import { maskPhone } from '../../utils/display.js';
 
 const workers = ref([]);
+const staffAllBrands = ref(false);
+const brands = ref([]); const brandIndex = ref(0); const grants = ref({}); const grantBusy = ref(false);
 const error = ref('');
 const creating = ref(false);
 const roleOptions = [{ label: '接单服务人员', value: 'WORKER' }, { label: '客服', value: 'CS' }];
@@ -75,7 +82,11 @@ onLoad(load);
 async function load() {
   error.value = '';
   try {
-    const list = await api.listUsers();
+    const [list, brandList, roleRows, profile] = await Promise.all([api.listStaffForAccess(), api.listBrands(), api.listUserBrandRoles(), api.getAccessProfile()]);
+    staffAllBrands.value = profile.staffAllBrands === true;
+    brands.value = brandList.map(b => ({ ...b, label: `${b.name}（${b.brandId}）` }));
+    grants.value = {};
+    for (const row of roleRows) if(row.status === 'ACTIVE') (grants.value[row.userId] ||= []).push(row.brandId);
     workers.value = (Array.isArray(list) ? list : []).filter((item) => ['WORKER', 'CS', 'CUSTOMER_SERVICE'].includes(item.role));
   } catch (e) {
     error.value = e.message || '账号列表加载失败';
@@ -85,6 +96,8 @@ async function load() {
 // 创建接单人员（createWorker：手机号唯一 + mustChangePwd=true），成功以服务端返回更新列表。
 async function create() {
   const { role, phone, initialPassword, nickname } = createForm.value;
+  const brandId = brands.value[brandIndex.value]?.brandId || (staffAllBrands.value ? 'default' : '');
+  if (!brandId) { uni.showToast({title:'请先选择品牌',icon:'none'}); return; }
   if (!phone) { uni.showToast({ title: '手机号不能为空', icon: 'none' }); return; }
   if (!initialPassword) { uni.showToast({ title: '初始密码不能为空', icon: 'none' }); return; }
   if (initialPassword.length < 12 || initialPassword.length > 128 || passwordClassCount(initialPassword) < 3) {
@@ -93,8 +106,8 @@ async function create() {
   }
   creating.value = true;
   try {
-    const user = await api.createStaff({ role, phone, password: initialPassword, nickname: nickname || phone });
-    workers.value.push(user);
+    const user = await api.createStaff({ role, phone, password: initialPassword, nickname: nickname || phone, brandId });
+    await load();
     createForm.value = { role: 'WORKER', phone: '', initialPassword: '', nickname: '' };
     uni.showToast({ title: '已创建，首次登录强制改密', icon: 'success' });
   } catch (e) {
@@ -104,6 +117,17 @@ async function create() {
   }
 }
 
+async function grantBrand(w) {
+  const brand = brands.value[brandIndex.value]; if (!brand || grantBusy.value) return;
+  const confirmed = await new Promise(resolve=>uni.showModal({title:'确认品牌授权',content:`允许 ${w.nickname || '该员工'} 处理 ${brand.label} 的订单？员工需重新登录。`,success:r=>resolve(r.confirm),fail:()=>resolve(false)}));
+  if (!confirmed) return;
+  grantBusy.value=true;
+  try {
+    const existing=(await api.listUserBrandRoles({userId:idOf(w)})).find(r=>r.brandId===brand.brandId);
+    await api.saveUserBrandRoles({userId:idOf(w),brandId:brand.brandId,roles:existing?.roles?.length?existing.roles:[w.role==='WORKER'?'WORKER':'CS'],permissions:existing?.permissions||[],status:'ACTIVE'});
+    await load(); uni.showToast({title:'授权成功，请员工重新登录',icon:'none'});
+  } catch(e){uni.showToast({title:e.message||'授权失败',icon:'none'});}finally{grantBusy.value=false;}
+}
 async function rejectRealname(w) {
   const result = await new Promise((resolve) => uni.showModal({ title: '实名审核驳回', content: '', editable: true, placeholderText: '请输入驳回原因', success: resolve }));
   if (!result.confirm) return;

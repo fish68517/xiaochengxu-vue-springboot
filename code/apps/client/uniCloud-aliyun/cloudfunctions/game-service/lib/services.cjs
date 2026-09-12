@@ -15,6 +15,8 @@ const { buildH5OrderLink } = require('./h5-link.cjs');
 const Finance = require('./commercial-finance.cjs');
 const Privacy = require('./privacy.cjs');
 const Ops = require('./commercial-ops.cjs');
+const Workflow = require('./order-workflow.cjs');
+const StaffBrands = require('./staff-brand-access.cjs');
 
 const auth = createAuth({ env: process.env });
 const verifyStepUp = async (_repo, session, token) => {
@@ -94,7 +96,7 @@ const REFUND_TYPES = ['full', 'partial_unstarted', 'partial_progress', 'partial_
 
 const STATUS_TEXT = {
   PENDING_PAYMENT: '待支付', PENDING_ACCEPT: '待受理', PENDING_GRAB: '待抢单',
-  ASSIGN_PENDING: '指派待确认', IN_SERVICE: '服务中', PENDING_CONFIRM: '待确认',
+  ASSIGN_PENDING: '待指派确认', IN_SERVICE: '服务中', PENDING_CONFIRM: '待验收',
   SETTLED: '已结单', DISPUTING: '异议中', CANCELLED: '已取消',
   REFUNDING: '退款中', REFUNDED: '已退款', CLOSED: '已关闭',
 };
@@ -196,11 +198,16 @@ async function transition(repo, orderId, expectedStatus, mutate, log) {
   const order = await repo.getById('orders', orderId);
   if (!order) throw new Error('订单不存在');
   if (order.status !== expectedStatus) throw new Error(`订单当前状态不可执行「${log.action}」`);
-  const clone = cloneOrder(order);
-  mutate(clone);
-  return repo.transaction(async (tr) => {
-    const res = await tr.updateWhere('orders', { _id: orderId, status: expectedStatus }, clone);
-    if (res.updated !== 1) throw new Error(`订单状态已变化,「${log.action}」失败`);
+  const result = await repo.transaction(async (tr) => {
+    const current = await tr.getById('orders', orderId);
+    if (!current || current.status !== expectedStatus || (current.version || 0) !== (order.version || 0)) {
+      throw new Error(`CONFLICT:订单状态已变化,「${log.action}」失败，请刷新`);
+    }
+    const clone = cloneOrder(current);
+    mutate(clone);
+    clone.version = (current.version || 0) + 1;
+    clone.updatedAt = Date.now();
+    await tr.updateById('orders', orderId, clone);
     await tr.insert('order_logs', {
       _id: newIdNo('olog'), orderId, brandId: clone.brandId || order.brandId || 'default',
       fromStatus: expectedStatus, toStatus: clone.status,
@@ -209,6 +216,8 @@ async function transition(repo, orderId, expectedStatus, mutate, log) {
     });
     return tr.getById('orders', orderId);
   });
+  Workflow.logTransition(log.action, result, expectedStatus);
+  return result;
 }
 
 // 退款比例:实际/保底(domain 公式 = 1 − clamp(实际/保底,0,1)),无保底兜底 0。
@@ -266,6 +275,9 @@ function assertBrandAccess(session, brandId) {
 }
 
 async function userHasBrandScope(repo, userId, brandId) {
+  const user = await repo.getById('users', userId);
+  if (user && user.status && user.status !== 'ACTIVE') return false;
+  if (StaffBrands.allowsAllBrands(user)) return true;
   const rows = await repo.find('user_brand_roles', { userId });
   const active = rows.filter((row) => row.status !== 'DISABLED');
   return active.length === 0 ? brandId === 'default' : active.some((row) => row.brandId === '*' || row.brandId === brandId);
@@ -459,7 +471,7 @@ function paymentMode() {
   return mode;
 }
 
-async function ensurePayment(repo, order, { payType = 'MWEB', idempotencyKey = '' } = {}) {
+async function ensurePayment(repo, order, { payType = 'MWEB', idempotencyKey = '', appId = '' } = {}) {
   const mode = paymentMode();
   const channel = mode === 'mock' ? 'MOCK' : `WECHAT_${payType}`;
   const key = idempotencyKey || `${order._id}:${channel}`;
@@ -473,42 +485,68 @@ async function ensurePayment(repo, order, { payType = 'MWEB', idempotencyKey = '
   const remote = ['staging', 'production'].includes(process.env.APP_ENV);
   const secretRef = mode === 'wechat' ? (refs.paymentSecretRef || (!remote && globalThis.__PAY_CLIENT__ ? 'injected:pay-client' : '') || (!remote && process.env.WECHAT_PAY_MCHID ? 'env:wechat-pay' : '')) : '';
   if (mode === 'wechat' && !secretRef) throw new Error('当前品牌未配置支付 secretRef');
-  if (mode === 'wechat' && remote) {
+  let configSnapshot = {};
+  if (mode === 'wechat' && (remote || appId)) {
     // 缺少客户凭据时先报配置错误，不创建无效待支付流水。
-    const { client, snapshot } = require('./payment-operations.cjs').clientFor(order, secretRef);
+    const { client, snapshot } = require('./payment-operations.cjs').clientFor(order, secretRef, appId);
+    configSnapshot = snapshot;
     if (!client.isConfigured()) throw new Error('微信支付未配置');
     if (brand?.binding?.merchant && String(brand.binding.merchant).trim() !== String(snapshot.mchid)) throw new Error('品牌后台商户号与支付映射不一致');
   }
   if (payment) return repo.updateById('payments', payment._id, { secretRef, updatedAt: Date.now() });
-  payment = await repo.insert('payments', {
-    _id: newIdNo('payment'), paymentNo: `PAY${Date.now()}${Math.random().toString(36).slice(2, 8).toUpperCase()}`,
+  const paymentId = payType === 'MINIPROGRAM' ? `mini-${require('node:crypto').createHash('sha256').update(order._id).digest('hex').slice(0, 32)}` : newIdNo('payment');
+  try { payment = await repo.insert('payments', {
+    _id: paymentId, paymentNo: `PAY${Date.now()}${Math.random().toString(36).slice(2, 8).toUpperCase()}`,
     brandId: order.brandId || 'default', orderId: order._id, channel, amountFen: order.amountFen,
-    status: 'PENDING', idempotencyKey: key, secretRef, createdAt: Date.now(), updatedAt: Date.now(),
-  });
+    status: 'PENDING', idempotencyKey: key, secretRef, configSnapshot, createdAt: Date.now(), updatedAt: Date.now(),
+  }); } catch (error) {
+    if (payType !== 'MINIPROGRAM') throw error;
+    payment = await repo.getById('payments', paymentId);
+    if (!payment || payment.orderId !== order._id || payment.channel !== channel || payment.amountFen !== order.amountFen) throw error;
+  }
   await repo.updateById('orders', order._id, { paymentId: payment._id, paymentStatus: payment.status, updatedAt: Date.now() });
   return payment;
 }
 
 async function completePayment(repo, payment, { transactionId, amountFen, brandId, paidAt = Date.now() }) {
-  if (payment.status === 'SUCCESS') return { code: 'SUCCESS', paymentId: payment._id, duplicate: true };
+  const { paymentLog, failureCode } = require('./payment-log.cjs');
   const order = await repo.getById('orders', payment.orderId);
   if (!order) throw new Error('订单不存在');
   if (payment.brandId !== (order.brandId || 'default') || (brandId && brandId !== payment.brandId)) throw new Error('支付品牌不匹配');
   if (payment.amountFen !== order.amountFen || (amountFen !== undefined && Number(amountFen) !== payment.amountFen)) throw new Error('支付金额与订单金额不一致');
-  if (order.status !== D.OrderStatus.PENDING_PAYMENT) throw new Error('订单当前状态不可支付');
   const duplicate = await repo.findOne('payments', { providerTransactionId: transactionId });
   if (duplicate && duplicate._id !== payment._id) throw new Error('支付流水已被其他支付单使用');
-  const clone = cloneOrder(order);
-  D.payOrder(clone, { paidAt, transactionId, payerOpenid: order.payerOpenid || order.customerId });
-  return repo.transaction(async (tr) => {
-    const res = await tr.updateWhere('orders', { _id: order._id, status: D.OrderStatus.PENDING_PAYMENT }, {
-      status: clone.status, paidAt: clone.paidAt, transactionId, paymentId: payment._id, paymentStatus: 'SUCCESS', updatedAt: Date.now(),
+  paymentLog('commit:start', { orderNo: order.orderNo, paymentId: payment._id });
+  try {
+    const result = await repo.transaction(async (tr) => {
+      // uniCloud事务只支持doc更新：在事务内读最新状态，再写同一文档；并发由事务冲突保护。
+      const current = await tr.getById('orders', order._id);
+      const currentPayment = await tr.getById('payments', payment._id);
+      if (!current || !currentPayment || currentPayment.orderId !== current._id || currentPayment.brandId !== current.brandId || currentPayment.amountFen !== current.amountFen || current.amountFen !== payment.amountFen) throw new Error('支付记录与订单金额或品牌不一致');
+      if (currentPayment.providerTransactionId && currentPayment.providerTransactionId !== transactionId) throw new Error('支付流水不一致');
+      if (current.transactionId && current.transactionId !== transactionId) throw new Error('订单支付流水不一致');
+      if (current.status !== D.OrderStatus.PENDING_PAYMENT) {
+        if (current.paidAt && current.transactionId === transactionId && currentPayment.status === 'SUCCESS') return { code: 'SUCCESS', paymentId: payment._id, duplicate: true };
+        throw new Error('订单当前状态不可支付');
+      }
+      const clone = cloneOrder(current);
+      D.payOrder(clone, { paidAt, transactionId, payerOpenid: current.payerOpenid || current.customerId });
+      await tr.updateById('orders', current._id, {
+        status: clone.status, paidAt: clone.paidAt, transactionId, paymentId: payment._id, paymentStatus: 'SUCCESS', updatedAt: Date.now(),
+      });
+      await tr.updateById('payments', payment._id, { status: 'SUCCESS', providerTransactionId: transactionId, paidAt, updatedAt: Date.now() });
+      const logId = `paid-${payment._id}`;
+      const existingLog = await tr.getById('order_logs', logId);
+      if (existingLog && (existingLog.orderId !== current._id || existingLog.payloadSnapshot?.paymentId !== payment._id)) throw new Error('到账日志关联订单不一致');
+      if (!existingLog) await tr.insert('order_logs', { _id: logId, brandId: current.brandId || 'default', orderId: current._id, fromStatus: D.OrderStatus.PENDING_PAYMENT, toStatus: D.OrderStatus.PENDING_ACCEPT, action: 'payNotify', operatorType: 'system', operatorRole: 'SYSTEM', operatorId: 'payment', payloadSnapshot: { paymentId: payment._id }, requestId: '', remark: '微信支付验签/查单确认到账', createdAt: Date.now() });
+      return { code: 'SUCCESS', paymentId: payment._id, duplicate: false };
     });
-    if (res.updated !== 1) throw new Error('CONFLICT:订单状态已变化，请刷新');
-    await tr.updateById('payments', payment._id, { status: 'SUCCESS', providerTransactionId: transactionId, paidAt, updatedAt: Date.now() });
-    await tr.insert('order_logs', { _id: newIdNo('olog'), brandId: order.brandId || 'default', orderId: order._id, fromStatus: D.OrderStatus.PENDING_PAYMENT, toStatus: D.OrderStatus.PENDING_ACCEPT, action: 'payNotify', operatorType: 'system', operatorRole: 'SYSTEM', operatorId: 'payment', payloadSnapshot: { paymentId: payment._id }, requestId: '', remark: '支付成功', createdAt: Date.now() });
-    return { code: 'SUCCESS', paymentId: payment._id, duplicate: false };
-  });
+    paymentLog('commit:success', { orderNo: order.orderNo, paymentId: payment._id, duplicate: result.duplicate });
+    return result;
+  } catch (error) {
+    paymentLog('commit:failed', { orderNo: order.orderNo, paymentId: payment._id, errorCode: failureCode(error) });
+    throw error;
+  }
 }
 
 async function addAssignment(repo, order, { type, workerId = '', previousWorkerId = '', operatorId = '', reason = '' }) {
@@ -555,6 +593,7 @@ function publicOrderDTO(order) {
 }
 
 const services = {
+  ...require('./mini-payment.cjs').createMiniPaymentServices({ ensurePayment, completePayment, paymentMode }),
   ...privacyServices,
   ...operationsServices,
   ...financeServices,
@@ -605,7 +644,11 @@ const services = {
   },
 
   async getAccessProfile(repo, {}, session) {
-    return accessProfile(session);
+    const profile = accessProfile(session);
+    const brands = await Workflow.readAll(repo, 'brands');
+    return { ...profile, staffAllBrands: StaffBrands.STAFF_ALL_BRANDS, brands: brands.filter(brand => canAccessBrand(session, brand.brandId))
+      .map(brand => ({ brandId: brand.brandId, name: brand.name })),
+      scopeHint: StaffBrands.STAFF_ALL_BRANDS ? '联调模式：客服和工作人员默认授权所有品牌；工作人员仍只能操作本人承接的订单。' : '按账号品牌授权查看订单，请管理员配置所需品牌。' };
   },
 
   async getRuntimeConfig(repo) {
@@ -640,7 +683,7 @@ const services = {
   },
 
   async listUsers(repo, { brandId } = {}, session) {
-    const users = await repo.find('users', {});
+    const users = await Workflow.readAll(repo, 'users');
     if (brandId) assertBrandAccess(session, brandId);
     const visible = [];
     for (const user of users) {
@@ -673,7 +716,7 @@ const services = {
   },
 
   async listUserBrandRoles(repo, { userId, brandId } = {}, session) {
-    let rows = await repo.find('user_brand_roles', userId ? { userId } : {});
+    let rows = await Workflow.readAll(repo, 'user_brand_roles', userId ? { userId } : {});
     if (brandId) rows = rows.filter((row) => row.brandId === brandId);
     return rows.filter((row) => canAccessBrand(session, row.brandId));
   },
@@ -874,6 +917,8 @@ const services = {
     }
     const order = await repo.getById('orders', orderId);
     if (!order) return { ok: false, code: 'ORDER_NOT_PAYABLE', message: '订单不可支付' };
+    const activePayment = order.paymentId ? await repo.getById('payments', order.paymentId) : null;
+    if (order.payType === 'MINIPROGRAM' || activePayment?.channel === 'WECHAT_MINIPROGRAM') return { ok: false, code: 'ORDER_NOT_PAYABLE', message: '请回到小程序原生支付页继续支付' };
     if (order.productId !== t.productId) return { ok: false, code: 'ORDER_NOT_PAYABLE', message: '订单不可支付' };
     if (order.status !== D.OrderStatus.PENDING_PAYMENT) return { ok: false, code: 'ORDER_NOT_PAYABLE', message: '订单不可支付' };
     if (D.isPaymentExpired(order, Date.now())) return { ok: false, code: 'ORDER_NOT_PAYABLE', message: '订单已超时关闭' };
@@ -956,11 +1001,13 @@ const services = {
   async listMyOrders(repo, {}, session) {
     let list;
     if (session.role === 'WORKER') {
-      list = await repo.find('orders', { workerId: session.userId });
+      list = await Workflow.readAll(repo, 'orders', { workerId: session.userId });
     } else {
-      list = await repo.find('orders', { customerId: session.openid });
+      list = await Workflow.readAll(repo, 'orders', { customerId: session.openid });
     }
-    return list.filter((order) => canAccessBrand(session, order.brandId || 'default')).map((order) => ({ ...orderDTO(order), allowedActions: session.role === 'WORKER' ? staffAllowedActions(order, session) : orderDTO(order).allowedActions })).sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+    return list.filter((order) => canAccessBrand(session, order.brandId || 'default')).map((order) => session.role === 'WORKER'
+      ? Workflow.workerOrder(order, orderDTO(order), staffAllowedActions(order, session)) : orderDTO(order))
+      .sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
   },
 
   async getMyOrder(repo, { orderId }, session) {
@@ -973,7 +1020,7 @@ const services = {
       throw new Error('无权查看他人订单');
     }
     const messages = await repo.find('order_messages', { orderId });
-    return { ...orderDTO(order), allowedActions: session.role === 'WORKER' ? staffAllowedActions(order, session) : orderDTO(order).allowedActions, messages };
+    return { ...(session.role === 'WORKER' ? Workflow.workerOrder(order, orderDTO(order), staffAllowedActions(order, session)) : orderDTO(order)), messages };
   },
 
   async submitDispute(repo, { orderId, content, attachmentIds = [] }, session) {
@@ -1059,8 +1106,8 @@ const services = {
   // ---- 客服/管理员订单管理 ----
 
   async listOrders(repo, { status, game, serviceType, from, to, keyword, brandId } = {}, session) {
-    let list = await repo.find('orders', {});
     if (brandId) assertBrandAccess(session, brandId);
+    let list = await Workflow.readAll(repo, 'orders', { ...(brandId && brandId !== 'default' ? { brandId } : {}), ...(status ? { status } : {}) });
     list = list.filter((order) => canAccessBrand(session, order.brandId || 'default'));
     if (brandId) list = list.filter((order) => (order.brandId || 'default') === brandId);
     if (status) list = list.filter((o) => o.status === status);
@@ -1068,7 +1115,8 @@ const services = {
     if (serviceType) list = list.filter((o) => o.serviceType === serviceType);
     if (from) list = list.filter((o) => o.createdAt >= from);
     if (to) list = list.filter((o) => o.createdAt <= to);
-    if (keyword) list = list.filter((o) => o.orderNo === keyword || o.contactPhone === keyword || o.contactWechat === keyword);
+    if (keyword) list = list.filter((o) => [o.orderNo, o.customerNickname, o.customerUid, o.contactPhone, o.contactWechat].some(value => String(value || '').includes(keyword)));
+    console.info('[OrderWorkflowList]', JSON.stringify({ role: session.role, brandScopes: session.brandScopes || [], requestedBrand: brandId || '', status: status || '', returned: list.length }));
     return list.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0)).map((order) => ({ ...order, allowedActions: staffAllowedActions(order, session) }));
   },
 
@@ -1086,7 +1134,16 @@ const services = {
     ]);
     // 出参契约定案:{order, logs[], attachments[], refund, dispute}(refund 取最近一条)。
     const refund = refunds.length ? refunds.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0))[0] : null;
-    return { order: { ...order, allowedActions: staffAllowedActions(order, session) }, logs, attachments, refund, dispute, payments, assignments };
+    const proofRows = await Promise.all((order.attachmentIds || []).map(id => repo.getById('attachments', id)));
+    const proofImages = [];
+    for (const attachment of proofRows.filter(Boolean)) {
+      if (attachment.bizType !== 'complete_proof' || attachment.uploaderId !== order.workerId
+        || (attachment.brandId || 'default') !== (order.brandId || 'default') || attachment.accessRevoked
+        || (attachment.scanStatus && attachment.scanStatus !== 'CLEAN')) continue;
+      const signed = await getUploadClient().signTempUrl({ fileID: attachment.fileID });
+      if (signed.url) proofImages.push({ id: attachment._id, url: signed.url });
+    }
+    return { order: { ...order, allowedActions: staffAllowedActions(order, session) }, logs, attachments, proofImages, refund, dispute, payments, assignments };
   },
 
   async listOrderLogs(repo, { orderId }, session) {
@@ -1097,7 +1154,7 @@ const services = {
   // 抢单池:含入池时长与超时标(入池 30 分钟)。
   async listPool(repo, { brandId = '' } = {}, session) {
     if (brandId) assertBrandAccess(session, brandId);
-    const pool = await repo.find('orders', { status: D.OrderStatus.PENDING_GRAB });
+    const pool = await Workflow.readAll(repo, 'orders', { status: D.OrderStatus.PENDING_GRAB });
     const now = Date.now();
     const configuredTimeoutMs = Number(await getConfig(repo, 'poolTimeoutMinutes', CONFIG_DEFAULTS.poolTimeoutMinutes)) * 60 * 1000;
     return pool
@@ -1158,6 +1215,9 @@ const services = {
     const previousWorkerId = order.workerId || '';
     const patch = { status: D.OrderStatus.ASSIGN_PENDING, workerId, assignedBy: session.userId, assignedAt: Date.now(), updatedAt: Date.now() };
     const updated = await repo.transaction(async (tr) => {
+      const current = await tr.getById('orders', orderId);
+      if (!current || current.status !== order.status || (current.version || 0) !== (order.version || 0)) throw new Error('CONFLICT:订单已变化，请刷新后改派');
+      patch.version = (current.version || 0) + 1;
       await tr.updateById('orders', orderId, patch);
       await tr.insert('order_logs', { _id: newIdNo('olog'), brandId: order.brandId || 'default', orderId, fromStatus: order.status, toStatus: D.OrderStatus.ASSIGN_PENDING, action: 'reassignOrder', operatorType: normRole(session.role), operatorRole: normRole(session.role), operatorId: session.userId, payloadSnapshot: { workerId, previousWorkerId }, requestId: requestId || idempotencyKey, remark: reason, createdAt: Date.now() });
       await tr.insert('assignments', { _id: newIdNo('assignment'), brandId: order.brandId || 'default', orderId, type: 'REASSIGN', workerId, previousWorkerId, operatorId: session.userId, reason, requestId: requestId || idempotencyKey, createdAt: Date.now() });
@@ -1182,7 +1242,7 @@ const services = {
     const wallet = await ensureWallet(repo, session.userId);
     if (wallet.freezeAccept) throw new Error('接单权限已被冻结');
     const maxActive = await getConfig(repo, 'maxActiveOrders', DEFAULTS.maxActiveOrders);
-    const mine = await repo.find('orders', { workerId: session.userId });
+    const mine = await Workflow.readAll(repo, 'orders', { workerId: session.userId });
     const inProgress = mine.filter((o) => [D.OrderStatus.IN_SERVICE, D.OrderStatus.PENDING_CONFIRM].includes(o.status)).length;
     if (inProgress >= maxActive) throw new Error(`同时进行订单已达上限(${maxActive})`);
     const order = await repo.getById('orders', orderId);
@@ -1200,6 +1260,14 @@ const services = {
     const order = await repo.getById('orders', assignmentId);
     if (!order) throw new Error('订单不存在');
     if (order.workerId !== session.userId) throw new Error('指派对象不一致');
+    assertBrandAccess(session, order.brandId || 'default');
+    const worker = await repo.getById('users', session.userId);
+    if (!worker || worker.status !== 'ACTIVE' || worker.acceptEnabled === false) throw new Error('接单权限未开启');
+    const wallet = await ensureWallet(repo, session.userId);
+    if (wallet.freezeAccept) throw new Error('接单权限已被冻结');
+    const mine = await Workflow.readAll(repo, 'orders', { workerId: session.userId });
+    const maxActive = await getConfig(repo, 'maxActiveOrders', DEFAULTS.maxActiveOrders);
+    if (mine.filter(row => ['IN_SERVICE', 'PENDING_CONFIRM'].includes(row.status)).length >= maxActive) throw new Error(`同时进行订单已达上限(${maxActive})`);
     const result = await transition(repo, assignmentId, D.OrderStatus.ASSIGN_PENDING, (clone) => {
       D.acceptAssignment(clone, session.userId);
     }, { action: 'acceptAssignment', operatorType: 'worker', operatorId: session.userId, remark: '接受指派' });
@@ -1231,6 +1299,14 @@ const services = {
     const order = await repo.getById('orders', orderId);
     if (!order) throw new Error('订单不存在');
     if (order.workerId !== session.userId) throw new Error('只能提交自己的订单');
+    assertBrandAccess(session, order.brandId || 'default');
+    if (!Array.isArray(attachmentIds) || !attachmentIds.length || attachmentIds.length > 9) throw new Error('请上传 1 至 9 张完成凭证');
+    for (const id of attachmentIds) {
+      const file = await repo.getById('attachments', id);
+      if (!file || !file.fileID || file.uploaderId !== session.userId || file.bizType !== 'complete_proof'
+        || (file.brandId || 'default') !== (order.brandId || 'default') || (file.bizId && file.bizId !== orderId)
+        || file.accessRevoked || (file.scanStatus && file.scanStatus !== 'CLEAN')) throw new Error('完成凭证不存在、不可用或不属于本订单，请重新上传');
+    }
     return transition(repo, orderId, D.OrderStatus.IN_SERVICE, (clone) => {
       D.submitCompletion(clone, { actualOutput, attachmentIds });
     }, { action: 'submitCompletion', operatorType: 'worker', operatorId: session.userId, remark: '提交完成申请' });
@@ -1270,9 +1346,13 @@ const services = {
     if (customerConfirmed !== true) throw new Error('结单前必须与客户确认');
     const pre = await repo.getById('orders', orderId);
     if (!pre) throw new Error('订单不存在');
+    assertBrandAccess(session, pre.brandId || 'default');
     if (pre.completedAt) return pre; // 幂等:重复结单不重复入账
     const workerId = pre.workerId;
     if (!workerId) throw new Error('订单未分配接单人员,无法结单');
+    if (pre.status !== D.OrderStatus.PENDING_CONFIRM || pre.verificationStatus !== 'VERIFIED') throw new Error('结单前必须先完成服务验收');
+    // 阿里云事务内只按文档ID操作；定位钱包在事务外，余额在事务内重新读取。
+    const settlementWallet = await ensureWallet(repo, workerId);
     const disputeWindowHours = Number(await getConfig(repo, 'disputeWindowHours', CONFIG_DEFAULTS.disputeWindowHours));
     const settled = await repo.transaction(async (tr) => {
       const cur = await tr.getById('orders', orderId);
@@ -1283,29 +1363,23 @@ const services = {
       const commissionRule = cur.commissionRuleSnapshot && cur.commissionRuleSnapshot.rule || cur.commission;
       const earnings = D.calculateEarnings({ amountFen: cur.amountFen, commission: commissionRule });
       const nowTs = Date.now();
-      const res = await tr.updateWhere('orders', { _id: orderId, status: D.OrderStatus.PENDING_CONFIRM }, {
+      if (cur.workerId !== workerId) throw new Error('CONFLICT:接单人员已变化，请刷新');
+      await tr.updateById('orders', orderId, {
         status: D.OrderStatus.SETTLED, confirmedBy: session.userId, completedAt: nowTs,
-        disputeDeadline: nowTs + disputeWindowHours * 60 * 60 * 1000, earningsFen: earnings, updatedAt: nowTs,
+        disputeDeadline: nowTs + disputeWindowHours * 60 * 60 * 1000, earningsFen: earnings, updatedAt: nowTs, version: (cur.version || 0) + 1,
       });
-      if (res.updated !== 1) {
-        const retry = await tr.getById('orders', orderId);
-        if (retry && retry.completedAt) return retry;
-        throw new Error('订单状态已变化,无法结单');
-      }
       if (earnings > 0) {
-        let wallet = await tr.findOne('wallets', { ownerId: workerId });
-        if (!wallet) {
-          wallet = { _id: newIdNo('wallet'), ownerId: workerId, ...D.createWallet(), createdAt: nowTs, updatedAt: nowTs };
-          await tr.insert('wallets', wallet);
-        }
+        const wallet = await tr.getById('wallets', settlementWallet._id);
+        if (!wallet || wallet.ownerId !== workerId) throw new Error('结算钱包不存在或归属不符');
         D.creditWallet(wallet, earnings);
         await tr.updateById('wallets', wallet._id, { availableFen: wallet.availableFen, version: (wallet.version || 0) + 1, updatedAt: nowTs });
-        await tr.insert('wallet_transactions', { _id: newIdNo('wtx'), brandId: cur.brandId || 'default', walletId: wallet._id, accountType: 'WORKER_AVAILABLE', accountId: workerId, direction: 'CREDIT', type: 'ORDER_EARNINGS', amountFen: earnings, balanceAfterFen: wallet.availableFen, refId: orderId, orderId, ruleVersion: cur.commissionRuleSnapshot && cur.commissionRuleSnapshot.version || 0, status: 'POSTED', operatorId: session.userId, createdAt: nowTs });
+        await tr.insert('wallet_transactions', { _id: `earnings-${orderId}`, brandId: cur.brandId || 'default', walletId: wallet._id, accountType: 'WORKER_AVAILABLE', accountId: workerId, direction: 'CREDIT', type: 'ORDER_EARNINGS', amountFen: earnings, balanceAfterFen: wallet.availableFen, refId: orderId, orderId, ruleVersion: cur.commissionRuleSnapshot && cur.commissionRuleSnapshot.version || 0, status: 'POSTED', operatorId: session.userId, createdAt: nowTs });
       }
       await tr.insert('order_logs', { _id: newIdNo('olog'), orderId, fromStatus: D.OrderStatus.PENDING_CONFIRM, toStatus: D.OrderStatus.SETTLED, action: 'confirmSettlement', operatorType: normRole(session.role), operatorId: session.userId, remark: '结单,佣金入账', createdAt: nowTs });
       return tr.getById('orders', orderId);
     });
     // 订阅消息:结单完成通知客户(失败静默)。
+    Workflow.logTransition('confirmSettlement', settled, D.OrderStatus.PENDING_CONFIRM);
     await sendSubscribe(repo, { receiverId: await resolveCustomerId(repo, settled), templateKey: 'ORDER_SETTLED', data: { orderNo: settled.orderNo, statusText: STATUS_TEXT[D.OrderStatus.SETTLED] } });
     return settled;
   },
@@ -1447,7 +1521,7 @@ const services = {
   // ---- 接单人员管理 ----
 
   async listWorkers(repo, { brandId } = {}, session) {
-    const workers = await repo.find('users', { role: 'WORKER' });
+    const workers = await Workflow.readAll(repo, 'users', { role: 'WORKER' });
     const requested = brandId || '';
     if (requested) assertBrandAccess(session, requested);
     const visible = [];
@@ -1982,6 +2056,8 @@ const services = {
     if (!Upload.isBizTypeAllowedForRole(bizType, session.role)) throw new Error('无权上传该类型附件');
     const uploaderName = await resolveUploaderName(repo, session);
     const relatedOrder = bizId ? await repo.getById('orders', bizId) : null;
+    if (bizType === 'complete_proof' && bizId && (!relatedOrder || relatedOrder.workerId !== session.userId || relatedOrder.status !== D.OrderStatus.IN_SERVICE)) throw new Error('仅可为本人服务中的订单上传凭证');
+    if (relatedOrder) assertBrandAccess(session, relatedOrder.brandId || 'default');
     const relatedDispute = !relatedOrder && bizId ? await repo.getById('disputes', bizId) : null;
     const brandId = (relatedOrder && relatedOrder.brandId) || (relatedDispute && relatedDispute.brandId)
       || (session.brandScopes || []).find((scope) => scope !== '*') || 'default';
@@ -2059,7 +2135,7 @@ const services = {
   async dashboard(repo, { brandId = '' } = {}, session) {
     if (brandId) assertBrandAccess(session, brandId);
     const [orders, refunds, withdrawals, users, disputes, roleRows] = await Promise.all([
-      repo.find('orders', {}), repo.find('refunds', {}), repo.find('withdrawals', {}), repo.find('users', {}), repo.find('disputes', {}), repo.find('user_brand_roles', {}),
+      Workflow.readAll(repo, 'orders'), repo.find('refunds', {}), repo.find('withdrawals', {}), repo.find('users', {}), repo.find('disputes', {}), repo.find('user_brand_roles', {}),
     ]);
     // 出参键契约定案:8 个固定键(inServiceOrders 替代旧 pendingCancellations)。
     const visibleOrders = orders
@@ -2075,6 +2151,8 @@ const services = {
       inServiceOrders: visibleOrders.filter((o) => o.status === D.OrderStatus.IN_SERVICE).length,
       workers: users.filter((user) => {
         if (normalizeRole(user.role) !== 'WORKER') return false;
+        if (user.status && user.status !== 'ACTIVE') return false;
+        if (StaffBrands.allowsAllBrands(user)) return true;
         const rows = roleRows.filter((row) => row.userId === user._id && row.status !== 'DISABLED');
         const scopes = rows.length ? rows.map((row) => row.brandId) : ['default'];
         return scopes.some((scope) => (!brandId || scope === brandId) && canAccessBrand(session, scope));

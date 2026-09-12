@@ -19,6 +19,7 @@ alerts/
 *.temp
 
 # 本地环境与敏感密钥
+/code/apps/client/uniCloud-aliyun/cloudfunctions/game-service/private-config/
 .env
 .env.*
 !.env.example

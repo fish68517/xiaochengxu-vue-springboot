@@ -19,10 +19,19 @@ Customer123@@1234567890
 13800000001
 Worker@@123456789abc
 
-
+小程序的
+WECHAT_MP_APPID
+wxe40bb897376601cc
+小程序的服务号
 OAUTH_APPID=wxc2da39cc9c2d35da
 OAUTH_SECRET=1595a6a80ef65c8c38f910defc8c8627
 
+商户的服务号
+
+
+
+小程序 AppID wxe40bb897376601cc：负责小程序入口、客服会话及小程序用户身份。
+服务号 AppID wxc2da39cc9c2d35da：负责网页授权和这条网页 JSAPI 支付链路。
 
 unicloud 相关  15071469547@163.com  320435Yhw
 https://unicloud.dcloud.net.cn/
@@ -133,3 +142,4 @@ configs，customers，data_rights_requests,dicts,  disputes,  financial_exports 
 13:50:47.412 [阿里云:pwfinal]创建数据表(brands)成功
 13:50:50.289 [阿里云:pwfinal]上传数据集合Schema(brands.schema.json)成功
 13:50:50.294 [阿里云:pwfinal]开始运行上传数据集合Schema(commission_rules.schema.json)
+

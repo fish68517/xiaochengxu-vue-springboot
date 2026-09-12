@@ -11,7 +11,7 @@
         <view v-if="attachments.length" class="card"><view class="section-head"><view><text class="section-title">服务完成凭证</text><text>点击图片查看原图</text></view><text>{{ attachments.length }} 张</text></view><view class="attach-row"><image v-for="attachment in attachments" :key="attachment.url" class="attach-img" :src="attachment.url" mode="aspectFill" @click="preview(attachment.url)"/></view></view>
         <view v-if="order.dispute" class="card dispute-card"><view class="section-head"><view><text class="section-title">客户异议</text><text>请结合证据和沟通记录处理</text></view><text>{{ order.dispute.status||'处理中' }}</text></view><text class="dispute-content">{{ order.dispute.content||'客户未填写补充说明' }}</text><text class="dispute-result">当前结果：{{ order.dispute.result||'待裁决' }}</text></view>
       </view><view class="action-column">
-      <view class="card action-card" v-if="order.status === 'PENDING_ACCEPT'"><view class="action-heading"><view>1</view><view><text class="section-title">确认订单录入</text><text>补齐服务信息后进入抢单池</text></view></view>
+      <view class="card action-card" v-if="order.status === 'PENDING_ACCEPT' && allowed('enterOrder')"><view class="action-heading"><view>1</view><view><text class="section-title">确认订单录入</text><text>补齐服务信息后进入抢单池</text></view></view>
         <input v-model="enter.game" class="input" placeholder="游戏（必填）" />
         <input v-model="enter.region" class="input" placeholder="区服（必填）" />
         <input v-model="enter.serviceType" class="input" placeholder="服务类型（必填）" />
@@ -23,11 +23,11 @@
         <textarea v-model="enter.internalNote" class="textarea" placeholder="内部备注" />
         <button class="primary-btn" :disabled="busy" @click="doEnter">确认录入并进入订单池</button>
       </view>
-      <view class="card action-card" v-if="order.status === 'PENDING_GRAB'"><view class="action-heading"><view>2</view><view><text class="section-title">指派服务人员</text><text>选择人员后立即生成指派记录</text></view></view>
+      <view class="card action-card" v-if="['PENDING_GRAB','ASSIGN_PENDING','IN_SERVICE'].includes(order.status)"><view class="action-heading"><view>2</view><view><text class="section-title">指派服务人员</text><text>选择人员后立即生成指派记录</text></view></view>
         <picker mode="selector" :range="workerLabels" @change="onWorkerChange">
           <view class="picker-value">{{ selectedWorkerLabel || '选择接单人员' }}</view>
         </picker>
-        <button class="primary-btn" :disabled="busy || !selectedWorkerId" @click="doAssign">确认指派</button><view class="danger-divider"><text>取消订单</text></view><textarea v-model="cancelReason" class="textarea" placeholder="取消原因（必填）"/><button class="danger-btn" :disabled="busy" @click="doCancel">发起取消申请</button>
+        <button class="primary-btn" :disabled="busy || !selectedWorkerId" @click="doAssign">{{ order.workerId ? '确认改派' : '确认指派' }}</button><view v-if="order.status==='PENDING_GRAB'" class="danger-divider"><text>取消订单</text></view><textarea v-if="order.status==='PENDING_GRAB'" v-model="cancelReason" class="textarea" placeholder="取消原因（必填）"/><button v-if="order.status==='PENDING_GRAB'" class="danger-btn" :disabled="busy" @click="doCancel">发起取消申请</button>
       </view>
       <view class="card action-card" v-if="order.status === 'IN_SERVICE'"><view class="action-heading"><view>退</view><view><text class="section-title">服务中退款申请</text><text>提交后进入管理员资金审批</text></view></view>
         <textarea v-model="refundReason" class="textarea" placeholder="退款原因（必填）" />
@@ -53,7 +53,7 @@
         <textarea v-model="disputeNote" class="textarea" placeholder="仲裁备注（必填）" />
         <button class="primary-btn" :disabled="busy" @click="doResolveDispute">提交仲裁</button>
       </view>
-      <view v-if="!['PENDING_ACCEPT','PENDING_GRAB','IN_SERVICE','PENDING_CONFIRM','DISPUTING'].includes(order.status)" class="card completed-state"><view>✓</view><text>{{ orderStatusText(order.status) }}</text><text>该订单当前没有需要客服执行的操作，完整记录已保留。</text></view>
+      <view v-if="!['PENDING_ACCEPT','PENDING_GRAB','ASSIGN_PENDING','IN_SERVICE','PENDING_CONFIRM','DISPUTING'].includes(order.status)" class="card completed-state"><view>✓</view><text>{{ orderStatusText(order.status) }}</text><text>该订单当前没有需要客服执行的操作，完整记录已保留。</text></view>
       </view></view>
     </template>
   </WorkbenchShell>
@@ -61,7 +61,7 @@
 
 <script setup>
 import { ref, computed } from 'vue';
-import { onLoad } from '@dcloudio/uni-app';
+import { onLoad, onShow } from '@dcloudio/uni-app';
 import { api } from '../../api.js';
 import { confirmAction, guard, go, oid, fenToYuan, orderStatusText } from '../../common.js';
 import { assignmentTypeText, formatDateTime, gameText, maskPhone, maskWechat, orderActionText, serviceTypeText } from '../../utils/display.js';
@@ -110,11 +110,17 @@ async function load() {
   try {
     const o = await api.getOrder(orderId.value);
     order.value = (o && o.order) || o || null;
+    customerConfirmed.value=false;
+    if(order.value?.status==='PENDING_ACCEPT'){
+      const current=order.value;const snap=current.productSnapshot||{};
+      for(const key of Object.keys(enter.value)) enter.value[key]=current[key] ?? snap[key] ?? '';
+    }
+    selectedWorkerId.value='';selectedWorkerLabel.value='';
     logs.value = Array.isArray(o && o.logs) ? o.logs : [];
-    attachments.value = Array.isArray(o && o.attachments) ? o.attachments : (Array.isArray(o && o.proofImages) ? o.proofImages : []);
+    attachments.value = Array.isArray(o && o.proofImages) ? o.proofImages : [];
     assignments.value = Array.isArray(o && o.assignments) ? o.assignments : [];
-    if (order.value && (order.value.status === 'PENDING_GRAB' || order.value.status === 'PENDING_CONFIRM')) {
-      workers.value = (await api.listWorkers()) || [];
+    if (order.value && (['PENDING_GRAB','ASSIGN_PENDING','IN_SERVICE'].includes(order.value.status))) {
+      workers.value = (await api.listWorkers({brandId:order.value.brandId})) || [];
     }
   } catch (e) {
     error.value = e.message || '加载失败';
@@ -126,6 +132,8 @@ function allowed(action) { return Array.isArray(order.value && order.value.allow
 
 // K-05 确认录入：校验必填后进池
 async function doEnter() {
+  if (!guard(['CS']) || busy.value) return;
+  if (!allowed('enterOrder')) { toast('当前身份不能录入订单，请使用客服账号并刷新'); return; }
   const f = enter.value;
   if (!f.game || !f.region || !f.serviceType || !f.customerUid || !f.customerNickname || !f.expectStartAt) {
     toast('请补齐必填字段');
@@ -151,7 +159,7 @@ async function doAssign() {
   if (!(await confirmAction({ title: '确认指派订单', content: `确认将订单指派给 ${selectedWorkerLabel.value}？操作将写入指派历史。`, confirmText: '确认指派' }))) return;
   busy.value = true;
   try {
-    order.value = await api.assignOrder(orderId.value, selectedWorkerId.value);
+    order.value = allowed('reassignOrder') ? await api.reassignOrder(orderId.value, selectedWorkerId.value, '客服人工改派') : await api.assignOrder(orderId.value, selectedWorkerId.value);
     toast('已指派', 'success');
     load();
   } catch (e) { toast(e.message || '指派失败'); } finally { busy.value = false; }
@@ -266,8 +274,8 @@ function preview(url) {
 onLoad((query) => {
   if (!guard(['CS'])) return;
   orderId.value = query && query.orderId ? decodeURIComponent(query.orderId) : '';
-  if (orderId.value) load();
 });
+onShow(()=>{if(guard(['CS']) && orderId.value)load();});
 </script>
 
 <style lang="scss" scoped>

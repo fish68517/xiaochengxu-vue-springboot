@@ -21,6 +21,7 @@ function createMockDb() {
       return { data: coll(name).filter((doc) => Object.entries(whereObj).every(([k, v]) => doc[k] === v)) };
     },
     limit() { return this; },
+    orderBy() { return this; }, // 工作流现在显式分页；本夹具均小于一页。
     async update(patch) {
       const list = coll(name).filter((doc) => Object.entries(whereObj).every(([k, v]) => doc[k] === v));
       list.forEach((doc) => Object.assign(doc, patch));
@@ -291,6 +292,12 @@ test('URL 化路由:/pay-notify 返回成功报文,未知路径 404 封套', asy
     assert.equal(res.mpserverlessComposedResponse, true);
     assert.equal(res.statusCode, 200);
     assert.equal(res.body, '{"code":"SUCCESS","message":"已忽略"}');
+    const base64 = await main({ httpMethod: 'POST', path: '/pay-notify', headers: { 'x-test': '1' }, body: Buffer.from('{}').toString('base64'), isBase64Encoded: true });
+    assert.equal(base64.statusCode, 200);
+    setPayClient({ isConfigured: () => true, handleNotify: async () => { throw new Error('验签失败'); } });
+    const failed = await main({ httpMethod: 'POST', path: '/pay-notify', headers: {}, body: '{}' });
+    assert.equal(failed.statusCode, 500);
+    assert.equal(JSON.parse(failed.body).code, 'FAIL');
     const notFound = await main({ httpMethod: 'POST', path: '/other', headers: {}, body: '' });
     assert.equal(notFound.statusCode, 404);
     assert.equal(JSON.parse(notFound.body).code, 'UNKNOWN_PATH');
@@ -302,8 +309,12 @@ test('URL 化路由:/pay-notify 返回成功报文,未知路径 404 封套', asy
 test('payNotify:微信支付未配置返回 DOMAIN_ERROR', async () => {
   const mockDb = createMockDb();
   globalThis.uniCloud = { database: () => mockDb };
-  const res = await main({ action: 'payNotify', payload: { headers: {}, body: '' } });
-  assert.equal(res.ok, false);
-  assert.equal(res.code, 'DOMAIN_ERROR');
-  assert.match(res.message, /未配置/);
+  // 隔离本机真实private-config，不让“未配置”用例读取客户凭据。
+  setPayClient({ isConfigured: () => false });
+  try {
+    const res = await main({ action: 'payNotify', payload: { headers: {}, body: '' } });
+    assert.equal(res.ok, false);
+    assert.equal(res.code, 'DOMAIN_ERROR');
+    assert.match(res.message, /未配置/);
+  } finally { clearPayClient(); }
 });

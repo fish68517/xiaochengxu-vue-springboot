@@ -96,7 +96,9 @@ async function cloud(action, payload, { idempotencyKey } = {}) {
     const res = await uniCloud.callFunction({ name: CLOUD_FN, data });
     const r = res.result || {};
     if (res.errCode && res.errCode !== 0) throw new BizError(res.errMsg || '服务端错误', res.errCode);
-    if (typeof r.code !== 'undefined' && r.code !== 0 && r.code !== 'SUCCESS') throw new BizError(r.message, r.code);
+    // 云函数业务错误统一为 { ok:false, code, message }。
+    // 成功实体也可能有 code（例如品牌 demo-a），不能将业务字段当错误码。
+    if (r.ok === false) throw new BizError(r.message, r.code || 'DOMAIN_ERROR');
     return r;
   } catch (err) {
     if (err instanceof BizError) throw err;
@@ -236,7 +238,7 @@ export const api = {
   createStaff: (data) => write('createStaff', withActiveBrand(data), PATH.createStaff),
   updateStaff: (data) => write('updateStaff', data, PATH.updateStaff),
   // K-13 接单人员管理
-  listWorkers: () => read('listWorkers', withActiveBrand({}), PATH.listWorkers),
+  listWorkers: (params = {}) => read('listWorkers', withActiveBrand(params), PATH.listWorkers),
   createWorker: (data) => write('createWorker', data, PATH.createWorker),
   updateWorker: (data) => write('updateWorker', data, PATH.updateWorker),
   // K-14 钱包调账
@@ -271,6 +273,11 @@ export const api = {
   rejectWithdrawal: (data) => write('rejectWithdrawal', data, PATH.rejectWithdrawal),
   // 退款审批
   listOrders: (params = {}) => read('listOrders', withActiveBrand(params), PATH.listOrders),
+  listStaffForAccess: () => read('listUsers', {}, PATH.listUsers),
+  enterOrder: (data) => write('enterOrder', data, '/api/enterOrder'),
+  verifyCompletion: (data) => write('verifyCompletion', data, '/api/verifyCompletion'),
+  rejectCompletion: (data) => write('rejectCompletion', data, '/api/rejectCompletion'),
+  confirmSettlement: (data) => write('confirmSettlement', data, '/api/confirmSettlement'),
   getOrder: (orderId) => read('getOrder', { orderId }, PATH.getOrder),
   listAssignments: (orderId) => read('listAssignments', { orderId }, PATH.listAssignments),
   assignOrder: (data) => write('assignOrder', data, PATH.assignOrder),

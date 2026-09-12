@@ -1,9 +1,10 @@
+import { sessionStore } from './session.js';
 // common.js — 工作台共享工具：会话、角色守卫、金额/状态文案、轮询、声音提醒、导航
 export function getSession() {
   return {
-    token: uni.getStorageSync('token') || '',
-    user: uni.getStorageSync('user') || {},
-    accessProfile: uni.getStorageSync('accessProfile') || {},
+    token: sessionStore.get('token') || '',
+    user: sessionStore.get('user') || {},
+    accessProfile: sessionStore.get('accessProfile') || {},
   };
 }
 
@@ -47,9 +48,9 @@ export const ORDER_STATUS_TEXT = {
   PENDING_PAYMENT: '待支付',
   PENDING_ACCEPT: '待受理',
   PENDING_GRAB: '待抢单',
-  ASSIGN_PENDING: '指派待确认',
+  ASSIGN_PENDING: '待指派确认',
   IN_SERVICE: '服务中',
-  PENDING_CONFIRM: '待确认',
+  PENDING_CONFIRM: '待验收',
   SETTLED: '已结单',
   DISPUTING: '异议中',
   CANCELLED: '已取消',
@@ -112,11 +113,11 @@ export function go(url) {
 }
 
 export function logout() {
-  uni.removeStorageSync('token');
-  uni.removeStorageSync('user');
-  uni.removeStorageSync('accessProfile');
-  uni.removeStorageSync('mustChangePwd');
-  uni.removeStorageSync('__workbench_active_brand__');
+  sessionStore.remove('token');
+  sessionStore.remove('user');
+  sessionStore.remove('accessProfile');
+  sessionStore.remove('mustChangePwd');
+  sessionStore.remove('__workbench_active_brand__');
   uni.reLaunch({ url: '/pages/login/index' });
 }
 
