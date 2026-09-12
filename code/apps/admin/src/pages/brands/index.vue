@@ -118,7 +118,8 @@
       <view v-show="activeTab === 'channel'">
       <text class="section-title">渠道安全引用</text>
       <view class="field"><text class="label">小程序密钥引用</text><input v-model="form.channelRefs.miniProgramSecretRef" class="input" placeholder="secret://...（不填写明文）" /></view>
-      <view class="field"><text class="label">支付凭据引用</text><input v-model="form.channelRefs.paymentCredentialRef" class="input" placeholder="secret://...（不填写私钥）" /></view>
+      <view class="field"><text class="label">支付凭据引用</text><input v-model="form.channelRefs.paymentSecretRef" class="input" placeholder="secret://xinghe/wechat-pay/production（不填写私钥）" /></view>
+      <view class="field"><text>此处填写技术人员提供的引用标识，须与服务端支付映射一致。保存商户号不会自动开通微信支付；证书和密钥由技术人员配置到云函数。</text></view>
 
       <text class="section-title">绑定字段</text>
       <view class="field">
@@ -184,7 +185,7 @@ function emptyForm() {
     binding: { space: '', merchant: '', callback: '' },
     contactConfig: { serviceWechat: '', servicePhone: '', serviceHours: '' },
     legalConfig: { serviceAgreementUrl: '', privacyPolicyUrl: '' },
-    channelRefs: { miniProgramSecretRef: '', paymentCredentialRef: '' },
+    channelRefs: { miniProgramSecretRef: '', paymentSecretRef: '' },
     status: 'ON',
     isDefault: false,
   };
@@ -215,7 +216,7 @@ function editBrand(b) {
     binding: { space: '', merchant: '', callback: '', ...(b.binding || {}) },
     contactConfig: { serviceWechat: '', servicePhone: '', serviceHours: '', ...(b.contactConfig || {}) },
     legalConfig: { serviceAgreementUrl: '', privacyPolicyUrl: '', ...(b.legalConfig || {}) },
-    channelRefs: { miniProgramSecretRef: '', paymentCredentialRef: '', ...(b.channelRefs || {}) },
+    channelRefs: { miniProgramSecretRef: '', ...(b.channelRefs || {}), paymentSecretRef: b.channelRefs?.paymentSecretRef || b.channelRefs?.paymentCredentialRef || '' },
     status: b.status === 'OFF' ? 'OFF' : 'ON',
     isDefault: b.isDefault === true,
   };
@@ -238,6 +239,8 @@ function addBanner() { bannerRows.value.push(''); }
 function removeBanner(index) { bannerRows.value.splice(index, 1); }
 
 function buildBrand() {
+  const channelRefs = { ...form.value.channelRefs, paymentSecretRef: (form.value.channelRefs.paymentSecretRef || '').trim() };
+  delete channelRefs.paymentCredentialRef;
   const copy = {};
   for (const row of copyRows.value) {
     const key = (row.key || '').trim();
@@ -256,7 +259,7 @@ function buildBrand() {
     assetConfig: { banners: bannerRows.value.filter((u) => u && String(u).trim()) },
     contactConfig: { ...form.value.contactConfig },
     legalConfig: { ...form.value.legalConfig },
-    channelRefs: { ...form.value.channelRefs },
+    channelRefs,
     status: form.value.status,
     isDefault: form.value.isDefault,
   };

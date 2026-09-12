@@ -464,10 +464,22 @@ async function ensurePayment(repo, order, { payType = 'MWEB', idempotencyKey = '
   const channel = mode === 'mock' ? 'MOCK' : `WECHAT_${payType}`;
   const key = idempotencyKey || `${order._id}:${channel}`;
   let payment = await repo.findOne('payments', { brandId: order.brandId || 'default', idempotencyKey: key });
-  if (payment) return payment;
+  if (payment) {
+    if (payment.orderId !== order._id || payment.amountFen !== order.amountFen || payment.channel !== channel) throw new Error('支付请求与已有支付单不一致');
+    if (!(payment.secretRef === 'env:wechat-pay' && payment.status === 'PENDING' && !payment.providerPrepayId && ['staging', 'production'].includes(process.env.APP_ENV))) return payment;
+  }
   const brand = await repo.findOne('brands', { brandId: order.brandId || 'default' });
-  const secretRef = mode === 'wechat' ? ((brand && brand.channelRefs && brand.channelRefs.paymentSecretRef) || (globalThis.__PAY_CLIENT__ ? 'injected:pay-client' : '') || (process.env.WECHAT_PAY_MCHID ? 'env:wechat-pay' : '')) : '';
+  const refs = require('./payment-config.cjs').normalizeChannelRefs(brand?.channelRefs || {});
+  const remote = ['staging', 'production'].includes(process.env.APP_ENV);
+  const secretRef = mode === 'wechat' ? (refs.paymentSecretRef || (!remote && globalThis.__PAY_CLIENT__ ? 'injected:pay-client' : '') || (!remote && process.env.WECHAT_PAY_MCHID ? 'env:wechat-pay' : '')) : '';
   if (mode === 'wechat' && !secretRef) throw new Error('当前品牌未配置支付 secretRef');
+  if (mode === 'wechat' && remote) {
+    // 缺少客户凭据时先报配置错误，不创建无效待支付流水。
+    const { client, snapshot } = require('./payment-operations.cjs').clientFor(order, secretRef);
+    if (!client.isConfigured()) throw new Error('微信支付未配置');
+    if (brand?.binding?.merchant && String(brand.binding.merchant).trim() !== String(snapshot.mchid)) throw new Error('品牌后台商户号与支付映射不一致');
+  }
+  if (payment) return repo.updateById('payments', payment._id, { secretRef, updatedAt: Date.now() });
   payment = await repo.insert('payments', {
     _id: newIdNo('payment'), paymentNo: `PAY${Date.now()}${Math.random().toString(36).slice(2, 8).toUpperCase()}`,
     brandId: order.brandId || 'default', orderId: order._id, channel, amountFen: order.amountFen,
@@ -2118,7 +2130,7 @@ const services = {
       assetConfig: brand.assetConfig && typeof brand.assetConfig === 'object' ? brand.assetConfig : {},
       contactConfig: brand.contactConfig && typeof brand.contactConfig === 'object' ? brand.contactConfig : {},
       legalConfig: brand.legalConfig && typeof brand.legalConfig === 'object' ? brand.legalConfig : {},
-      channelRefs: brand.channelRefs && typeof brand.channelRefs === 'object' ? brand.channelRefs : {},
+      channelRefs: require('./payment-config.cjs').normalizeChannelRefs(brand.channelRefs === undefined ? existed?.channelRefs || {} : brand.channelRefs),
       binding: brand.binding && typeof brand.binding === 'object' && !Array.isArray(brand.binding) ? brand.binding : {},
       isDefault: brand.isDefault === true,
       status: brand.status === 'OFF' ? 'OFF' : 'ON',

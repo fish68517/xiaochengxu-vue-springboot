@@ -1,4 +1,17 @@
 'use strict';
+function normalizeChannelRefs(value = {}) {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) throw new Error('渠道引用必须为对象');
+  const refs = { ...value };
+  for (const key of ['paymentSecretRef', 'paymentCredentialRef']) {
+    if (refs[key] != null && typeof refs[key] !== 'string') throw new Error('支付凭据引用必须为字符串');
+  }
+  const current = (refs.paymentSecretRef || '').trim();
+  const legacy = (refs.paymentCredentialRef || '').trim();
+  if (current && legacy && current !== legacy) throw new Error('新旧支付凭据引用不一致，请统一后保存');
+  refs.paymentSecretRef = current || legacy;
+  delete refs.paymentCredentialRef;
+  return refs;
+}
 // 服务端映射只持有引用；不同环境、主体不可回退到共用凭证。
 function resolvePaymentConfig({ brandCode, secretRef = '', env = process.env }) {
   const environment = env.APP_ENV || 'development';
@@ -22,4 +35,4 @@ function resolvePaymentConfig({ brandCode, secretRef = '', env = process.env }) 
   if (!(resolved.WECHAT_PAY_PUBLIC_KEY && resolved.WECHAT_PAY_PUBLIC_KEY_ID) && !(resolved.WECHAT_PAY_PLATFORM_CERT && resolved.WECHAT_PAY_PLATFORM_SERIAL)) throw new Error('缺少可信微信支付公钥或平台证书');
   return { env: resolved, snapshot: { brandCode, environment, secretRef: entry.secretRef, entityId: entry.entityId, appId: entry.appId, mchid: entry.mchid, currency: 'CNY' } };
 }
-module.exports = { resolvePaymentConfig };
+module.exports = { resolvePaymentConfig, normalizeChannelRefs };
