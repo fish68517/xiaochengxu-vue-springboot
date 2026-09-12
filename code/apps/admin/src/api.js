@@ -253,6 +253,7 @@ export const api = {
   addVip: (data) => write('addVip', data, PATH.addVip),
   removeVip: (data) => write('removeVip', data, PATH.removeVip),
   // K-16 商品
+  uploadCatalogImage: (data) => write('uploadCatalogImage', data, '/api/uploadCatalogImage'),
   listProducts: (params = {}) => read('listProducts', withActiveBrand(params), PATH.listProducts),
   listManagedProducts: (params = {}) => read('listManagedProducts', withActiveBrand(params), PATH.listManagedProducts),
   getManagedProduct: (productId) => read('getManagedProduct', { productId }, PATH.getManagedProduct),

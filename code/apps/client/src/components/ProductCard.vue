@@ -1,5 +1,6 @@
 <template>
   <view class="product-card" @click="selectProduct">
+    <view v-if="item.brandName" class="brand-label"><text>{{ item.brandName }}</text></view>
     <view class="cover-wrap">
       <image class="product-image" :src="cover" mode="aspectFill" @error="onImageError" />
       <text v-if="item.tierName" class="tier-badge">{{ item.tierName }}</text>
@@ -34,6 +35,7 @@ function onImageError() { cover.value = '/static/default-product.svg'; }
 </script>
 
 <style lang="scss" scoped>
+.brand-label{padding:12rpx 18rpx;background:#eef2ff;color:#4338ca;font-size:23rpx;font-weight:700;line-height:1.5;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .product-card { min-width: 0; overflow: hidden; background: var(--color-surface); border: 1rpx solid rgba(16,24,40,.04); border-radius: var(--brand-radius); box-shadow: var(--shadow-card); }
 .cover-wrap { position: relative; overflow: hidden; aspect-ratio: 4 / 3; background: #eef0ff; }
 .product-image { display: block; width: 100%; height: 100%; }

@@ -22,10 +22,10 @@
 
       <view class="field">
         <text class="label">所属品牌</text>
-        <picker :range="brandOptions" range-key="name" :value="brandPickerIndex" @change="onBrandChange">
+        <picker :range="brandOptions" range-key="name" :value="brandPickerIndex" :disabled="uploading || saving" @change="onBrandChange">
           <view class="input picker-input" :class="{ invalid: !selectedBrandValid }">{{ selectedBrandLabel }}</view>
         </picker>
-        <text class="field-hint">品牌 ID 应在这里选择；商品保存后只会展示在该品牌客户端。</text>
+        <text class="field-hint">选择商品归属品牌；上架后在客户端全品牌目录展示，并标记品牌名称。订单和支付仍归属所选品牌。</text>
       </view>
 
       <view class="field">
@@ -64,14 +64,10 @@
       </view>
 
       <view class="field">
-        <text class="label">图片 URL（每行一个）</text>
-        <textarea v-model="form.imagesText" class="textarea" placeholder="https://..." />
+        <text class="label">商品图片</text>
+        <CatalogImagePicker v-model="productImages" :brand-id="form.brandId" kind="product" :max="9" :disabled="saving" @busy="uploading = $event" />
       </view>
-      <view class="field">
-        <text class="label">商品素材附件 ID（每行一个）</text>
-        <textarea v-model="form.assetIdsText" class="textarea" placeholder="填写上传素材后返回的 attachment-id；没有素材请留空" />
-        <text class="field-hint warning">这里不是品牌 ID，请勿填写 demo-a；没有上传素材时保持为空。</text>
-      </view>
+      <!-- 素材附件 ID 暂时隐藏；编辑已有商品时保留原值。 -->
       <view class="field">
         <text class="label">下单动态表单 JSON Schema</text>
         <textarea v-model="form.formSchemaText" class="textarea schema-input" placeholder='{"required":["server"],"properties":{"server":{"type":"string"}}}' />
@@ -86,7 +82,7 @@
         <switch :checked="form.status === 'ON'" @change="(e) => (form.status = e.detail.value ? 'ON' : 'OFF')" />
       </view>
 
-      <button class="save-btn" :disabled="saving" @click="save">保存商品</button>
+      <button class="save-btn" :disabled="saving || uploading" @click="save">保存商品</button>
     </view>
   </view>
   </AdminShell>
@@ -96,15 +92,18 @@
 import { computed, ref } from 'vue';
 import { onLoad } from '@dcloudio/uni-app';
 import { api, getActiveBrandId } from '../../api.js';
+import CatalogImagePicker from '../../components/CatalogImagePicker.vue';
 import { findRedline } from '../../utils/redline.js';
 import { gameText, serviceText } from '../../utils/display.js';
 
 const products = ref([]);
 const error = ref('');
 const saving = ref(false);
+const uploading = ref(false);
 const editingId = ref('');
 const brandOptions = ref([]);
 const form = ref(emptyForm());
+const productImages = computed({ get: () => form.value.imagesText.split('\n').map(s => s.trim()).filter(Boolean), set: values => { form.value.imagesText = values.join('\n'); } });
 
 const selectedBrandValid = computed(() => brandOptions.value.some((brand) => brand.brandId === form.value.brandId));
 const brandPickerIndex = computed(() => {
@@ -170,6 +169,7 @@ async function toggle(p) {
 }
 
 function edit(p) {
+  if (uploading.value || saving.value) return;
   editingId.value = idOf(p);
   const productBrandId = p.brandId || '';
   form.value = {
@@ -193,12 +193,14 @@ function edit(p) {
 }
 
 function newProduct() {
+  if (uploading.value || saving.value) return;
   editingId.value = '';
   form.value = emptyForm();
 }
 
 function onCommissionType(e) { form.value.commission.type = e.detail.value; }
 function onBrandChange(e) {
+  if (uploading.value || saving.value) return;
   const selected = brandOptions.value[Number(e.detail.value) || 0];
   form.value.brandId = selected ? selected.brandId : '';
 }
@@ -241,6 +243,7 @@ function buildPayload() {
 
 // 保存商品：真实调 saveProduct，成功后以服务端返回替换/新增本地行。
 async function save() {
+  if (saving.value || uploading.value) return;
   if (!selectedBrandValid.value) { uni.showToast({ title: '请先选择有效的所属品牌', icon: 'none' }); return; }
   if (!form.value.game) { uni.showToast({ title: '游戏不能为空', icon: 'none' }); return; }
   if (!form.value.serviceType) { uni.showToast({ title: '服务类型不能为空', icon: 'none' }); return; }

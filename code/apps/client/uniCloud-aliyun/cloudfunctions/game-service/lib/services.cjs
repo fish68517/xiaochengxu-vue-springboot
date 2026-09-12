@@ -743,6 +743,12 @@ const services = {
 
   // ---- 商品 / 品牌(公开读) ----
 
+  listCatalogProducts: require('./catalog.cjs').listCatalogProducts,
+  getCatalogProduct: require('./catalog.cjs').getCatalogProduct,
+  async uploadCatalogImage(repo, payload, session) {
+    return require('./catalog.cjs').uploadCatalogImage(repo, payload, session);
+  },
+
   async listProducts(repo, { game, brandId, brandCode, appId } = {}) {
     const context = await resolveRequestBrand(repo, { brandId, brandCode, appId }, { allowDefault: true });
     let list = await repo.find('products', { status: 'ON' });

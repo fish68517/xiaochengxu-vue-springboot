@@ -18,6 +18,7 @@ const PUBLIC_ACTIONS = new Set([
   'getPaymentStatus',
   'queryOrderByNo', // 公开读:按订单号+联系方式脱敏查询(客户自助查单)
   'getLegalDocuments',
+  'listCatalogProducts', 'getCatalogProduct',
 ]);
 
 // H5 页面无会话:靠 H5 下单 token 自证(服务层验签 + exp + productId 绑定)。
@@ -110,6 +111,7 @@ const ROLE_MATRIX = {
   removeVip: ['ADMIN'],
   listVips: ['ADMIN'],
   saveProduct: ['ADMIN', 'BRAND_ADMIN', 'SUPER_ADMIN'],
+  uploadCatalogImage: ['ADMIN', 'BRAND_ADMIN', 'SUPER_ADMIN'],
   updateProductStatus: ['ADMIN', 'BRAND_ADMIN', 'SUPER_ADMIN'],
   listManagedProducts: ['ADMIN', 'BRAND_ADMIN', 'SUPER_ADMIN'],
   getManagedProduct: ['ADMIN', 'BRAND_ADMIN', 'SUPER_ADMIN'],

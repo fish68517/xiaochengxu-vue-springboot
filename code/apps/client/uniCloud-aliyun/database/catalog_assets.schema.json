@@ -1,0 +1,16 @@
+{
+  "bsonType": "object",
+  "required": ["brandId", "kind", "fileID", "uploaderId"],
+  "permission": { "read": false, "create": false, "update": false, "delete": false },
+  "properties": {
+    "_id": { "bsonType": "string" },
+    "brandId": { "bsonType": "string" },
+    "kind": { "bsonType": "string", "enum": ["logo", "product"] },
+    "fileID": { "bsonType": "string" },
+    "url": { "bsonType": "string" },
+    "cloudPath": { "bsonType": "string" },
+    "size": { "bsonType": "int" },
+    "uploaderId": { "bsonType": "string" },
+    "createdAt": { "bsonType": "long" }
+  }
+}

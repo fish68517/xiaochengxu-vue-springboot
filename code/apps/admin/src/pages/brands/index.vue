@@ -25,7 +25,7 @@
       <view v-show="activeTab === 'basic'">
       <view class="field">
         <text class="label">品牌 ID</text>
-        <input v-model="form.brandId" class="input" :disabled="!!editingBrandId" placeholder="唯一标识，如 brand-a" />
+        <input v-model="form.brandId" class="input" :disabled="!!editingBrandId || uploading" placeholder="唯一标识，如 brand-a" />
       </view>
       <view class="field">
         <text class="label">品牌 Code</text>
@@ -52,8 +52,8 @@
       <view v-show="activeTab === 'assets'">
       <text class="section-title">品牌资产</text>
       <view class="field">
-        <text class="label">Logo URL（MVP 不上传）</text>
-        <input v-model="form.logo" class="input" placeholder="https://..." />
+        <text class="label">品牌 Logo</text>
+        <CatalogImagePicker v-model="logoImages" :brand-id="form.brandId" kind="logo" :disabled="saving" @busy="uploading = $event" />
       </view>
       </view>
 
@@ -93,14 +93,7 @@
       <button class="mini-btn" @click="addCopyRow">+ 添加文案</button>
       </view>
 
-      <view v-show="activeTab === 'assets'">
-      <text class="section-title">Banner URL 列表</text>
-      <view v-for="(url, index) in bannerRows" :key="index" class="kv-row">
-        <input v-model="bannerRows[index]" class="kv-value" placeholder="https://..." />
-        <button class="mini-btn danger" @click="removeBanner(index)">删</button>
-      </view>
-      <button class="mini-btn" @click="addBanner">+ 添加 Banner</button>
-      </view>
+      <!-- Banner 编辑暂时隐藏；bannerRows 仍保留并保存原数据。 -->
 
       <view v-show="activeTab === 'contact'">
       <text class="section-title">客服与法务</text>
@@ -119,7 +112,7 @@
       <text class="section-title">渠道安全引用</text>
       <view class="field"><text class="label">小程序密钥引用</text><input v-model="form.channelRefs.miniProgramSecretRef" class="input" placeholder="secret://...（不填写明文）" /></view>
       <view class="field"><text class="label">支付凭据引用</text><input v-model="form.channelRefs.paymentSecretRef" class="input" placeholder="secret://xinghe/wechat-pay/production（不填写私钥）" /></view>
-      <view class="field"><text>此处填写技术人员提供的引用标识，须与服务端支付映射一致。保存商户号不会自动开通微信支付；证书和密钥由技术人员配置到云函数。</text></view>
+      <view class="field"><text>不能为所有品牌无条件固定同一引用。demo-a 可使用 secret://xinghe/wechat-pay/production；新品牌请在云端 private-config/wechat-pay.json 的对应环境、品牌 Code 下配置映射，并填写该项 secretRef（已配置 WECHAT_PAY_CONFIG_MAP 时以环境变量为准）。仅同主体、同商户且已配置映射时可复用；不同主体必须独立配置。此处不填写证书或密钥，保存商户号不会自动开通支付。</text></view>
 
       <text class="section-title">绑定字段</text>
       <view class="field">
@@ -142,16 +135,17 @@
         <text class="version-note">第一阶段采用直接发布模式：每次保存均执行 version + 1、保存不可变版本快照并写审计日志。</text>
       </view>
 
-      <button class="save-btn" :disabled="saving" @click="save">保存品牌配置</button>
+      <button class="save-btn" :disabled="saving || uploading" @click="save">保存品牌配置</button>
     </view>
   </view>
   </AdminShell>
 </template>
 
 <script setup>
-import { ref } from 'vue';
+import { computed, ref } from 'vue';
 import { onLoad } from '@dcloudio/uni-app';
 import { api } from '../../api.js';
+import CatalogImagePicker from '../../components/CatalogImagePicker.vue';
 
 const DEFAULT_THEME = {
   primary: '#ff2442',
@@ -167,6 +161,7 @@ const editingBrandId = ref('');
 const copyRows = ref([]);
 const bannerRows = ref([]);
 const saving = ref(false);
+const uploading = ref(false);
 const activeTab = ref('basic');
 const tabs = [
   { key: 'basic', label: '基本信息' }, { key: 'theme', label: '主题文案' }, { key: 'assets', label: '资产' },
@@ -181,6 +176,8 @@ function emptyForm() {
     appId: '',
     name: '',
     logo: '',
+    assetConfig: {},
+    publicConfig: {},
     themeTokens: { ...DEFAULT_THEME },
     binding: { space: '', merchant: '', callback: '' },
     contactConfig: { serviceWechat: '', servicePhone: '', serviceHours: '' },
@@ -191,6 +188,7 @@ function emptyForm() {
   };
 }
 const form = ref(emptyForm());
+const logoImages = computed({ get: () => form.value.logo ? [form.value.logo] : [], set: values => { form.value.logo = values[0] || ''; } });
 
 onLoad(load);
 
@@ -205,13 +203,16 @@ async function load() {
 }
 
 function editBrand(b) {
+  if (uploading.value) return;
   editingBrandId.value = b.brandId || b.id || '';
   form.value = {
     brandId: b.brandId || b.id || '',
     code: b.code || b.brandId || '',
     appId: b.appId || '',
     name: b.name || '',
-    logo: b.logo || '',
+    logo: b.logo || b.assetConfig?.logo || '',
+    assetConfig: { ...(b.assetConfig || {}) },
+    publicConfig: { ...(b.publicConfig || {}) },
     themeTokens: { ...DEFAULT_THEME, ...(b.themeTokens || {}) },
     binding: { space: '', merchant: '', callback: '', ...(b.binding || {}) },
     contactConfig: { serviceWechat: '', servicePhone: '', serviceHours: '', ...(b.contactConfig || {}) },
@@ -226,6 +227,7 @@ function editBrand(b) {
 }
 
 function newBrand() {
+  if (uploading.value || saving.value) return;
   editingBrandId.value = '';
   form.value = emptyForm();
   copyRows.value = [];
@@ -235,8 +237,6 @@ function newBrand() {
 
 function addCopyRow() { copyRows.value.push({ key: '', value: '' }); }
 function removeCopyRow(index) { copyRows.value.splice(index, 1); }
-function addBanner() { bannerRows.value.push(''); }
-function removeBanner(index) { bannerRows.value.splice(index, 1); }
 
 function buildBrand() {
   const channelRefs = { ...form.value.channelRefs, paymentSecretRef: (form.value.channelRefs.paymentSecretRef || '').trim() };
@@ -256,7 +256,8 @@ function buildBrand() {
     copy,
     banners: bannerRows.value.filter((u) => u && String(u).trim()),
     binding: { ...form.value.binding },
-    assetConfig: { banners: bannerRows.value.filter((u) => u && String(u).trim()) },
+    assetConfig: { ...form.value.assetConfig, logo: (form.value.logo || '').trim() },
+    publicConfig: { ...form.value.publicConfig },
     contactConfig: { ...form.value.contactConfig },
     legalConfig: { ...form.value.legalConfig },
     channelRefs,
@@ -266,6 +267,7 @@ function buildBrand() {
 }
 
 async function save() {
+  if (saving.value || uploading.value) return;
   const brand = buildBrand();
   if (!brand.brandId) { uni.showToast({ title: '品牌 ID 不能为空', icon: 'none' }); return; }
   if (!brand.appId) { uni.showToast({ title: 'AppID 不能为空', icon: 'none' }); return; }

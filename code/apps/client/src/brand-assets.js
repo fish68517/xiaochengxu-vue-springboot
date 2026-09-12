@@ -28,6 +28,7 @@ export function productCover(product) {
   if (product) {
     const own = product.coverImage || product.image || (Array.isArray(product.images) && product.images[0]);
     if (own) return own;
+    if (product.brandId && product.brandId !== current().brandId) return '/static/default-product.svg';
   }
   const assets = current().assetConfig || {};
   return assets.defaultProductImage || '/static/default-product.svg';

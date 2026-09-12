@@ -180,8 +180,9 @@ function getWxLoginCode() {
 export const api = {
   // 小程序静默登录:code 换 openid → {token, customerId, isVip}
   miniLogin: (code, context = {}) => call('miniLogin', { code, brandCode: BRAND_CODE, ...context }),
-  listProducts: (params = {}) => call('listProducts', { brandCode: BRAND_CODE, ...params }),
-  getProduct: (productId) => call('getProduct', { productId, brandCode: BRAND_CODE }),
+  // 公开目录聚合全部启用品牌；登录、订单、支付仍使用原品牌会话。
+  listProducts: (params = {}) => call('listCatalogProducts', params),
+  getProduct: (productId) => call('getCatalogProduct', { productId }),
   // 小程序端申请 H5 下单 token(绑定小程序 openid),需 session
   h5Token: (productId) => call('h5Token', { productId }),
   getH5Product: (token) => call('getH5Product', { token }),
