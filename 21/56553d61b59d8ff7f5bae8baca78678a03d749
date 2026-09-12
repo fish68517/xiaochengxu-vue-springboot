@@ -1,0 +1,54 @@
+code/apps/client/src/brand-assets.js
+  s_c6f0a82ffef8e9::t_549556012792b2 31
+doc/品牌商品资源设计.md
+  s_c6f0a82ffef8e9::t_fbd699d5483eb6 61-67
+  s_c6f0a82ffef8e9::t_3dc700b909f624 1-48
+  s_c6f0a82ffef8e9::t_99f9a98e6f04d4 49-60
+code/apps/client/uniCloud-aliyun/cloudfunctions/game-service/lib/catalog.cjs
+  s_c6f0a82ffef8e9::t_549556012792b2 15
+  s_c6f0a82ffef8e9::t_a5fc6c2b7e6639 1-14,16-46,48-66
+  s_c6f0a82ffef8e9::t_fbd699d5483eb6 47
+code/apps/client/uniCloud-aliyun/database/catalog_assets.schema.json
+  s_c6f0a82ffef8e9::t_a5fc6c2b7e6639 1-16
+code/apps/client/uniCloud-aliyun/cloudfunctions/game-service/lib/services.cjs
+  s_c6f0a82ffef8e9::t_a5fc6c2b7e6639 746-747,751
+  s_c6f0a82ffef8e9::t_6a7121cc8eecf2 748-750
+code/apps/client/src/pages/product/detail.vue
+  s_c6f0a82ffef8e9::t_4f5daa47f6d867 8,16,24,26-30,33,36,42
+code/apps/client/src/api.js
+  s_c6f0a82ffef8e9::t_549556012792b2 183-185
+code/apps/client/uniCloud-aliyun/cloudfunctions/game-service/test/catalog.test.cjs
+  s_c6f0a82ffef8e9::t_e6cf8494650207 1-78
+code/apps/client/uniCloud-aliyun/cloudfunctions/game-service/lib/auth.cjs
+  s_c6f0a82ffef8e9::t_a5fc6c2b7e6639 21,114
+code/apps/admin/src/api.js
+  s_c6f0a82ffef8e9::t_a5fc6c2b7e6639 256
+code/apps/admin/src/pages/brands/index.vue
+  s_c6f0a82ffef8e9::t_549556012792b2 213,259
+  s_c6f0a82ffef8e9::t_f566559e04d7ca 28,55-56,96,115,138,145,148,164,179-180,191,206,214-215,230,260,270
+code/apps/admin/src/components/CatalogImagePicker.vue
+  s_c6f0a82ffef8e9::t_99f9a98e6f04d4 16,55
+  s_c6f0a82ffef8e9::t_6a7121cc8eecf2 1-15,17-54,56-65
+doc/登录方案.md
+  s_c6f0a82ffef8e9::t_13ef56efa1a7d5 1-110
+code/apps/admin/src/pages/products/index.vue
+  s_c6f0a82ffef8e9::t_f566559e04d7ca 25,28,67-68,70,85,95,102,106,172,196,203,246
+code/apps/client/src/components/ProductCard.vue
+  s_c6f0a82ffef8e9::t_549556012792b2 3,38
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "2156553d61b59d8ff7f5bae8baca78678a03d749",
+  "prompts": {},
+  "sessions": {
+    "s_c6f0a82ffef8e9": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a0525b-3152-7f70-8eab-bf6495370f2f",
+        "model": "gpt-6-astra"
+      },
+      "human_author": "yuhongwen <Hongwen_Yu.sgmwh@saic-gm.com>"
+    }
+  }
+}
