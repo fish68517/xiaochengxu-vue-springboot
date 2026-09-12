@@ -1,0 +1,88 @@
+code/apps/client/.env.production
+  s_c6f0a82ffef8e9::t_3abe354485c314 5
+  s_c6f0a82ffef8e9::t_87ed47addb3256 6
+doc/支付缺少会话token分析.md
+  s_c6f0a82ffef8e9::t_65f82b27ec5782 1-17
+code/apps/client/uniCloud/cloudfunctions/game-service/lib/oauth.cjs
+  s_c6f0a82ffef8e9::t_87ed47addb3256 26-27
+code/apps/client/src/pages/category/index.vue
+  s_c6f0a82ffef8e9::t_a8c8a3c74e7792 42-49
+doc/商业运营条件.md
+  s_c6f0a82ffef8e9::t_b9d17b97a070ef 589-590
+doc/订单不可支付处理.md
+  s_c6f0a82ffef8e9::t_dbef2c739681ca 1-15
+code/apps/client/uniCloud-aliyun/cloudfunctions/bootstrap-seed/lib/oauth.cjs
+  s_c6f0a82ffef8e9::t_87ed47addb3256 26-27
+部署文档.md
+  s_c6f0a82ffef8e9::t_b9d17b97a070ef 173-174,576-577
+code/apps/client/uniCloud-aliyun/cloudfunctions/game-service/test/launch-policy.test.cjs
+  s_c6f0a82ffef8e9::t_f2c2e94af3bb47 1-30
+code/apps/client/uniCloud-aliyun/cloudfunctions/game-service/test/game-service.test.cjs
+  s_c6f0a82ffef8e9::t_2d405e3b99ce45 84,92-102
+  s_c6f0a82ffef8e9::t_968971912e2019 103-104
+code/docs/外包交接说明.txt
+  s_c6f0a82ffef8e9::t_b9d17b97a070ef 58-59
+code/apps/client/src/components/client-tabbar.vue
+  s_c6f0a82ffef8e9::t_a8c8a3c74e7792 22-29
+code/apps/client/src/pages/h5-order/index.vue
+  s_c6f0a82ffef8e9::t_896a670eab5e18 133-136,371-373,375-376,388
+  s_c6f0a82ffef8e9::t_65f82b27ec5782 180-181,264-268
+  s_c6f0a82ffef8e9::t_50191a5254a7d2 380-383,385-387
+  s_c6f0a82ffef8e9::t_c58d28d5e1ce02 414-425,429
+  s_c6f0a82ffef8e9::t_ffe3e58cd529be 95-96,99-101,105
+  s_c6f0a82ffef8e9::t_dbef2c739681ca 237,253
+  s_c6f0a82ffef8e9::t_c367f3b24cdff5 41,50,53-57,65,102-104
+  s_c6f0a82ffef8e9::t_b446982f8cf4a7 426-427
+  s_c6f0a82ffef8e9::t_0f812a67ba6c26 42-49,51-52,58-64,70,94,126,140,142,370,378,384
+  s_c6f0a82ffef8e9::t_a372d36ae45f64 4
+code/apps/client/uniCloud-aliyun/cloudfunctions/game-service/lib/services.cjs
+  s_c6f0a82ffef8e9::t_65f82b27ec5782 454-458
+code/apps/client/src/components/ProductCard.vue
+  s_c6f0a82ffef8e9::t_8e898fd7d545d8 2,26-30
+doc/服务号网页授权环境变量与部署核查.md
+  s_c6f0a82ffef8e9::t_ebe2b735dd51fb 1-9,12,36-54
+  s_c6f0a82ffef8e9::t_306bb6cb964d29 11,16-31
+  s_c6f0a82ffef8e9::t_fb36a755a79651 10,14-15,32-34
+  s_c6f0a82ffef8e9::t_be0b22363aa3b8 13
+  s_c6f0a82ffef8e9::t_406a9ec289d1a0 35
+code/apps/client/src/pages/index/index.vue
+  s_c6f0a82ffef8e9::t_a8c8a3c74e7792 70-85
+code/apps/client/uniCloud-aliyun/cloudfunctions/game-service/lib/commercial-ops.cjs
+  s_c6f0a82ffef8e9::t_d0452c5a862c60 100-104,106-111
+code/apps/client/uniCloud-aliyun/cloudfunctions/game-service/lib/oauth.cjs
+  s_c6f0a82ffef8e9::t_87ed47addb3256 26-27
+code/apps/client/src/pages/order/webview-shell.vue
+  s_c6f0a82ffef8e9::t_0f812a67ba6c26 52
+  s_c6f0a82ffef8e9::t_e3b9e94a703872 15-27,30-35,54
+  s_c6f0a82ffef8e9::t_09b4832ed961f7 36-37
+  s_c6f0a82ffef8e9::t_a3a8b9d30f48fc 49-51
+  s_c6f0a82ffef8e9::t_97c12b1a07f065 53
+  s_c6f0a82ffef8e9::t_a09576e34af0ad 55-57
+  s_c6f0a82ffef8e9::t_77cd5550edf1e8 2-6,11,39,42-48,58
+code/docs/debug/H5_ORDER_TOKEN_AND_WEBVIEW_AUDIT.md
+  s_c6f0a82ffef8e9::t_3a87e2ca44dfbc 1-339
+code/apps/client/uniCloud-aliyun/cloudfunctions/game-service/test/oauth.test.cjs
+  s_c6f0a82ffef8e9::t_486de7978d156c 1-26
+game-service/lib/oauth.cjs
+  s_c6f0a82ffef8e9::t_87ed47addb3256 26-27
+code/apps/client/src/pages.json
+  s_c6f0a82ffef8e9::t_5476ef2fd69daa 9-12
+doc/下单灰度限制处理.md
+  s_c6f0a82ffef8e9::t_f2c2e94af3bb47 1-36
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "edd7f238ae7cb875796d00eefb8d00902bfeb271",
+  "prompts": {},
+  "sessions": {
+    "s_c6f0a82ffef8e9": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a0525b-3152-7f70-8eab-bf6495370f2f",
+        "model": "gpt-6-astra"
+      },
+      "human_author": "yuhongwen <Hongwen_Yu.sgmwh@saic-gm.com>"
+    }
+  }
+}
